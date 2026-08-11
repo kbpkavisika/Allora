@@ -17,44 +17,46 @@ Tokens and component specs for the Allora marketplace mobile app. Achromatic sur
 
 ## 01 · Colour
 
+Every token below has a light and a dark value. Neutrals and surfaces invert between modes (light backgrounds/dark text swap to dark backgrounds/light text). Saturated brand and semantic hues keep their hue in both modes; `success` and `warning` are brightened in dark mode since their light-mode fills are too low-lightness to stay legible on a near-black surface.
+
 ### Ink & neutrals
 
-| Swatch | Name | Hex | Token | Notes |
-|---|---|---|---|---|
-| ⬛ | Ink 900 | `#101112` | `primary` | |
-| ⬛ | Ink 700 | `#2E3133` | `primary-hover` | |
-| ⬛ | Ink 500 | `#6B7075` | `secondary` | |
-| ⬛ | Ink 400 | `#9BA0A5` | `disabled` | disabled only · 2.64:1 |
-| ⬛ | Grey 400 | `#8C9297` | `border-strong` | 3.15:1 |
-| ⬛ | Grey 200 | `#E4E6E8` | `border` | border colour `#D8DADC` |
+| Swatch | Name | Token | Light | Dark | Notes |
+|---|---|---|---|---|---|
+| ⬛ | Ink 900 | `primary` | `#101112` | `#F5F5F6` | |
+| ⬛ | Ink 700 | `primary-hover` | `#2E3133` | `#E4E6E8` | |
+| ⬛ | Ink 500 | `secondary` | `#6B7075` | `#9BA0A5` | |
+| ⬛ | Ink 400 | `disabled` | `#9BA0A5` | `#5C6165` | disabled only · 2.64:1 (light) |
+| ⬛ | Grey 400 | `border-strong` | `#8C9297` | `#55585B` | 3.15:1 (light) |
+| ⬛ | Grey 200 | `border` | `#E4E6E8` | `#2A2B2D` | light border colour `#D8DADC` |
 
 ### Surfaces
 
-| Swatch | Name | Hex | Token |
-|---|---|---|---|
-| ⬜ | Surface | `#FFFFFF` | `surface` |
-| ⬜ | Surface muted | `#F7F8F8` | `surface-muted` |
-| ⬜ | Surface sunken | `#F1F2F3` | `surface-sunken` |
+| Swatch | Name | Token | Light | Dark |
+|---|---|---|---|---|
+| ⬜ | Surface | `surface` | `#FFFFFF` | `#101112` |
+| ⬜ | Surface muted | `surface-muted` | `#F7F8F8` | `#1C1D1E` |
+| ⬜ | Surface sunken | `surface-sunken` | `#F1F2F3` | `#252627` |
 
 ### Accent & info
 
-| Swatch | Name | Hex | Token |
-|---|---|---|---|
-| 🟥 | Signal | `#D33A2C` | `accent` |
-| 🟥 | Signal press | `#B62E22` | `accent-pressed` |
-| 🟥 | Signal tint | `#FBEDEB` | `accent-tint` (border `#F3DCD9`) |
-| 🟦 | Tide | `#2F6BD8` | `info` |
-| 🟦 | Tide 200 | `#B9CDF2` | `info-track` (border `#A9C0EC`) |
-| 🟦 | Tide tint | `#EDF2FC` | `info-tint` (border `#DDE6F8`) |
+| Swatch | Name | Token | Light | Dark |
+|---|---|---|---|---|
+| 🟥 | Signal | `accent` | `#D33A2C` | `#D33A2C` |
+| 🟥 | Signal press | `accent-pressed` | `#B62E22` | `#B62E22` |
+| 🟥 | Signal tint | `accent-tint` | `#FBEDEB` (border `#F3DCD9`) | `#2C1613` (border `#4A241F`) |
+| 🟦 | Tide | `info` | `#2F6BD8` | `#2F6BD8` |
+| 🟦 | Tide 200 | `info-track` | `#B9CDF2` (border `#A9C0EC`) | `#24406E` |
+| 🟦 | Tide tint | `info-tint` | `#EDF2FC` (border `#DDE6F8`) | `#16233B` (border `#223655`) |
 
 ### Semantic
 
-| Name | Fill hex | Tint hex | Token |
-|---|---|---|---|
-| Success | `#197A4B` | `#E8F3EC` (border `#D6E8DC`) | `success` / `success-tint` |
-| Warning | `#8A5300` | `#FBF2E3` (border `#F1E4CD`) | `warning` / `warning-tint` |
-| Error | `#C4291F` | `#FBEBEA` (border `#F2D8D6`) | `error` / `error-tint` |
-| Info | `#2F6BD8` | `#EDF2FC` (border `#DDE6F8`) | `info` / `info-tint` (same values as Tide) |
+| Name | Token | Light fill | Dark fill | Light tint | Dark tint |
+|---|---|---|---|---|---|
+| Success | `success` / `success-tint` | `#197A4B` | `#22A566` | `#E8F3EC` (border `#D6E8DC`) | `#12261C` (border `#1E3A2C`) |
+| Warning | `warning` / `warning-tint` | `#8A5300` | `#C97F1D` | `#FBF2E3` (border `#F1E4CD`) | `#2C2211` (border `#4A3819`) |
+| Error | `error` / `error-tint` | `#C4291F` | `#C4291F` | `#FBEBEA` (border `#F2D8D6`) | `#2E1614` (border `#4A2320`) |
+| Info | `info` / `info-tint` | `#2F6BD8` | `#2F6BD8` | `#EDF2FC` (border `#DDE6F8`) | `#16233B` (border `#223655`) (same values as Tide) |
 
 > **Note (verbatim):** "Accent is reserved: active tab indicator, TRENDING/sale flags, destructive confirmation. Never a large fill. Product imagery is the only saturated area of a screen."
 
