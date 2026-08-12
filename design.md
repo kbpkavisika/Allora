@@ -17,44 +17,46 @@ Tokens and component specs for the Allora marketplace mobile app. Achromatic sur
 
 ## 01 · Colour
 
+Every token below has a light and a dark value. Neutrals and surfaces invert between modes (light backgrounds/dark text swap to dark backgrounds/light text). Saturated brand and semantic hues keep their hue in both modes; `success` and `warning` are brightened in dark mode since their light-mode fills are too low-lightness to stay legible on a near-black surface.
+
 ### Ink & neutrals
 
-| Swatch | Name | Hex | Token | Notes |
-|---|---|---|---|---|
-| ⬛ | Ink 900 | `#101112` | `ink.primary` | |
-| ⬛ | Ink 700 | `#2E3133` | `ink.body` | |
-| ⬛ | Ink 500 | `#6B7075` | `ink.secondary` | |
-| ⬛ | Ink 400 | `#9BA0A5` | `ink.disabled` | disabled only · 2.64:1 |
-| ⬛ | Grey 400 | `#8C9297` | `border.control` | 3.15:1 |
-| ⬛ | Grey 200 | `#E4E6E8` | `border.default` | border colour `#D8DADC` |
+| Swatch | Name | Token | Light | Dark | Notes |
+|---|---|---|---|---|---|
+| ⬛ | Ink 900 | `primary` | `#101112` | `#F5F5F6` | |
+| ⬛ | Ink 700 | `primary-hover` | `#2E3133` | `#E4E6E8` | |
+| ⬛ | Ink 500 | `secondary` | `#6B7075` | `#9BA0A5` | |
+| ⬛ | Ink 400 | `disabled` | `#9BA0A5` | `#5C6165` | disabled only · 2.64:1 (light) |
+| ⬛ | Grey 400 | `border-strong` | `#8C9297` | `#55585B` | 3.15:1 (light) |
+| ⬛ | Grey 200 | `border` | `#E4E6E8` | `#2A2B2D` | light border colour `#D8DADC` |
 
 ### Surfaces
 
-| Swatch | Name | Hex | Token |
-|---|---|---|---|
-| ⬜ | Surface | `#FFFFFF` | `surface.default` |
-| ⬜ | Surface muted | `#F7F8F8` | `surface.muted` |
-| ⬜ | Surface sunken | `#F1F2F3` | `surface.sunken` |
+| Swatch | Name | Token | Light | Dark |
+|---|---|---|---|---|
+| ⬜ | Surface | `surface` | `#FFFFFF` | `#101112` |
+| ⬜ | Surface muted | `surface-muted` | `#F7F8F8` | `#1C1D1E` |
+| ⬜ | Surface sunken | `surface-sunken` | `#F1F2F3` | `#252627` |
 
-### Accent & secondary
+### Accent & info
 
-| Swatch | Name | Hex | Token |
-|---|---|---|---|
-| 🟥 | Signal | `#D33A2C` | `accent.default` |
-| 🟥 | Signal press | `#B62E22` | `accent.pressed` |
-| 🟥 | Signal tint | `#FBEDEB` | `accent.tint` (border `#F3DCD9`) |
-| 🟦 | Tide | `#2F6BD8` | `secondary.default` |
-| 🟦 | Tide 200 | `#B9CDF2` | `secondary.track` (border `#A9C0EC`) |
-| 🟦 | Tide tint | `#EDF2FC` | `secondary.tint` (border `#DDE6F8`) |
+| Swatch | Name | Token | Light | Dark |
+|---|---|---|---|---|
+| 🟥 | Signal | `accent` | `#D33A2C` | `#D33A2C` |
+| 🟥 | Signal press | `accent-pressed` | `#B62E22` | `#B62E22` |
+| 🟥 | Signal tint | `accent-tint` | `#FBEDEB` (border `#F3DCD9`) | `#2C1613` (border `#4A241F`) |
+| 🟦 | Tide | `info` | `#2F6BD8` | `#2F6BD8` |
+| 🟦 | Tide 200 | `info-track` | `#B9CDF2` (border `#A9C0EC`) | `#24406E` |
+| 🟦 | Tide tint | `info-tint` | `#EDF2FC` (border `#DDE6F8`) | `#16233B` (border `#223655`) |
 
 ### Semantic
 
-| Name | Fill hex | Tint hex |
-|---|---|---|
-| Success | `#197A4B` | `#E8F3EC` (border `#D6E8DC`) |
-| Warning | `#8A5300` | `#FBF2E3` (border `#F1E4CD`) |
-| Error | `#C4291F` | `#FBEBEA` (border `#F2D8D6`) |
-| Info | `#2F6BD8` | `#EDF2FC` (border `#DDE6F8`) |
+| Name | Token | Light fill | Dark fill | Light tint | Dark tint |
+|---|---|---|---|---|---|
+| Success | `success` / `success-tint` | `#197A4B` | `#22A566` | `#E8F3EC` (border `#D6E8DC`) | `#12261C` (border `#1E3A2C`) |
+| Warning | `warning` / `warning-tint` | `#8A5300` | `#C97F1D` | `#FBF2E3` (border `#F1E4CD`) | `#2C2211` (border `#4A3819`) |
+| Error | `error` / `error-tint` | `#C4291F` | `#C4291F` | `#FBEBEA` (border `#F2D8D6`) | `#2E1614` (border `#4A2320`) |
+| Info | `info` / `info-tint` | `#2F6BD8` | `#2F6BD8` | `#EDF2FC` (border `#DDE6F8`) | `#16233B` (border `#223655`) (same values as Tide) |
 
 > **Note (verbatim):** "Accent is reserved: active tab indicator, TRENDING/sale flags, destructive confirmation. Never a large fill. Product imagery is the only saturated area of a screen."
 
@@ -64,18 +66,18 @@ Tokens and component specs for the Allora marketplace mobile app. Achromatic sur
 
 Display & text: **Archivo** (400 / 500 / 600 / 700 / 800) · Data & labels: **IBM Plex Mono** (400 / 500)
 
-| Style | Size / Line-height / Weight / Letter-spacing | Example text | Font |
-|---|---|---|---|
-| display | 34 / 38 / 800 / -0.03em | "Hi Alex" | Archivo |
-| h1 | 28 / 32 / 700 / -0.025em | "Your recent orders" | Archivo |
-| h2 | 22 / 28 / 700 / -0.02em | "Summary" | Archivo |
-| h3 / title | 18 / 24 / 600 / -0.01em | "Ridge Shell Jacket" | Archivo |
-| body-lg | 17 / 24 / 400 / 0 | "Tracking info will be emailed within 1–2 business days." | Archivo |
-| body | 15 / 22 / 400 / 0 | "Eligible to return in-store for credit." | Archivo |
-| label | 14 / 20 / 600 / 0 | "Add to cart" | Archivo |
-| caption | 13 / 18 / 400 / 0 | "11 items · Sep 10, 2025" (color Ink 500) | Archivo |
-| overline / flag | 11 / 14 / 700 / 0.1em / caps | "Trending" (color `#B62E22`) | Archivo |
-| mono-data | 13 / 18 / 400 / 0 | "c175679077816140" | IBM Plex Mono |
+| Token | Size / Line-height / Weight / Letter-spacing | Example text | Font | Default color |
+|---|---|---|---|---|
+| display | 34 / 38 / 800 / -0.03em | "Hi Alex" | Archivo | `primary` |
+| h1 | 28 / 32 / 700 / -0.025em | "Your recent orders" | Archivo | `primary` |
+| h2 | 22 / 28 / 700 / -0.02em | "Summary" | Archivo | `primary` |
+| h3 | 18 / 24 / 600 / -0.01em | "Ridge Shell Jacket" | Archivo | `primary` |
+| text-lg | 17 / 24 / 400 / 0 | "Tracking info will be emailed within 1–2 business days." | Archivo | `primary` |
+| text-primary | 15 / 22 / 400 / 0 | "Eligible to return in-store for credit." | Archivo | `primary` |
+| label | 14 / 20 / 600 / 0 | "Add to cart" | Archivo | `primary` |
+| text-secondary | 13 / 18 / 400 / 0 | "11 items · Sep 10, 2025" | Archivo | `secondary` |
+| overline | 11 / 14 / 700 / 0.1em / caps | "Trending" | Archivo | `accent-pressed` |
+| mono | 13 / 18 / 400 / 0 | "c175679077816140" | IBM Plex Mono | `primary` |
 
 > **Note (verbatim):** "Headings set tight and heavy; body stays 400 at generous leading. Sentence case everywhere except flags and section overlines. Product names use 600 with the material/variant word in Ink 500 at the same size."
 
@@ -186,7 +188,7 @@ Spec line: `h 52 (lg) / 44 (md) / 36 (sm) · radius full · label 15/600 · padd
 | Primary / disabled | 52 | full | `#E4E6E8` | `#9BA0A5` text | |
 | Secondary / default | 52 | full | `#FFFFFF` | border 1.5px `#101112`, text `#101112` | "Find in store" |
 | Secondary / pressed | 52 | full | `#F1F2F3` | border 1.5px `#101112`, text `#101112` | |
-| Secondary / focus | 52 | full | `#FFFFFF` | border 1.5px `#101112` + `box-shadow: 0 0 0 3px #2F6BD8` | focus ring 3px Tide solid |
+| Secondary / focus | 52 | full | `#FFFFFF` | border 1.5px `#101112` + `box-shadow: 0 0 0 3px #2F6BD8` | focus ring 3px `info` solid |
 | Secondary / disabled | 52 | full | `#FFFFFF` | border 1.5px `#C9CDD1`, text `#9BA0A5` | |
 | Small (sm) | 36 | full | `#101112` | `#FFFFFF` text, 13px/600 | "Small" example |
 | Destructive | 44 | full | `#C4291F` | `#FFFFFF` text, 15px/600 | "Cancel order" |
@@ -278,7 +280,7 @@ Spec line: `top bar h 56 · 1px #E4E6E8 hairline · title 17/600 centred, wordma
 
 ### Scroll tabs
 
-Spec line: `scroll tabs h 48 · label 17/600 · active = Ink 900 + 3px Signal indicator, inactive Ink 500`
+Spec line: `scroll tabs h 48 · label 17/600 · active = primary + 3px accent indicator, inactive secondary`
 
 - Tab bar container: border 1px `#E4E6E8`, gap 24 between tabs, padding `0 16px`.
 - Active tab: 17/600 `#101112`, bottom border 3px `#D33A2C`.
@@ -287,7 +289,7 @@ Spec line: `scroll tabs h 48 · label 17/600 · active = Ink 900 + 3px Signal in
 
 ### Bottom tab bar
 
-Spec line: `tab bar h 56 + 34 safe area · icon 24 · label 11/600 · active fills icon & Ink 900 label`
+Spec line: `tab bar h 56 + 34 safe area · icon 24 · label 11/600 · active fills icon & primary label`
 
 - Height 60 (56 + safe area accommodation shown as 60/24 split), bg `#FFFFFF`, top border 1px `#E4E6E8`.
 - Icons 24px, active icon stroke `#101112` (filled where relevant), label 11/700 `#101112`; inactive icon/label stroke & text `#6B7075` 11/500.
@@ -302,8 +304,8 @@ Spec line: `tab bar h 56 + 34 safe area · icon 24 · label 11/600 · active fil
 |---|---|---|
 | Hover | Pointer only. Fill darkens one step (#101112 → #2E3133); outlined and ghost surfaces take #F7F8F8. Tile image scales 1.02 with overflow clipped. | 120ms ease-out |
 | Pressed | Primary scale 0.97; outlined fills #F1F2F3; list rows flash #F7F8F8. Touch feedback is the only state on mobile. | 80ms in / 160ms out |
-| Focus | 3px solid Tide #2F6BD8 outer ring, 2px offset, radius follows the control. Never removed for keyboard or switch control. | instant |
-| Selected | 1.5px Ink 900 border and #F1F2F3 fill on chips and size cells; filled glyph on tabs and save; 3px Signal indicator on scroll tabs. | 140ms ease-out |
+| Focus | 3px solid `info` #2F6BD8 outer ring, 2px offset, radius follows the control. Never removed for keyboard or switch control. | instant |
+| Selected | 1.5px `primary` border and `surface-sunken` fill on chips and size cells; filled glyph on tabs and save; 3px `accent` indicator on scroll tabs. | 140ms ease-out |
 | Disabled | Fill #E4E6E8 / label #9BA0A5; outlined drops to #E4E6E8 border. No opacity fades. Sold-out sizes keep a hairline and #F7F8F8 fill. | none |
 | Loading | Skeletons in #F1F2F3 at the final geometry, 1.4s shimmer to #F7F8F8. Buttons keep width and swap the label for a 20px ring. | 1400ms loop |
 | Error | 1.5px #C4291F border, 13px message below the field, label turns #C4291F. Toasts sit above the tab bar for 4s. | no shake |
