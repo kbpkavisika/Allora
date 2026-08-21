@@ -110,6 +110,7 @@ export const Fonts = {
     semiBold: 'Archivo_600SemiBold',
     bold: 'Archivo_700Bold',
     extraBold: 'Archivo_800ExtraBold',
+    black: 'Archivo_900Black',
   },
   ibmPlexMono: {
     regular: 'IBMPlexMono_400Regular',
@@ -120,6 +121,13 @@ export const Fonts = {
 type TypographySpec = Omit<TextStyle, 'color'> & { colorToken: ColorToken };
 
 export const typographySpecs = {
+  splash: {
+    fontFamily: Fonts.archivo.black,
+    fontSize: 60,
+    lineHeight: 64,
+    letterSpacing: -0.03 * 60,
+    colorToken: 'primary',
+  },
   display: {
     fontFamily: Fonts.archivo.extraBold,
     fontSize: 34,
