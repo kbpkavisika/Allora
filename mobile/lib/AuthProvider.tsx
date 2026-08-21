@@ -1,18 +1,20 @@
-import type { Session, User } from '@supabase/supabase-js';
+import type { Session } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { supabase } from '@/lib/supabase';
 
 export interface AuthContextValue {
   session: Session | null;
-  user: User | null;
   isLoading: boolean;
-  signOut: () => Promise<void>;
+}
+
+export interface AuthProviderProps {
+  children: ReactNode;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -31,25 +33,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const value = useMemo<AuthContextValue>(
-    () => ({
-      session,
-      user: session?.user ?? null,
-      isLoading,
-      signOut: async () => {
-        await supabase.auth.signOut();
-      },
-    }),
+  const authState = useMemo<AuthContextValue>(
+    () => ({ session, isLoading }),
     [session, isLoading]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={authState}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth(): AuthContextValue {
-  const context = useContext(AuthContext);
-  if (!context) {
+  const authState = useContext(AuthContext);
+  if (!authState) {
     throw new Error('useAuth must be used inside <AuthProvider>.');
   }
-  return context;
+  return authState;
 }
