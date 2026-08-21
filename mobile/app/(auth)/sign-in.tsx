@@ -1,20 +1,24 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'expo-router';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Controller, useForm, type FieldErrors } from 'react-hook-form';
 import { Text, TextInput, View } from 'react-native';
 
 import { SocialAuthButtons } from '@/components/auth/social-auth-buttons';
 import { Button } from '@/components/ui/button';
 import { Divider } from '@/components/ui/divider';
+import { FormError } from '@/components/ui/form-error';
 import { KeyboardScreen } from '@/components/ui/keyboard-screen';
 import { ScreenHeader } from '@/components/ui/screen-header';
 import { TextField } from '@/components/ui/text-field';
+import { getAuthErrorMessage } from '@/lib/auth-errors';
 import { signInSchema, type SignInValues } from '@/lib/schemas';
+import { supabase } from '@/lib/supabase';
 
 export default function SignInScreen() {
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const {
     control,
@@ -27,9 +31,17 @@ export default function SignInScreen() {
     reValidateMode: 'onChange',
   });
 
-  function onSubmit(values: SignInValues) {
-    // TODO(auth)
-    console.log('sign-in submitted', values);
+  async function onSubmit(values: SignInValues) {
+    setFormError(null);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: values.email,
+      password: values.password,
+    });
+
+    if (error) {
+      setFormError(getAuthErrorMessage(error));
+    }
   }
 
   function focusFirstInvalid(invalid: FieldErrors<SignInValues>) {
@@ -101,6 +113,8 @@ export default function SignInScreen() {
           // TODO(auth)
           onPress={() => console.log('forgot password')}
         />
+
+        <FormError message={formError} />
 
         <Button label="Log in" loading={isSubmitting} onPress={submit} />
       </View>
