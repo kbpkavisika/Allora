@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Link } from 'expo-router';
+import { Link, router } from 'expo-router';
 import { useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Text, TextInput, View } from 'react-native';
@@ -27,8 +27,7 @@ export default function SignUpScreen() {
   });
 
   function onSubmit(values: SignUpValues) {
-    // TODO(auth)
-    console.log('sign-up submitted', values);
+    router.push({ pathname: '/create-password', params: { email: values.email } });
   }
 
   const submit = handleSubmit(onSubmit, () => emailRef.current?.focus());
