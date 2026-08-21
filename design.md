@@ -74,8 +74,10 @@ Display & text: **Archivo** (400 / 500 / 600 / 700 / 800) · Data & labels: **IB
 | h3 | 18 / 24 / 600 / -0.01em | "Ridge Shell Jacket" | Archivo | `primary` |
 | text-lg | 17 / 24 / 400 / 0 | "Tracking info will be emailed within 1–2 business days." | Archivo | `primary` |
 | text-primary | 15 / 22 / 400 / 0 | "Eligible to return in-store for credit." | Archivo | `primary` |
+| label-lg | 15 / 22 / 600 / 0 | "Log in" | Archivo | `primary` |
 | label | 14 / 20 / 600 / 0 | "Add to cart" | Archivo | `primary` |
 | text-secondary | 13 / 18 / 400 / 0 | "11 items · Sep 10, 2025" | Archivo | `secondary` |
+| label-sm | 13 / 18 / 600 / 0 | "Qty" | Archivo | `primary` |
 | overline | 11 / 14 / 700 / 0.1em / caps | "Trending" | Archivo | `accent-pressed` |
 | mono | 13 / 18 / 400 / 0 | "c175679077816140" | IBM Plex Mono | `primary` |
 
@@ -149,7 +151,7 @@ tab   744+ → 3-up tiles
 
 ## 05 · Iconography
 
-Outline only, **1.75px stroke**, round caps and joins, drawn on a **24px grid** with a **2px safe margin**. Fill is used solely for a selected state (saved item, completed step). Every text input pairs with the mic glyph so any field can be dictated rather than typed. Icons inherit text colour; never accent unless the state is accent.
+Outline only, **1.75px stroke**, round caps and joins, drawn on a **24px grid** with a **2px safe margin**. Fill is used solely for a selected state (saved item, completed step). Every text input pairs with the mic glyph so any field can be dictated rather than typed. Icons inherit text colour; never accent unless the state is accent. Secure fields carry a `show`/`hide` toggle in the mic's position instead.
 
 ### Sizes
 
@@ -171,6 +173,8 @@ Outline only, **1.75px stroke**, round caps and joins, drawn on a **24px grid** 
 - **account** — person-in-circle
 - **back** — left chevron
 - **chevron** — down chevron (expand/collapse)
+- **show** — eye outline (reveal the value of a secure field)
+- **hide** — eye outline with a diagonal slash (conceal the value of a secure field)
 
 ---
 
@@ -194,6 +198,9 @@ Spec line: `h 52 (lg) / 44 (md) / 36 (sm) · radius full · label 15/600 · padd
 | Destructive | 44 | full | `#C4291F` | `#FFFFFF` text, 15px/600 | "Cancel order" |
 | Text link / default | — | — | none | `#101112`, 15px/600, 1.5px underline | "Size guide" |
 | Text link / disabled | — | — | none | `#9BA0A5`, 15px/600 | |
+| Social / default | 52 | full | `#FFFFFF` | border 1.5px `#8C9297`, text `#101112` | 20px brand mark leading, gap 8, mark+label centred as one group · "Continue with Apple" |
+| Social / pressed | 52 | full | `#F1F2F3` | border 1.5px `#8C9297`, text `#101112` | |
+| Social / disabled | 52 | full | `#FFFFFF` | border 1px `#E4E6E8`, text and mark `#9BA0A5` | |
 
 ### Inputs
 
@@ -203,8 +210,19 @@ Spec line: `search: h 52, radius full, bg #F1F2F3, no border · field: h 52, rad
 |---|---|---|---|---|---|
 | Search / rest | 52 | full (999px) | `#F1F2F3` | none | search icon `#6B7075` + mic icon `#101112`, placeholder "Search Allora" |
 | Search / active (typing) | 52 | full | `#FFFFFF` | 1.5px `#101112` | text cursor shown as `#2F6BD8` bar; "Clear" label `#6B7075` 13px/600 |
-| Field / rest | 52 | 8 | `#FFFFFF` | 1px `#8C9297` | label 13px/600 `#101112` above; trailing 32px circular mic button |
-| Field / error | 52 | 8 | `#FFFFFF` | 1.5px `#C4291F` | label turns `#C4291F`; error message 13px `#C4291F` below (e.g. "Enter a complete postal code") |
+| Field / rest | 52 | 8 | `#FFFFFF` | 1px `#8C9297` | label 15px/600 `#101112` above; trailing 32px circular mic button |
+| Field / error | 52 | 8 | `#FFFFFF` | 1.5px `#C4291F` | label turns `#C4291F`; error message 15px `#C4291F` below (e.g. "Enter a complete postal code") |
+| Field / secure (password) | 52 | 8 | `#FFFFFF` | 1px `#8C9297` | no mic; trailing 32px circular visibility toggle — `show` glyph while concealed, `hide` while revealed, 20px in `#6B7075` |
+| Field / required | 52 | 8 | `#FFFFFF` | 1px `#8C9297` | label row is `Label` + the word `Required` in `#6B7075` 15/400, gap 8 |
+
+### Divider
+
+Spec line: `rule 1px border · centred label · gap 12 either side · block margin 24 0`
+
+| Variant | Rule | Label | Usage |
+|---|---|---|---|
+| Plain | 1px `#E4E6E8`, full width | — | separates sections inside a sheet or form |
+| Labelled ("OR") | 1px `#E4E6E8` each side, each `flex: 1` | `overline` ramp (11/700 caps, 0.1em) in `secondary` — **not** the `accent-pressed` default | separates two alternative paths, e.g. the email form and the social providers |
 
 ### Filter chips, dropdown, toggle, checkbox
 
@@ -314,7 +332,7 @@ Spec line: `tab bar h 56 + 34 safe area · icon 24 · label 11/600 · active fil
 
 ## 09 · The system in use
 
-Three screens at 390 × 844, built only from the tokens above.
+Five screens at 390 × 844, built only from the tokens above.
 
 ### 01 · Discover
 Status bar (h 48, bg `#F7F8F8`) → root top bar (h 56, wordmark + cart badge, bg `#F7F8F8`, border-bottom `#E4E6E8`) → greeting block: display "Hi Alex" + body-lg subcopy → search bar (h 52, pill, `#F1F2F3`, "Search or tap to speak" + mic icon) → scroll tabs (For You active w/ 3px Signal underline; New, Women, Men, Ho…) → "Your recent order" h2 heading → order card (progress bar w/ Tide fill, "Processing · arrives Sep 14") → full-bleed hero banner (220px, diagonal placeholder, "Editor's pick" badge top-left) → bottom tab bar (Shop active) → home indicator.
@@ -324,3 +342,16 @@ Status bar → sub-screen top bar (back chevron, "shell jacket" title + "11 item
 
 ### 03 · Purchase details
 Status bar (bg `#FFFFFF` on `#F7F8F8` frame) → sub-screen top bar ("Purchase details") → order meta row (Order ID mono `c1756790778`, Date "Sep 10, 2025", Total "1 item") → h1 "We've received your order" + progress stepper (Tide track/fill) + body copy → order line-item card (image, "Everyday Ribbed Crew Socks", Colour/Size/Qty rows, "Final sale" badge, price $14.00 strikethrough → $9.00 USD, return-eligibility note) → summary panel (bg `#F7F8F8`, Subtotal/Total tax/Shipping FREE `#197A4B`/Total $9.84 USD) → bottom tab bar → home indicator.
+
+### 04 · Sign in
+Back button (44 circle, `back` glyph, top-left) → h1 "Log in to Allora" → Email field (label "Email",
+placeholder "hello@company.com", mic) → Password field (label "Password", placeholder "Your password",
+visibility toggle) → "Forgot password?" text link, left-aligned → Primary button "Log in" (full width,
+52) → labelled divider "OR" → Social "Continue with Apple" → Social "Continue with Google" → footer
+row "New to Allora?" (`text-primary`) + text link "Create an account" (`label-lg`).
+
+### 05 · Sign up
+Back button → h1 "Get your free account" → Social "Continue with Apple" → Social "Continue with
+Google" → labelled divider "OR" → Email field (label "Email" + `Required`, mic) → Primary button
+"Continue with Email" → footer row "Already have an account?" (`text-primary`) + text link "Log in"
+(`label-lg`).
