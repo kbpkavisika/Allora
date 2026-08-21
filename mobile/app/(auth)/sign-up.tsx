@@ -4,12 +4,12 @@ import { useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Text, TextInput, View } from 'react-native';
 
-import { SocialAuthButtons } from '@/components/auth/social-auth-buttons';
-import { Button } from '@/components/ui/button';
-import { Divider } from '@/components/ui/divider';
-import { KeyboardScreen } from '@/components/ui/keyboard-screen';
-import { ScreenHeader } from '@/components/ui/screen-header';
-import { TextField } from '@/components/ui/text-field';
+import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
+import { Button } from '@/components/ui/Button';
+import { Divider } from '@/components/ui/Divider';
+import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { TextField } from '@/components/ui/TextField';
 import { signUpSchema, type SignUpValues } from '@/lib/schemas';
 
 export default function SignUpScreen() {

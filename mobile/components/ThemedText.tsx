@@ -1,7 +1,7 @@
 import { Text, type TextProps } from 'react-native';
 
 import type { TypographyToken } from '@/constants/theme';
-import { useTypography } from '@/hooks/use-typography';
+import { useTypography } from '@/hooks/useTypography';
 
 export type ThemedTextProps = TextProps & {
   type?: TypographyToken;

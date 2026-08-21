@@ -4,14 +4,14 @@ import { useRef, useState } from 'react';
 import { Controller, useForm, type FieldErrors } from 'react-hook-form';
 import { Text, TextInput, View } from 'react-native';
 
-import { SocialAuthButtons } from '@/components/auth/social-auth-buttons';
-import { Button } from '@/components/ui/button';
-import { Divider } from '@/components/ui/divider';
-import { FormError } from '@/components/ui/form-error';
-import { KeyboardScreen } from '@/components/ui/keyboard-screen';
-import { ScreenHeader } from '@/components/ui/screen-header';
-import { TextField } from '@/components/ui/text-field';
-import { getAuthErrorMessage } from '@/lib/auth-errors';
+import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
+import { Button } from '@/components/ui/Button';
+import { Divider } from '@/components/ui/Divider';
+import { FormError } from '@/components/ui/FormError';
+import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { TextField } from '@/components/ui/TextField';
+import { getAuthErrorMessage } from '@/lib/authErrors';
 import { signInSchema, type SignInValues } from '@/lib/schemas';
 import { supabase } from '@/lib/supabase';
 

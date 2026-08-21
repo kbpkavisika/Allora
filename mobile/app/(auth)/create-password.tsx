@@ -4,12 +4,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Text, TextInput, View } from 'react-native';
 
-import { Button } from '@/components/ui/button';
-import { FormError } from '@/components/ui/form-error';
-import { KeyboardScreen } from '@/components/ui/keyboard-screen';
-import { ScreenHeader } from '@/components/ui/screen-header';
-import { TextField } from '@/components/ui/text-field';
-import { getAuthErrorMessage } from '@/lib/auth-errors';
+import { Button } from '@/components/ui/Button';
+import { FormError } from '@/components/ui/FormError';
+import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { TextField } from '@/components/ui/TextField';
+import { getAuthErrorMessage } from '@/lib/authErrors';
 import { createPasswordSchema, type CreatePasswordValues } from '@/lib/schemas';
 import { supabase } from '@/lib/supabase';
 
