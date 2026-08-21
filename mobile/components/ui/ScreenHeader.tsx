@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
 import { Text, View } from 'react-native';
 
-import { Icon } from '@/components/ui/icon';
-import { IconButton } from '@/components/ui/icon-button';
+import { Icon } from '@/components/ui/Icon';
+import { IconButton } from '@/components/ui/IconButton';
 
 export interface ScreenHeaderProps {
   title: string;

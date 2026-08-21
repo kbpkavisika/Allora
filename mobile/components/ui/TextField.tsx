@@ -8,9 +8,9 @@ import {
   type TextInputProps,
 } from 'react-native';
 
-import { Icon } from '@/components/ui/icon';
-import { IconButton } from '@/components/ui/icon-button';
-import { useThemeColor } from '@/hooks/use-theme-color';
+import { Icon } from '@/components/ui/Icon';
+import { IconButton } from '@/components/ui/IconButton';
+import { useThemeColor } from '@/hooks/useThemeColor';
 
 export interface TextFieldProps
   extends Omit<

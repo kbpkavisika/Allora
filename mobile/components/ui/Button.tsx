@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, Text, type PressableProps } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 
-import { FocusRing } from '@/components/ui/focus-ring';
+import { FocusRing } from '@/components/ui/FocusRing';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'social' | 'link';
 export type ButtonSize = 'lg' | 'md' | 'sm';

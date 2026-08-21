@@ -1,7 +1,7 @@
 import { View } from 'react-native';
 
-import { Button } from '@/components/ui/button';
-import { BrandMark } from '@/components/ui/icon';
+import { Button } from '@/components/ui/Button';
+import { BrandMark } from '@/components/ui/Icon';
 
 export interface SocialAuthButtonsProps {
   onApplePress?: () => void;
