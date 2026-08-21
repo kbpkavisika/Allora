@@ -61,6 +61,7 @@ module.exports = {
         "archivo-semibold": Fonts.archivo.semiBold,
         "archivo-bold": Fonts.archivo.bold,
         "archivo-extrabold": Fonts.archivo.extraBold,
+        "archivo-black": Fonts.archivo.black,
         mono: Fonts.ibmPlexMono.regular,
         "mono-medium": Fonts.ibmPlexMono.medium,
       },
