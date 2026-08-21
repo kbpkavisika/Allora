@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Text, TextInput, View } from 'react-native';
+import { TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { FormError } from '@/components/ui/FormError';
@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabase';
 export default function CreatePasswordScreen() {
   const { email } = useLocalSearchParams<{ email?: string }>();
   const passwordRef = useRef<TextInput>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
   const [formError, setFormError] = useState<string | null>(null);
 
   const {
@@ -24,7 +25,7 @@ export default function CreatePasswordScreen() {
     formState: { errors, isSubmitting },
   } = useForm<CreatePasswordValues>({
     resolver: zodResolver(createPasswordSchema),
-    defaultValues: { password: '' },
+    defaultValues: { password: '', confirmPassword: '' },
     mode: 'onSubmit',
     reValidateMode: 'onChange',
   });
@@ -55,7 +56,10 @@ export default function CreatePasswordScreen() {
     }
   }
 
-  const submit = handleSubmit(onSubmit, () => passwordRef.current?.focus());
+  const submit = handleSubmit(onSubmit, (fieldErrors) => {
+    const target = fieldErrors.password ? passwordRef : confirmPasswordRef;
+    target.current?.focus();
+  });
 
   if (!email) {
     return null;
@@ -63,11 +67,7 @@ export default function CreatePasswordScreen() {
 
   return (
     <KeyboardScreen>
-      <ScreenHeader title="Create a password" className="mb-2" />
-
-      <Text className="type-text-primary mb-8 text-secondary">
-        You are creating an account for {email}.
-      </Text>
+      <ScreenHeader title="Create a password" className="mb-8" />
 
       <View className="gap-5">
         <Controller
@@ -82,6 +82,31 @@ export default function CreatePasswordScreen() {
               onChangeText={field.onChange}
               onBlur={field.onBlur}
               error={errors.password?.message}
+              secure
+              required
+              textContentType="newPassword"
+              autoComplete="new-password"
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="next"
+              submitBehavior="submit"
+              onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="confirmPassword"
+          render={({ field }) => (
+            <TextField
+              ref={confirmPasswordRef}
+              label="Confirm password"
+              placeholder="Re-enter your password"
+              value={field.value}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.confirmPassword?.message}
               secure
               required
               textContentType="newPassword"
