@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import { ActivityIndicator, Pressable, Text, type PressableProps } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View, type PressableProps } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
-
-import { FocusRing } from '@/components/ui/FocusRing';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'social' | 'link';
 export type ButtonSize = 'lg' | 'md' | 'sm';
@@ -21,8 +19,6 @@ export interface ButtonProps
   className?: string;
 }
 
-// Each variant emits one complete string: NativeWind resolves conflicts by CSS specificity,
-// not string order, so overrides cannot be layered onto a base.
 const CONTAINER: Record<ButtonVariant, string> = {
   primary: 'bg-primary active:bg-primary-hover',
   secondary: 'bg-surface border-1.5 border-primary active:bg-surface-sunken',
@@ -37,7 +33,6 @@ const CONTAINER_INERT: Record<ButtonVariant, string> = {
   link: 'bg-transparent',
 };
 
-// min-h, not h: controls grow rather than clip when the OS text size is raised (§03).
 const SIZE: Record<ButtonSize, string> = {
   lg: 'min-h-control-lg px-6',
   md: 'min-h-control-md px-6',
@@ -69,7 +64,7 @@ export function Button({
   hint,
   className = '',
   ...rest
-}: ButtonProps) {
+}: Readonly<ButtonProps>) {
   const [focused, setFocused] = useState(false);
   const reduceMotion = useReducedMotion();
   const inert = disabled || loading;
@@ -81,32 +76,38 @@ export function Button({
   const press = !inert && !reduceMotion && variant === 'primary' ? 'active:scale-[0.97]' : '';
 
   return (
-    <FocusRing focused={focused} className={`rounded-full ${fullWidth ? 'w-full' : 'self-start'}`}>
-      <Pressable
-        onPress={inert ? undefined : onPress}
-        disabled={inert}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        role="button"
-        aria-label={label}
-        aria-disabled={disabled}
-        aria-busy={loading}
-        accessibilityHint={hint}
-        className={`flex-row items-center justify-center gap-2 rounded-full ${sizing} ${
-          inert ? CONTAINER_INERT[variant] : CONTAINER[variant]
-        } ${width} ${press} ${className}`}
-        {...rest}>
-        {loading ? (
-          <ActivityIndicator size={20} className={labelColor} />
-        ) : (
-          <>
-            {leadingIcon}
-            <Text className={`${LABEL_SIZE[size]} ${labelColor}`} maxFontSizeMultiplier={2}>
-              {label}
-            </Text>
-          </>
-        )}
-      </Pressable>
-    </FocusRing>
+    <Pressable
+      onPress={inert ? undefined : onPress}
+      disabled={inert}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+      role="button"
+      aria-label={label}
+      aria-disabled={disabled}
+      aria-busy={loading}
+      accessibilityHint={hint}
+      className={`relative flex-row items-center justify-center gap-2 rounded-full ${sizing} ${
+        inert ? CONTAINER_INERT[variant] : CONTAINER[variant]
+      } ${width} ${press} ${className}`}
+      {...rest}>
+      {focused && !inert ? (
+        <View
+          pointerEvents="none"
+          aria-hidden
+          className="absolute inset-0 rounded-full border-3 border-info"
+        />
+      ) : null}
+
+      {loading ? (
+        <ActivityIndicator size={20} className={labelColor} />
+      ) : (
+        <>
+          {leadingIcon}
+          <Text className={`${LABEL_SIZE[size]} ${labelColor}`} maxFontSizeMultiplier={2}>
+            {label}
+          </Text>
+        </>
+      )}
+    </Pressable>
   );
 }
