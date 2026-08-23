@@ -1,1 +1,9 @@
-mobile/.env
+# local env files
+.env
+.env*.local
+
+# supabase cli
+supabase/.temp/
+
+# macOS
+.DS_Store

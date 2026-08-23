@@ -61,6 +61,48 @@ export const Colors = palette;
 
 export type ColorToken = keyof typeof palette.light;
 
+export const Spacing = {
+  0: 0,
+  px: 1,
+  0.5: 2,
+  1: 4,
+  2: 8,
+  3: 12,
+  4: 16,
+  5: 20,
+  6: 24,
+  8: 32,
+  10: 40,
+  16: 64,
+} as const;
+
+export const Radius = {
+  0: 0,
+  DEFAULT: 8,
+  4: 4,
+  8: 8,
+  12: 12,
+  16: 16,
+  full: 9999,
+} as const;
+
+export const BorderWidth = {
+  DEFAULT: 1,
+  0: 0,
+  1: 1,
+  1.5: 1.5,
+  1.75: 1.75,
+  3: 3,
+} as const;
+
+export const ControlSize = {
+  lg: 52,
+  md: 44,
+  sm: 36,
+  tap: 44,
+  glyph: 32,
+} as const;
+
 export const Fonts = {
   archivo: {
     regular: 'Archivo_400Regular',
@@ -68,6 +110,7 @@ export const Fonts = {
     semiBold: 'Archivo_600SemiBold',
     bold: 'Archivo_700Bold',
     extraBold: 'Archivo_800ExtraBold',
+    black: 'Archivo_900Black',
   },
   ibmPlexMono: {
     regular: 'IBMPlexMono_400Regular',
@@ -77,7 +120,14 @@ export const Fonts = {
 
 type TypographySpec = Omit<TextStyle, 'color'> & { colorToken: ColorToken };
 
-const typographySpecs = {
+export const typographySpecs = {
+  splash: {
+    fontFamily: Fonts.archivo.black,
+    fontSize: 60,
+    lineHeight: 64,
+    letterSpacing: -0.03 * 60,
+    colorToken: 'primary',
+  },
   display: {
     fontFamily: Fonts.archivo.extraBold,
     fontSize: 34,
@@ -124,10 +174,22 @@ const typographySpecs = {
     lineHeight: 18,
     colorToken: 'secondary',
   },
+  'label-lg': {
+    fontFamily: Fonts.archivo.semiBold,
+    fontSize: 15,
+    lineHeight: 22,
+    colorToken: 'primary',
+  },
   label: {
     fontFamily: Fonts.archivo.semiBold,
     fontSize: 14,
     lineHeight: 20,
+    colorToken: 'primary',
+  },
+  'label-sm': {
+    fontFamily: Fonts.archivo.semiBold,
+    fontSize: 13,
+    lineHeight: 18,
     colorToken: 'primary',
   },
   overline: {
@@ -148,7 +210,6 @@ const typographySpecs = {
 
 export type TypographyToken = keyof typeof typographySpecs;
 
-/** Resolves a typography token to a ready-to-use TextStyle for the given color scheme. */
 export function getTypography(token: TypographyToken, scheme: ColorScheme): TextStyle {
   const { colorToken, ...style } = typographySpecs[token];
   return { ...style, color: Colors[scheme][colorToken] };
