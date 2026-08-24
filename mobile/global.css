@@ -5,7 +5,7 @@
 :root {
   --color-primary: 16 17 18;
   --color-primary-hover: 46 49 51;
-  --color-secondary: 107 112 117;
+  --color-secondary: 99 104 109;
   --color-disabled: 155 160 165;
   --color-border: 228 230 232;
   --color-border-strong: 140 146 151;
@@ -33,7 +33,7 @@
     --color-secondary: 155 160 165;
     --color-disabled: 92 97 101;
     --color-border: 42 43 45;
-    --color-border-strong: 85 88 91;
+    --color-border-strong: 114 119 124;
     --color-surface: 16 17 18;
     --color-surface-muted: 28 29 30;
     --color-surface-sunken: 37 38 39;
@@ -47,7 +47,7 @@
     --color-success-tint: 18 38 28;
     --color-warning: 201 127 29;
     --color-warning-tint: 44 34 17;
-    --color-error: 196 41 31;
+    --color-error: 229 84 74;
     --color-error-tint: 46 22 20;
   }
 }

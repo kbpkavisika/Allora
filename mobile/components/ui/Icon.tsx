@@ -13,6 +13,7 @@ export type BrandName = 'apple' | 'google';
 const GLYPH: Record<IconName, React.ComponentProps<typeof Feather>['name']> = {
   back: 'chevron-left',
   dictate: 'mic',
+  search: 'search',
   show: 'eye',
   hide: 'eye-off',
   cart: 'shopping-cart',
@@ -47,12 +48,7 @@ export interface BrandMarkProps {
   className?: string;
 }
 
-/**
- * Provider brand mark.
- *
- * TODO(branding): swap for Apple's official mark (required by their Human Interface Guidelines)
- * and Google's four-colour "G" before shipping real sign-in. Both need react-native-svg.
- */
+
 export function BrandMark({ name, size = 'md', className }: BrandMarkProps) {
   return (
     <FontAwesome6
