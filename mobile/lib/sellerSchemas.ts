@@ -1,34 +1,6 @@
 import { z } from 'zod';
 
-export const shopRegistrationSchema = z.object({
-  shopName: z
-    .string()
-    .trim()
-    .min(2, { error: 'Enter your shop name.' })
-    .max(60, { error: 'Keep the shop name under 60 characters.' }),
-  description: z
-    .string()
-    .trim()
-    .min(10, { error: 'Describe your shop in at least 10 characters.' })
-    .max(500, { error: 'Keep the description under 500 characters.' }),
-  contactEmail: z
-    .string()
-    .trim()
-    .min(1, { error: 'Enter a contact email address.' })
-    .pipe(z.email({ error: 'Enter a valid email address, like hello@company.com.' })),
-  contactPhone: z
-    .string()
-    .trim()
-    .min(7, { error: 'Enter a contact phone number.' })
-    .regex(/^[0-9+()\-\s]+$/, { error: 'Use only numbers and phone symbols like + ( ) -.' }),
-  address: z
-    .string()
-    .trim()
-    .max(120, { error: 'Keep the address under 120 characters.' })
-    .optional(),
-});
-
-export type ShopRegistrationValues = z.infer<typeof shopRegistrationSchema>;
+import { shopCategories } from '@/lib/shop';
 
 export const productCategories = [
   'Apparel',
@@ -74,7 +46,55 @@ export const productDetailsSchema = z.object({
   price: priceString,
   stockQuantity: stockQuantityString,
   category: categoryString,
-  imageUri: z.string().min(1, { error: 'Add a product photo.' }),
+  photos: z.array(z.string()).max(6, { error: 'Add up to 6 photos.' }),
 });
 
 export type ProductDetailsValues = z.infer<typeof productDetailsSchema>;
+
+export const productStepFields: readonly (readonly (keyof ProductDetailsValues)[])[] = [
+  [],
+  ['name', 'price', 'stockQuantity', 'description', 'category'],
+  ['photos'],
+];
+
+const shopCategoryString = z
+  .string()
+  .min(1, { error: 'Choose what you sell.' })
+  .refine((value) => (shopCategories as readonly string[]).includes(value), {
+    error: 'Choose a valid category.',
+  });
+
+export const storeSetupSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(2, { error: 'Enter your shop name.' })
+      .max(60, { error: 'Keep the shop name under 60 characters.' }),
+    category: shopCategoryString,
+    city: z
+      .string()
+      .trim()
+      .min(2, { error: 'Enter your town or city.' })
+      .max(80, { error: 'Keep the location under 80 characters.' }),
+    phone: z
+      .string()
+      .trim()
+      .min(7, { error: 'Enter a phone number.' })
+      .regex(/^[0-9+()\-\s]+$/, { error: 'Use only numbers and phone symbols like + ( ) -.' }),
+    pickupEnabled: z.boolean(),
+    deliveryEnabled: z.boolean(),
+    photoUri: z.string().optional(),
+  })
+  .refine((values) => values.pickupEnabled || values.deliveryEnabled, {
+    error: 'Turn on pickup or delivery so buyers can receive orders.',
+    path: ['pickupEnabled'],
+  });
+
+export type StoreSetupValues = z.infer<typeof storeSetupSchema>;
+
+export const storeSetupStepFields: readonly (readonly (keyof StoreSetupValues)[])[] = [
+  ['name', 'category'],
+  ['city', 'phone', 'pickupEnabled', 'deliveryEnabled'],
+  ['photoUri'],
+];

@@ -1,9 +1,9 @@
 import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
 import { Pressable, Text, View } from 'react-native';
 
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { pickImage } from '@/lib/imagePicker';
 
 export interface ImagePickerFieldProps {
   label: string;
@@ -11,6 +11,10 @@ export interface ImagePickerFieldProps {
   onChange: (uri: string | null) => void;
   error?: string | null;
   required?: boolean;
+  placeholder?: string;
+  fullWidth?: boolean;
+  aspectRatio?: number;
+  allowCamera?: boolean;
   className?: string;
 }
 
@@ -20,26 +24,26 @@ export function ImagePickerField({
   onChange,
   error,
   required = false,
+  placeholder = 'Add photo',
+  fullWidth = false,
+  aspectRatio = 3 / 4,
+  allowCamera = false,
   className = '',
 }: ImagePickerFieldProps) {
   const hasError = Boolean(error);
   const secondaryColor = useThemeColor({}, 'secondary');
 
-  async function pickImage() {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      return;
-    }
+  const cropAspect: [number, number] = aspectRatio >= 1 ? [4, 3] : [3, 4];
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [3, 4],
-      quality: 0.8,
+  async function handlePress() {
+    const uri = await pickImage({
+      aspect: cropAspect,
+      allowCamera,
+      title: `Add ${label.toLowerCase()}`,
     });
 
-    if (!result.canceled && result.assets[0]) {
-      onChange(result.assets[0].uri);
+    if (uri) {
+      onChange(uri);
     }
   }
 
@@ -53,10 +57,11 @@ export function ImagePickerField({
       </View>
 
       <Pressable
-        onPress={pickImage}
+        onPress={handlePress}
         role="button"
         aria-label={imageUri ? `Change ${label.toLowerCase()}` : `Add ${label.toLowerCase()}`}
-        className={`aspect-[3/4] w-40 items-center justify-center overflow-hidden rounded-12 bg-surface-sunken ${
+        style={{ aspectRatio }}
+        className={`${fullWidth ? 'w-full' : 'w-40'} items-center justify-center overflow-hidden rounded-12 bg-surface-sunken ${
           hasError ? 'border-1.5 border-error' : 'border-1 border-border-strong'
         }`}>
         {imageUri ? (
@@ -66,9 +71,9 @@ export function ImagePickerField({
             contentFit="cover"
           />
         ) : (
-          <View className="items-center gap-2">
+          <View className="items-center gap-2 px-4">
             <Feather name="camera" size={24} color={secondaryColor} />
-            <Text className="type-text-secondary text-secondary">Add photo</Text>
+            <Text className="type-text-secondary text-center text-secondary">{placeholder}</Text>
           </View>
         )}
       </Pressable>

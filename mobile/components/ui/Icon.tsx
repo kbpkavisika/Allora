@@ -10,6 +10,8 @@ cssInterop(FontAwesome6, { className: { target: 'style', nativeStyleToProp: { co
 export type IconName =
   | 'back'
   | 'forward'
+  | 'chevron'
+  | 'filters'
   | 'dictate'
   | 'search'
   | 'show'
@@ -21,15 +23,24 @@ export type IconName =
   | 'shop'
   | 'save'
   | 'orders'
+  | 'payment'
   | 'account'
   | 'lock'
-  | 'shield';
+  | 'shield'
+  | 'check'
+  | 'chat'
+  | 'stop'
+  | 'star'
+  | 'close';
 export type IconSize = 'sm' | 'md' | 'lg';
 export type BrandName = 'apple' | 'google';
+export type SolidIconName = 'star';
 
 const GLYPH: Record<IconName, React.ComponentProps<typeof Feather>['name']> = {
   back: 'chevron-left',
   forward: 'chevron-right',
+  chevron: 'chevron-down',
+  filters: 'sliders',
   dictate: 'mic',
   search: 'search',
   show: 'eye',
@@ -41,9 +52,19 @@ const GLYPH: Record<IconName, React.ComponentProps<typeof Feather>['name']> = {
   shop: 'shopping-bag',
   save: 'heart',
   orders: 'package',
+  payment: 'credit-card',
   account: 'user',
   lock: 'lock',
   shield: 'shield',
+  check: 'check',
+  chat: 'message-circle',
+  stop: 'square',
+  star: 'star',
+  close: 'x',
+};
+
+const SOLID_GLYPH: Record<SolidIconName, React.ComponentProps<typeof FontAwesome6>['name']> = {
+  star: 'star',
 };
 
 const PX: Record<IconSize, number> = { sm: 16, md: 20, lg: 24 };
@@ -59,6 +80,28 @@ export function Icon({ name, size = 'lg', className, style }: IconProps) {
   return (
     <Feather
       name={GLYPH[name]}
+      size={PX[size]}
+      className={className}
+      style={style}
+      aria-hidden
+      importantForAccessibility="no-hide-descendants"
+    />
+  );
+}
+
+export interface SolidIconProps {
+  name: SolidIconName;
+  size?: IconSize;
+  className?: string;
+  style?: StyleProp<TextStyle>;
+}
+
+// Feather draws outlines only, so filled glyphs come from FontAwesome6's solid set.
+export function SolidIcon({ name, size = 'lg', className, style }: SolidIconProps) {
+  return (
+    <FontAwesome6
+      name={SOLID_GLYPH[name]}
+      solid
       size={PX[size]}
       className={className}
       style={style}

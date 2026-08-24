@@ -1,52 +1,65 @@
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
-import { Button } from '@/components/ui/Button';
-import { statusLabel, type MockOrder } from '@/lib/mockOrders';
+import { Icon } from '@/components/ui/Icon';
+import {
+  formatPlacedAt,
+  itemSummary,
+  statusPresentation,
+  trackingStep,
+  type Order,
+} from '@/lib/orders';
 
 export interface OrderListCardProps {
-  order: MockOrder;
-}
-
-const STATUS_COLOR: Record<MockOrder['status'], string> = {
-  placed: 'text-secondary',
-  payment_received: 'text-secondary',
-  preparing: 'text-primary',
-  out_for_delivery: 'text-info',
-  delivered: 'text-success',
-};
-
-function itemSummary(order: MockOrder): string {
-  const [first, ...rest] = order.items;
-  const restCount = rest.reduce((sum, item) => sum + item.quantity, 0);
-  return restCount > 0 ? `${first.name} and ${restCount} more` : first.name;
+  order: Order;
 }
 
 export function OrderListCard({ order }: OrderListCardProps) {
+  const status = statusPresentation(order.status);
+  const cover = order.items[0]?.product_photo;
+  const caption =
+    order.status === 'new'
+      ? `${status.label} · Order placed ${formatPlacedAt(order.placed_at)}`
+      : `${status.label} · ${trackingStep(order.status).label}`;
+
   return (
-    <View className="gap-2 rounded-12 border-1 border-border bg-surface p-3">
-      <Text className="type-label-lg text-primary" numberOfLines={1}>
-        {order.id} · {itemSummary(order)}
-      </Text>
+    <Pressable
+      onPress={() => router.push({ pathname: '/orders/[id]', params: { id: order.id } })}
+      role="button"
+      aria-label={`Order ${order.order_number}, ${status.label}`}
+      accessibilityHint="Opens the order"
+      className="flex-row items-center gap-3 rounded-12 border-1 border-border bg-surface p-3 active:bg-surface-muted">
+      <View className="h-14 w-14 items-center justify-center overflow-hidden rounded-8 bg-surface-sunken">
+        {cover ? (
+          <Image
+            source={{ uri: cover }}
+            style={{ width: '100%', height: '100%' }}
+            contentFit="cover"
+          />
+        ) : (
+          <Icon name="orders" size="md" className="text-secondary" />
+        )}
+      </View>
 
-      {/* Status is a full sentence, never colour alone (wireframe S16 note: T10 found a
-          coloured pill was hard to find). */}
-      <Text className={`type-text-primary ${STATUS_COLOR[order.status]}`}>
-        {statusLabel(order.status)} · {order.deliveryNote}
-      </Text>
+      <View className="flex-1 gap-1">
+        <Text className="type-mono text-secondary" numberOfLines={1}>
+          Order {order.order_number}
+        </Text>
+        <Text className="type-label-lg text-primary" numberOfLines={1}>
+          {itemSummary(order.items)}
+        </Text>
 
-      <Text className="type-text-secondary text-secondary">
-        Placed {order.placedAt} · ${order.total}
-      </Text>
+        {/* Status is a full sentence, never colour alone (design.md §06, wireframe S16). */}
+        <View className="flex-row items-center gap-2">
+          <View className={`h-2 w-2 rounded-full ${status.tone}`} />
+          <Text className="type-text-secondary text-secondary" numberOfLines={1}>
+            {caption}
+          </Text>
+        </View>
+      </View>
 
-      <Button
-        variant="secondary"
-        size="sm"
-        label="View details"
-        fullWidth={false}
-        className="mt-1"
-        onPress={() => router.push({ pathname: '/orders/[id]', params: { id: order.id } })}
-      />
-    </View>
+      <Icon name="forward" size="md" className="text-secondary" />
+    </Pressable>
   );
 }

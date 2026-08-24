@@ -9,6 +9,7 @@
   --color-disabled: 155 160 165;
   --color-border: 228 230 232;
   --color-border-strong: 140 146 151;
+  --color-inert: 201 205 209;
   --color-surface: 255 255 255;
   --color-surface-muted: 247 248 248;
   --color-surface-sunken: 241 242 243;
@@ -18,6 +19,7 @@
   --color-info: 47 107 216;
   --color-info-track: 185 205 242;
   --color-info-tint: 237 242 252;
+  --color-info-tint-border: 221 230 248;
   --color-success: 25 122 75;
   --color-success-tint: 232 243 236;
   --color-warning: 138 83 0;
@@ -34,6 +36,7 @@
     --color-disabled: 92 97 101;
     --color-border: 42 43 45;
     --color-border-strong: 114 119 124;
+    --color-inert: 74 78 82;
     --color-surface: 16 17 18;
     --color-surface-muted: 28 29 30;
     --color-surface-sunken: 37 38 39;
@@ -43,6 +46,7 @@
     --color-info: 47 107 216;
     --color-info-track: 36 64 110;
     --color-info-tint: 22 35 59;
+    --color-info-tint-border: 34 54 85;
     --color-success: 34 165 102;
     --color-success-tint: 18 38 28;
     --color-warning: 201 127 29;

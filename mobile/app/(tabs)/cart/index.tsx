@@ -1,28 +1,37 @@
 import { router } from 'expo-router';
-import { FlatList, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CartItemRow } from '@/components/cart/CartItemRow';
 import { Button } from '@/components/ui/Button';
 import { SuccessBanner } from '@/components/ui/SuccessBanner';
 import { useCart } from '@/lib/CartProvider';
+import { formatMoney } from '@/lib/orders';
 
 export default function CartScreen() {
   const insets = useSafeAreaInsets();
-  const { lineItems, itemCount, subtotal, updateQuantity, removeItem } = useCart();
+  const { lines, itemCount, subtotal, isLoading, updateQuantity, removeItem } = useCart();
 
   // Persistent, not a fading toast: wireframe S11 note — a deaf buyer re-checks the cart
   // after every action when feedback is audio-only, so the count/total stay on screen.
   const bannerMessage =
     itemCount > 0
-      ? `Cart has ${itemCount} item${itemCount === 1 ? '' : 's'}, $${subtotal.toFixed(2)} total.`
+      ? `Cart has ${itemCount} item${itemCount === 1 ? '' : 's'}, ${formatMoney(subtotal)} total.`
       : null;
+
+  if (isLoading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-surface">
+        <ActivityIndicator className="text-secondary" />
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-surface">
       <FlatList
-        data={lineItems}
-        keyExtractor={(item) => item.product.id}
+        data={lines}
+        keyExtractor={(line) => line.product.id}
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 16,
@@ -37,11 +46,11 @@ export default function CartScreen() {
             <SuccessBanner message={bannerMessage} />
           </View>
         }
-        renderItem={({ item }) => (
+        renderItem={({ item: line }) => (
           <CartItemRow
-            item={item}
-            onChangeQuantity={(quantity) => updateQuantity(item.product.id, quantity)}
-            onRemove={() => removeItem(item.product.id)}
+            line={line}
+            onChangeQuantity={(quantity) => updateQuantity(line.product.id, quantity)}
+            onRemove={() => removeItem(line.product.id)}
           />
         )}
         ListEmptyComponent={
@@ -50,11 +59,11 @@ export default function CartScreen() {
           </Text>
         }
         ListFooterComponent={
-          lineItems.length > 0 ? (
+          lines.length > 0 ? (
             <View className="mt-6 gap-4 border-t-1 border-border pt-4">
               <View className="flex-row items-center justify-between">
                 <Text className="type-label-lg text-primary">Total</Text>
-                <Text className="type-h3 text-primary">${subtotal.toFixed(2)}</Text>
+                <Text className="type-h3 text-primary">{formatMoney(subtotal)}</Text>
               </View>
               <Button
                 label="Checkout"

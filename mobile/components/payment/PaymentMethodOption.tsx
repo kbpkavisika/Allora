@@ -1,6 +1,8 @@
 import { Pressable, Text, View } from 'react-native';
 
-export type PaymentMethod = 'payhere' | 'other';
+import type { PaymentMethod } from '@/lib/orders';
+
+export type { PaymentMethod } from '@/lib/orders';
 
 export interface PaymentMethodOptionProps {
   method: PaymentMethod;
@@ -20,7 +22,7 @@ export function PaymentMethodOption({
   onPress,
 }: PaymentMethodOptionProps) {
   const containerClass = selected
-    ? 'border-primary bg-primary/10'
+    ? 'border-primary bg-surface-sunken'
     : 'border-border-strong bg-surface';
 
   return (
@@ -31,23 +33,24 @@ export function PaymentMethodOption({
       accessibilityHint={description}
       disabled={disabled}
       onPress={() => onPress(method)}
-      className={`w-full rounded-3xl border-2 px-5 py-4 ${containerClass} ${disabled ? 'opacity-60' : ''}`}>
+      className={`w-full rounded-12 border-1.5 px-5 py-4 ${containerClass}`}>
       <View className="flex-row items-start justify-between gap-3">
         <View className="flex-1 gap-1">
           <Text className="type-label-lg text-primary" maxFontSizeMultiplier={2}>
             {title}
           </Text>
-          <Text className="type-body-sm text-secondary" maxFontSizeMultiplier={2}>
+          <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
             {description}
           </Text>
         </View>
 
         <View
           aria-hidden
-          className={`mt-1 h-6 w-6 rounded-full border-2 ${
-            selected ? 'border-primary bg-primary' : 'border-border-strong bg-surface'
-          }`}
-        />
+          className={`mt-1 h-6 w-6 items-center justify-center rounded-full border-1.5 ${
+            selected ? 'border-primary' : 'border-border-strong'
+          }`}>
+          {selected ? <View className="h-3 w-3 rounded-full bg-primary" /> : null}
+        </View>
       </View>
     </Pressable>
   );

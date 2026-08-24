@@ -16,16 +16,19 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 
 export type InputFieldVariant = 'field' | 'search';
 export type InputFieldWidth = 'full' | 'half' | 'auto';
+export type InputFieldValueVariant = 'text' | 'mono';
 
 type InputState = 'rest' | 'focus' | 'error' | 'disabled';
 
-const VALUE_TEXT = typographySpecs['text-primary'];
+function toValueTextStyle(token: 'text-primary' | 'mono') {
+  const spec = typographySpecs[token];
+  return { fontFamily: spec.fontFamily, fontSize: spec.fontSize, includeFontPadding: false } as const;
+}
 
-const valueTextStyle = {
-  fontFamily: VALUE_TEXT.fontFamily,
-  fontSize: VALUE_TEXT.fontSize,
-  includeFontPadding: false,
-} as const;
+const VALUE_TEXT_STYLE: Record<InputFieldValueVariant, ReturnType<typeof toValueTextStyle>> = {
+  text: toValueTextStyle('text-primary'),
+  mono: toValueTextStyle('mono'),
+};
 
 const TONE = {
   primary: 'text-primary',
@@ -56,6 +59,7 @@ type BaseProps = Omit<
   onChangeText: (text: string) => void;
 
   error?: string | null;
+  helperText?: string;
   isDisabled?: boolean;
   isRevealed?: boolean;
 
@@ -67,7 +71,9 @@ type BaseProps = Omit<
   onRevealToggle?: (isNextRevealed: boolean) => void;
 
   width?: InputFieldWidth;
+  valueVariant?: InputFieldValueVariant;
   isMicVisible?: boolean;
+  multiline?: boolean;
   className?: string;
   ref?: React.Ref<TextInput>;
 };
@@ -125,6 +131,11 @@ const WIDTH: Record<InputFieldWidth, string> = {
   auto: 'self-start',
 };
 
+const MIN_HEIGHT: Record<InputFieldVariant, string> = {
+  field: 'min-h-control-field',
+  search: 'min-h-control-lg',
+};
+
 function resolveState(isDisabled: boolean, hasError: boolean, isActive: boolean): InputState {
   if (isDisabled) return 'disabled';
   if (hasError) return 'error';
@@ -138,12 +149,15 @@ export function InputField({
   value,
   onChangeText,
   error,
+  helperText,
   isDisabled = false,
   isRevealed,
   isRequired = false,
   isSecure = false,
   isMicVisible = true,
   width = 'full',
+  valueVariant = 'text',
+  multiline = false,
   onFocus,
   onBlur,
   onSubmitEditing,
@@ -196,6 +210,7 @@ export function InputField({
       return (
         <IconButton
           diameter={32}
+          variant="filled"
           icon={
             <Icon
               name={isPasswordRevealed ? 'hide' : 'show'}
@@ -235,6 +250,7 @@ export function InputField({
     return (
       <IconButton
         diameter={32}
+        variant="filled"
         icon={
           <Icon name="dictate" size="md" className={isMicInert ? TONE.disabled : TONE.primary} />
         }
@@ -263,14 +279,17 @@ export function InputField({
       ) : null}
 
       <View
-        className={`min-h-control-lg flex-row items-center gap-2 px-4 py-2 ${CONTAINER[variant][state]}`}>
+        className={`${MIN_HEIGHT[variant]} flex-row gap-2 px-4 py-2 ${
+          multiline ? 'items-start' : 'items-center'
+        } ${CONTAINER[variant][state]}`}>
         {isSearch ? <Icon name="search" size="md" className={TONE.secondary} /> : null}
 
         <TextInput
           ref={ref}
           className={`flex-1 self-stretch p-0 ${VALUE_TONE[state]}`}
-          style={valueTextStyle}
-          textAlignVertical="center"
+          style={[VALUE_TEXT_STYLE[valueVariant], multiline ? { minHeight: 96 } : null]}
+          multiline={multiline}
+          textAlignVertical={multiline ? 'top' : 'center'}
           value={value}
           onChangeText={onChangeText}
           onFocus={(e) => {
@@ -305,6 +324,12 @@ export function InputField({
           className={`type-text-primary mt-1 ${TONE.error}`}
           maxFontSizeMultiplier={2}>
           {error}
+        </Text>
+      ) : helperText ? (
+        <Text
+          className={`type-text-secondary mt-1 ${isDisabled ? TONE.disabled : TONE.secondary}`}
+          maxFontSizeMultiplier={2}>
+          {helperText}
         </Text>
       ) : null}
     </View>
