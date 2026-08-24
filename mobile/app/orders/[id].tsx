@@ -13,7 +13,7 @@ export default function OrderTrackingScreen() {
 
   useEffect(() => {
     if (!order) {
-      router.replace('/orders');
+      router.replace('/(tabs)/orders/index');
     }
   }, [order]);
 
