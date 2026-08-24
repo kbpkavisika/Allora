@@ -19,7 +19,6 @@ import 'react-native-reanimated';
 import { BrandSplash } from '@/components/BrandSplash';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/lib/AuthProvider';
-import { CartProvider } from '@/lib/CartProvider';
 
 import '../global.css';
 
@@ -35,9 +34,7 @@ if (Constants.executionEnvironment !== ExecutionEnvironment.StoreClient) {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <CartProvider>
-        <RootNavigator />
-      </CartProvider>
+      <RootNavigator />
     </AuthProvider>
   );
 }
@@ -65,7 +62,7 @@ function RootNavigator() {
     return () => clearTimeout(timer);
   }, []);
 
-
+ 
   useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
