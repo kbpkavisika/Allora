@@ -9,6 +9,7 @@ cssInterop(FontAwesome6, { className: { target: 'style', nativeStyleToProp: { co
 
 export type IconName =
   | 'back'
+  | 'forward'
   | 'dictate'
   | 'search'
   | 'show'
@@ -20,12 +21,15 @@ export type IconName =
   | 'shop'
   | 'save'
   | 'orders'
-  | 'account';
+  | 'account'
+  | 'lock'
+  | 'shield';
 export type IconSize = 'sm' | 'md' | 'lg';
 export type BrandName = 'apple' | 'google';
 
 const GLYPH: Record<IconName, React.ComponentProps<typeof Feather>['name']> = {
   back: 'chevron-left',
+  forward: 'chevron-right',
   dictate: 'mic',
   search: 'search',
   show: 'eye',
@@ -38,6 +42,8 @@ const GLYPH: Record<IconName, React.ComponentProps<typeof Feather>['name']> = {
   save: 'heart',
   orders: 'package',
   account: 'user',
+  lock: 'lock',
+  shield: 'shield',
 };
 
 const PX: Record<IconSize, number> = { sm: 16, md: 20, lg: 24 };

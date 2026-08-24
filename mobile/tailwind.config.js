@@ -37,7 +37,7 @@ const typography = plugin(function ({ addComponents }) {
     components[`.type-${token}`] = {
       fontFamily: spec.fontFamily,
       fontSize: `${spec.fontSize}px`,
-      lineHeight: `${spec.lineHeight}px`,
+      lineHeight: spec.lineHeight ? `${spec.lineHeight}px` : 'normal',
       letterSpacing: `${spec.letterSpacing ?? 0}px`,
       ...(spec.textTransform ? { textTransform: spec.textTransform } : null),
     };

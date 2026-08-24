@@ -135,6 +135,12 @@ export const typographySpecs = {
     letterSpacing: -0.03 * 34,
     colorToken: 'primary',
   },
+  wordmark: {
+    fontFamily: Fonts.archivo.extraBold,
+    fontSize: 22,
+    letterSpacing: -0.03 * 22,
+    colorToken: 'primary',
+  },
   h1: {
     fontFamily: Fonts.archivo.bold,
     fontSize: 28,

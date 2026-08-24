@@ -1,11 +1,12 @@
 import { Tabs } from 'expo-router';
 
 import { BottomTabBar } from '@/components/ui/BottomTabBar';
+import { Header } from '@/components/ui/Header';
 
 export default function TabLayout() {
   return (
     <Tabs
-      screenOptions={{ headerShown: false }}
+      screenOptions={{ header: () => <Header /> }}
       tabBar={(props) => <BottomTabBar {...props} />}>
       <Tabs.Screen name="index" options={{ title: 'Shop' }} />
       <Tabs.Screen name="cart/index" options={{ title: 'Cart' }} />

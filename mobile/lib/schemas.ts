@@ -25,6 +25,40 @@ export const createPasswordSchema = z
     path: ['confirmPassword'],
   });
 
+export const profileSchema = z.object({
+  fullName: z.string().trim().min(1, { error: 'Enter your name.' }),
+  phone: z
+    .string()
+    .trim()
+    .optional()
+    .refine((value) => !value || value.length >= 7, { error: 'Enter a valid phone number.' }),
+});
+
+export const addressSchema = z.object({
+  label: z.string().trim().min(1, { error: 'Enter a label, like Home or Work.' }).max(30),
+  line1: z.string().trim().min(1, { error: 'Enter a street address.' }),
+  line2: z.string().trim().optional(),
+  city: z.string().trim().min(1, { error: 'Enter a city.' }),
+  region: z.string().trim().min(1, { error: 'Enter a province or state.' }),
+  postalCode: z.string().trim().min(1, { error: 'Enter a postal code.' }),
+  country: z.string().trim().min(1, { error: 'Enter a country.' }),
+  deliveryNote: z.string().trim().optional(),
+  isDefault: z.boolean(),
+});
+
+export const resetPasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, { error: 'Enter your current password.' }),
+    newPassword,
+  })
+  .refine((values) => values.newPassword !== values.currentPassword, {
+    error: 'Choose a password you have not used before.',
+    path: ['newPassword'],
+  });
+
 export type SignInValues = z.infer<typeof signInSchema>;
 export type SignUpValues = z.infer<typeof signUpSchema>;
 export type CreatePasswordValues = z.infer<typeof createPasswordSchema>;
+export type ProfileValues = z.infer<typeof profileSchema>;
+export type AddressValues = z.infer<typeof addressSchema>;
+export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;

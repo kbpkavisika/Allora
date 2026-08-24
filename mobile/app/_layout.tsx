@@ -78,6 +78,18 @@ function RootNavigator() {
       <Stack>
         <Stack.Protected guard={!!session}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="account/edit-profile"
+            options={{ presentation: 'modal', headerShown: false }}
+          />
+          <Stack.Screen
+            name="account/address"
+            options={{ presentation: 'modal', headerShown: false }}
+          />
+          <Stack.Screen
+            name="account/reset-password"
+            options={{ presentation: 'modal', headerShown: false }}
+          />
         </Stack.Protected>
 
         <Stack.Protected guard={!session}>
