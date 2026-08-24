@@ -6,9 +6,9 @@ import { TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { FormError } from '@/components/ui/FormError';
+import { InputField } from '@/components/ui/InputField';
 import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { TextField } from '@/components/ui/TextField';
 import { getAuthErrorMessage } from '@/lib/authErrors';
 import { createPasswordSchema, type CreatePasswordValues } from '@/lib/schemas';
 import { supabase } from '@/lib/supabase';
@@ -74,7 +74,7 @@ export default function CreatePasswordScreen() {
           control={control}
           name="password"
           render={({ field }) => (
-            <TextField
+            <InputField
               ref={passwordRef}
               label="Password"
               placeholder="At least 6 characters"
@@ -82,8 +82,8 @@ export default function CreatePasswordScreen() {
               onChangeText={field.onChange}
               onBlur={field.onBlur}
               error={errors.password?.message}
-              secure
-              required
+              isSecure
+              isRequired
               textContentType="newPassword"
               autoComplete="new-password"
               autoCapitalize="none"
@@ -99,7 +99,7 @@ export default function CreatePasswordScreen() {
           control={control}
           name="confirmPassword"
           render={({ field }) => (
-            <TextField
+            <InputField
               ref={confirmPasswordRef}
               label="Confirm password"
               placeholder="Re-enter your password"
@@ -107,8 +107,8 @@ export default function CreatePasswordScreen() {
               onChangeText={field.onChange}
               onBlur={field.onBlur}
               error={errors.confirmPassword?.message}
-              secure
-              required
+              isSecure
+              isRequired
               textContentType="newPassword"
               autoComplete="new-password"
               autoCapitalize="none"

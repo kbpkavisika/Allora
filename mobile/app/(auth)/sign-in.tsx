@@ -8,9 +8,9 @@ import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
 import { Button } from '@/components/ui/Button';
 import { Divider } from '@/components/ui/Divider';
 import { FormError } from '@/components/ui/FormError';
+import { InputField } from '@/components/ui/InputField';
 import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { TextField } from '@/components/ui/TextField';
 import { getAuthErrorMessage } from '@/lib/authErrors';
 import { signInSchema, type SignInValues } from '@/lib/schemas';
 import { supabase } from '@/lib/supabase';
@@ -60,7 +60,7 @@ export default function SignInScreen() {
           control={control}
           name="email"
           render={({ field }) => (
-            <TextField
+            <InputField
               ref={emailRef}
               label="Email"
               placeholder="hello@company.com"
@@ -85,7 +85,7 @@ export default function SignInScreen() {
           control={control}
           name="password"
           render={({ field }) => (
-            <TextField
+            <InputField
               ref={passwordRef}
               label="Password"
               placeholder="Your password"
@@ -93,7 +93,7 @@ export default function SignInScreen() {
               onChangeText={field.onChange}
               onBlur={field.onBlur}
               error={errors.password?.message}
-              secure
+              isSecure
               textContentType="password"
               autoComplete="current-password"
               autoCapitalize="none"
