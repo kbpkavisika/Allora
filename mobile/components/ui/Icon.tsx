@@ -6,15 +6,20 @@ import { cssInterop } from 'nativewind';
 cssInterop(Feather, { className: { target: 'style', nativeStyleToProp: { color: true } } });
 cssInterop(FontAwesome6, { className: { target: 'style', nativeStyleToProp: { color: true } } });
 
-export type IconName = 'back' | 'dictate' | 'show' | 'hide';
+export type IconName = 'back' | 'dictate' | 'show' | 'hide' | 'cart' | 'plus' | 'minus' | 'trash';
 export type IconSize = 'sm' | 'md' | 'lg';
 export type BrandName = 'apple' | 'google';
 
 const GLYPH: Record<IconName, React.ComponentProps<typeof Feather>['name']> = {
   back: 'chevron-left',
   dictate: 'mic',
+  search: 'search',
   show: 'eye',
   hide: 'eye-off',
+  cart: 'shopping-cart',
+  plus: 'plus',
+  minus: 'minus',
+  trash: 'trash-2',
 };
 
 const PX: Record<IconSize, number> = { sm: 16, md: 20, lg: 24 };
@@ -43,12 +48,7 @@ export interface BrandMarkProps {
   className?: string;
 }
 
-/**
- * Provider brand mark.
- *
- * TODO(branding): swap for Apple's official mark (required by their Human Interface Guidelines)
- * and Google's four-colour "G" before shipping real sign-in. Both need react-native-svg.
- */
+
 export function BrandMark({ name, size = 'md', className }: BrandMarkProps) {
   return (
     <FontAwesome6

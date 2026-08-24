@@ -17,7 +17,9 @@ Tokens and component specs for the Allora marketplace mobile app. Achromatic sur
 
 ## 01 · Colour
 
-Every token below has a light and a dark value. Neutrals and surfaces invert between modes (light backgrounds/dark text swap to dark backgrounds/light text). Saturated brand and semantic hues keep their hue in both modes; `success` and `warning` are brightened in dark mode since their light-mode fills are too low-lightness to stay legible on a near-black surface.
+Every token below has a light and a dark value. Neutrals and surfaces invert between modes (light backgrounds/dark text swap to dark backgrounds/light text). Saturated brand and semantic hues keep their hue in both modes; `success`, `warning`, and `error` are brightened in dark mode since their light-mode fills are too low-lightness to stay legible on a near-black surface. Component specs below quote light-mode hexes; substitute the dark value from these tables when the app is in dark mode.
+
+Every foreground token is chosen to clear WCAG 2.1 AA against the surfaces it actually sits on — 4.5:1 for text, 3:1 for borders and meaningful non-text — in **both** modes. `disabled` is the sole exception, permitted by the inactive-user-interface-component exemption. Re-check the ratio against the specific background before changing any value here.
 
 ### Ink & neutrals
 
@@ -25,9 +27,9 @@ Every token below has a light and a dark value. Neutrals and surfaces invert bet
 |---|---|---|---|---|---|
 | ⬛ | Ink 900 | `primary` | `#101112` | `#F5F5F6` | |
 | ⬛ | Ink 700 | `primary-hover` | `#2E3133` | `#E4E6E8` | |
-| ⬛ | Ink 500 | `secondary` | `#6B7075` | `#9BA0A5` | |
-| ⬛ | Ink 400 | `disabled` | `#9BA0A5` | `#5C6165` | disabled only · 2.64:1 (light) |
-| ⬛ | Grey 400 | `border-strong` | `#8C9297` | `#55585B` | 3.15:1 (light) |
+| ⬛ | Ink 500 | `secondary` | `#63686D` | `#9BA0A5` | 5.63:1 (light on `surface`) · 5.02:1 on `surface-sunken` · 7.17:1 (dark) |
+| ⬛ | Ink 400 | `disabled` | `#9BA0A5` | `#5C6165` | disabled only · 2.64:1 (light) · exempt under the inactive-component rule |
+| ⬛ | Grey 400 | `border-strong` | `#8C9297` | `#72777C` | 3.15:1 (light) · 4.18:1 (dark) — both clear the 3:1 non-text minimum |
 | ⬛ | Grey 200 | `border` | `#E4E6E8` | `#2A2B2D` | light border colour `#D8DADC` |
 
 ### Surfaces
@@ -55,7 +57,7 @@ Every token below has a light and a dark value. Neutrals and surfaces invert bet
 |---|---|---|---|---|---|
 | Success | `success` / `success-tint` | `#197A4B` | `#22A566` | `#E8F3EC` (border `#D6E8DC`) | `#12261C` (border `#1E3A2C`) |
 | Warning | `warning` / `warning-tint` | `#8A5300` | `#C97F1D` | `#FBF2E3` (border `#F1E4CD`) | `#2C2211` (border `#4A3819`) |
-| Error | `error` / `error-tint` | `#C4291F` | `#C4291F` | `#FBEBEA` (border `#F2D8D6`) | `#2E1614` (border `#4A2320`) |
+| Error | `error` / `error-tint` | `#C4291F` | `#E5544A` | `#FBEBEA` (border `#F2D8D6`) | `#2E1614` (border `#4A2320`) |
 | Info | `info` / `info-tint` | `#2F6BD8` | `#2F6BD8` | `#EDF2FC` (border `#DDE6F8`) | `#16233B` (border `#223655`) (same values as Tide) |
 
 > **Note (verbatim):** "Accent is reserved: active tab indicator, TRENDING/sale flags, destructive confirmation. Never a large fill. Product imagery is the only saturated area of a screen."
@@ -208,12 +210,12 @@ Spec line: `search: h 52, radius full, bg #F1F2F3, no border · field: h 52, rad
 
 | Variant / State | Height | Radius | Background | Border | Notes |
 |---|---|---|---|---|---|
-| Search / rest | 52 | full (999px) | `#F1F2F3` | none | search icon `#6B7075` + mic icon `#101112`, placeholder "Search Allora" |
-| Search / active (typing) | 52 | full | `#FFFFFF` | 1.5px `#101112` | text cursor shown as `#2F6BD8` bar; "Clear" label `#6B7075` 13px/600 |
+| Search / rest | 52 | full (999px) | `#F1F2F3` | none | search icon `#63686D` + mic icon `#101112`, placeholder "Search Allora" |
+| Search / active (typing) | 52 | full | `#FFFFFF` | 1.5px `#101112` | text cursor shown as `#2F6BD8` bar; "Clear" label `#63686D` 13px/600 |
 | Field / rest | 52 | 8 | `#FFFFFF` | 1px `#8C9297` | label 15px/600 `#101112` above; trailing 32px circular mic button |
 | Field / error | 52 | 8 | `#FFFFFF` | 1.5px `#C4291F` | label turns `#C4291F`; error message 15px `#C4291F` below (e.g. "Enter a complete postal code") |
-| Field / secure (password) | 52 | 8 | `#FFFFFF` | 1px `#8C9297` | no mic; trailing 32px circular visibility toggle — `show` glyph while concealed, `hide` while revealed, 20px in `#6B7075` |
-| Field / required | 52 | 8 | `#FFFFFF` | 1px `#8C9297` | label row is `Label` + the word `Required` in `#6B7075` 15/400, gap 8 |
+| Field / secure (password) | 52 | 8 | `#FFFFFF` | 1px `#8C9297` | no mic; trailing 32px circular visibility toggle — `show` glyph while concealed, `hide` while revealed, 20px in `#63686D` |
+| Field / required | 52 | 8 | `#FFFFFF` | 1px `#8C9297` | label row is `Label` + the word `Required` in `#63686D` 15/400, gap 8 |
 
 ### Divider
 
@@ -232,7 +234,7 @@ Spec line: `rule 1px border · centred label · gap 12 either side · block marg
 | Filter chip (dropdown, default) | h 44, radius 8 | border `#8C9297`, bg `#FFFFFF`, text 15/500 `#101112` | e.g. "Sort: Relevance" + chevron |
 | Filter chip (selected) | h 44, radius 8 | border 1.5px `#101112`, bg `#F1F2F3`, text 15/600 `#101112` | e.g. "Size · 2" |
 | Filter chip (disabled) | h 44, radius 8 | border 1px `#E4E6E8`, bg `#FFFFFF`, text `#C9CDD1` | e.g. "Colour" |
-| Dropdown panel | radius 12, e3 shadow | bg `#FFFFFF`, border 1px `#E4E6E8` | header row 13/600 uppercase `#6B7075`; selected row shows `✓` in `#B62E22`; hovered/next row bg `#F7F8F8`; disabled row text `#C9CDD1` |
+| Dropdown panel | radius 12, e3 shadow | bg `#FFFFFF`, border 1px `#E4E6E8` | header row 13/600 uppercase `#63686D`; selected row shows `✓` in `#B62E22`; hovered/next row bg `#F7F8F8`; disabled row text `#C9CDD1` |
 | Toggle / Off | 52×32, radius full | track `#E4E6E8`, border 1px `#8C9297`, knob 26×24 `#FFFFFF` w/ shadow `0 1px 2px rgba(16,17,18,0.2)` | padding 3px |
 | Toggle / On | 52×32, radius full | track `#101112`, knob 26×24 `#FFFFFF` (knob right-aligned) | e.g. "On · pickup only" |
 | Checkbox / unchecked | 22×22, radius 4 | border 1.75px `#101112` | "Compare" |
@@ -246,7 +248,7 @@ Spec line: `rule 1px border · centred label · gap 12 either side · block marg
 | Badge "Final sale" | 24 | 4 | bg `#101112`, text `#FFFFFF` 11/700 uppercase 0.06em | |
 | Badge "In stock" | 24 | 4 | bg `#E8F3EC`, text `#197A4B` 11/700 uppercase | |
 | Badge "Low stock" | 24 | 4 | bg `#FBF2E3`, text `#8A5300` 11/700 uppercase | |
-| Badge "Sold out" | 24 | 4 | bg `#F1F2F3`, text `#6B7075` 11/700 uppercase | |
+| Badge "Sold out" | 24 | 4 | bg `#F1F2F3`, text `#63686D` 11/700 uppercase | |
 | Tag (pill, e.g. "Nulu") | 24 | full | border 1px `#8C9297`, text `#2E3133` 13px | |
 | Count badge (numeric, e.g. "3") | 18×18 | full | bg `#D33A2C`, text `#FFFFFF` (IBM Plex Mono 10px) | also used as cart badge, 16×16, positioned top -3px right -5px |
 
@@ -257,13 +259,13 @@ Spec line: `radius 0 · image 3:4 on #ECEDEE · 2px inter-tile gap · meta stack
 - Image: `aspect-ratio: 3/4` on placeholder `#ECEDEE`/`#F4F5F5` diagonal stripe pattern, radius 0.
 - Save button: 36px circle, `rgba(255,255,255,0.9)` background, positioned top 10px / right 10px, heart icon (outline default, filled when saved with `fill: #101112`).
 - Colour swatches: 26×26 circles (24×24 in narrower grid layout), gap 8; selected swatch = `box-shadow: 0 0 0 1.5px #FFFFFF inset, 0 0 0 1.75px #101112`.
-- Meta stack (gap 8): trending flag → title (16px/600 `#101112` + variant word `#6B7075`/400) → price (15px `#2E3133`; sale price `#C4291F` 600 with strikethrough original in `#6B7075` 13px) → compare checkbox row.
+- Meta stack (gap 8): trending flag → title (16px/600 `#101112` + variant word `#63686D`/400) → price (15px `#2E3133`; sale price `#C4291F` 600 with strikethrough original in `#63686D` 13px) → compare checkbox row.
 - Inter-tile gap: 2px, grid `1fr 1fr`.
 
 ### Order card & progress
 
 - Card: radius 12, `box-shadow: 0 1px 2px rgba(16,17,18,0.06)`, border 1px `#E4E6E8`, bg `#FFFFFF`.
-- Layout: `104px 1fr` grid — image placeholder, then padding 16 20 with title 17/600 `#101112`, progress bar, caption 13px `#6B7075`.
+- Layout: `104px 1fr` grid — image placeholder, then padding 16 20 with title 17/600 `#101112`, progress bar, caption 13px `#63686D`.
 - Progress bar (step indicator): 4px height segments, active segment `#2F6BD8`, inactive `#E4E6E8`; 22×22 circular checkmark node `#2F6BD8` bg / `#FFFFFF` check.
 - Shipment progress bar (linear): track `#B9CDF2`, fill `#2F6BD8`, height 4, radius 0.
 
@@ -273,13 +275,13 @@ Spec line: `sheet radius 16 top · grabber 40×4 · scrim rgba(16,17,18,.45) · 
 
 - Sheet: `border-radius: 16px 16px 0 0`, `box-shadow: 0 -16px 40px rgba(16,17,18,0.16)`, bg `#FFFFFF`, padding `12px 20px 20px`.
 - Grabber: 40×4, radius full, `#C9CDD1`, centered, margin `0 auto 16px`.
-- Header row: title 22/700 `-0.02em` `#101112` + "Size guide" link 13/600 `#6B7075`.
+- Header row: title 22/700 `-0.02em` `#101112` + "Size guide" link 13/600 `#63686D`.
 - Size grid cells: 5-column, 48px height, radius 8; default border 1px `#8C9297` text 15/500; selected border 1.5px `#101112` + bg `#101112` text `#FFFFFF` 15/600; sold-out cell border 1px `#E4E6E8` bg `#F7F8F8` text `#C9CDD1`.
 - Primary CTA inside sheet: 52 height, radius full, `#101112` bg, `#FFFFFF` text — "Add to cart · $128".
 
 ### Pagination & load state
 
-- Page number buttons: 44×44, radius 8; current page bg `#101112` text `#FFFFFF` 15/600; other pages border 1px `#8C9297` text `#101112`; disabled/next-arrow border 1px `#E4E6E8` icon `#C9CDD1`; ellipsis `…` in `#6B7075`.
+- Page number buttons: 44×44, radius 8; current page bg `#101112` text `#FFFFFF` 15/600; other pages border 1px `#8C9297` text `#101112`; disabled/next-arrow border 1px `#E4E6E8` icon `#C9CDD1`; ellipsis `…` in `#63686D`.
 - "Load 24 more" button: height 44, padding 0 22, radius full, border 1.5px `#101112`, text 15/600 `#101112`.
 - Carousel dots: active 22×4 pill `#101112`; inactive 8×4 pill `#C9CDD1`; radius full.
 
@@ -294,7 +296,7 @@ Spec line: `sheet radius 16 top · grabber 40×4 · scrim rgba(16,17,18,.45) · 
 Spec line: `top bar h 56 · 1px #E4E6E8 hairline · title 17/600 centred, wordmark left-aligned on root screens`
 
 - Root screen top bar: height 56, bg `#FFFFFF`, bottom border 1px `#E4E6E8`; wordmark "allora" 22/800 `-0.03em` `#101112` left-aligned; cart icon right with numeric badge (16×16 `#D33A2C`).
-- Sub-screen top bar: height 56, back chevron left, centered title (17/600 `#101112`) + subtitle (13px `#6B7075`), cart icon with badge right.
+- Sub-screen top bar: height 56, back chevron left, centered title (17/600 `#101112`) + subtitle (13px `#63686D`), cart icon with badge right.
 
 ### Scroll tabs
 
@@ -302,7 +304,7 @@ Spec line: `scroll tabs h 48 · label 17/600 · active = primary + 3px accent in
 
 - Tab bar container: border 1px `#E4E6E8`, gap 24 between tabs, padding `0 16px`.
 - Active tab: 17/600 `#101112`, bottom border 3px `#D33A2C`.
-- Inactive tab: 17/500 `#6B7075`.
+- Inactive tab: 17/500 `#63686D`.
 - Example tabs: For You, New, Women, Men, Home.
 
 ### Bottom tab bar
@@ -310,7 +312,7 @@ Spec line: `scroll tabs h 48 · label 17/600 · active = primary + 3px accent in
 Spec line: `tab bar h 56 + 34 safe area · icon 24 · label 11/600 · active fills icon & primary label`
 
 - Height 60 (56 + safe area accommodation shown as 60/24 split), bg `#FFFFFF`, top border 1px `#E4E6E8`.
-- Icons 24px, active icon stroke `#101112` (filled where relevant), label 11/700 `#101112`; inactive icon/label stroke & text `#6B7075` 11/500.
+- Icons 24px, active icon stroke `#101112` (filled where relevant), label 11/700 `#101112`; inactive icon/label stroke & text `#63686D` 11/500.
 - Tabs: Shop, Drops, Sellers, Saved, Account.
 - Home indicator: 134×5 pill `#101112`, centered, in 24–26px bottom strip.
 

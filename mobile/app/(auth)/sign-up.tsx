@@ -7,9 +7,9 @@ import { Text, TextInput, View } from 'react-native';
 import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
 import { Button } from '@/components/ui/Button';
 import { Divider } from '@/components/ui/Divider';
+import { InputField } from '@/components/ui/InputField';
 import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { TextField } from '@/components/ui/TextField';
 import { signUpSchema, type SignUpValues } from '@/lib/schemas';
 
 export default function SignUpScreen() {
@@ -45,7 +45,7 @@ export default function SignUpScreen() {
           control={control}
           name="email"
           render={({ field }) => (
-            <TextField
+            <InputField
               ref={emailRef}
               label="Email"
               placeholder="hello@company.com"
@@ -53,7 +53,7 @@ export default function SignUpScreen() {
               onChangeText={field.onChange}
               onBlur={field.onBlur}
               error={errors.email?.message}
-              required
+              isRequired
               keyboardType="email-address"
               textContentType="emailAddress"
               autoComplete="email"

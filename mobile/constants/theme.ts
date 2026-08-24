@@ -12,7 +12,7 @@ const palette = {
   light: {
     primary: '#101112',
     'primary-hover': '#2E3133',
-    secondary: '#6B7075',
+    secondary: '#63686D',
     disabled: '#9BA0A5',
     border: '#E4E6E8',
     'border-strong': '#8C9297',
@@ -38,7 +38,7 @@ const palette = {
     secondary: '#9BA0A5',
     disabled: '#5C6165',
     border: '#2A2B2D',
-    'border-strong': '#55585B',
+    'border-strong': '#72777C',
     surface: '#101112',
     'surface-muted': '#1C1D1E',
     'surface-sunken': '#252627',
@@ -52,7 +52,7 @@ const palette = {
     'success-tint': '#12261C',
     warning: '#C97F1D',
     'warning-tint': '#2C2211',
-    error: '#C4291F',
+    error: '#E5544A',
     'error-tint': '#2E1614',
   },
 } as const;
