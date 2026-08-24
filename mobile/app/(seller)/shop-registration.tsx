@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { SuccessBanner } from '@/components/ui/SuccessBanner';
-import { TextField } from '@/components/ui/TextField';
+import { InputField } from '@/components/ui/InputField';
 import { shopRegistrationSchema, type ShopRegistrationValues } from '@/lib/sellerSchemas';
 
 export default function ShopRegistrationScreen() {
@@ -55,7 +55,7 @@ export default function ShopRegistrationScreen() {
           control={control}
           name="shopName"
           render={({ field }) => (
-            <TextField
+            <InputField
               ref={shopNameRef}
               label="Shop name"
               placeholder="e.g. Ridge & Co."
@@ -66,7 +66,7 @@ export default function ShopRegistrationScreen() {
               }}
               onBlur={field.onBlur}
               error={errors.shopName?.message}
-              required
+              isRequired
               autoCapitalize="words"
               returnKeyType="next"
               onSubmitEditing={() => descriptionRef.current?.focus()}
@@ -78,7 +78,7 @@ export default function ShopRegistrationScreen() {
           control={control}
           name="description"
           render={({ field }) => (
-            <TextField
+            <InputField
               ref={descriptionRef}
               label="Description"
               placeholder="Tell buyers what your shop sells"
@@ -89,10 +89,7 @@ export default function ShopRegistrationScreen() {
               }}
               onBlur={field.onBlur}
               error={errors.description?.message}
-              required
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
+              isRequired
               returnKeyType="next"
               onSubmitEditing={() => contactEmailRef.current?.focus()}
             />
@@ -103,7 +100,7 @@ export default function ShopRegistrationScreen() {
           control={control}
           name="contactEmail"
           render={({ field }) => (
-            <TextField
+            <InputField
               ref={contactEmailRef}
               label="Contact email"
               placeholder="hello@yourshop.com"
@@ -114,7 +111,7 @@ export default function ShopRegistrationScreen() {
               }}
               onBlur={field.onBlur}
               error={errors.contactEmail?.message}
-              required
+              isRequired
               keyboardType="email-address"
               textContentType="emailAddress"
               autoComplete="email"
@@ -131,7 +128,7 @@ export default function ShopRegistrationScreen() {
           control={control}
           name="contactPhone"
           render={({ field }) => (
-            <TextField
+            <InputField
               ref={contactPhoneRef}
               label="Contact phone"
               placeholder="+1 555 010 1234"
@@ -142,7 +139,7 @@ export default function ShopRegistrationScreen() {
               }}
               onBlur={field.onBlur}
               error={errors.contactPhone?.message}
-              required
+              isRequired
               keyboardType="phone-pad"
               textContentType="telephoneNumber"
               autoComplete="tel"
@@ -156,7 +153,7 @@ export default function ShopRegistrationScreen() {
           control={control}
           name="address"
           render={({ field }) => (
-            <TextField
+            <InputField
               ref={addressRef}
               label="Business address"
               placeholder="123 Market St, Springfield"

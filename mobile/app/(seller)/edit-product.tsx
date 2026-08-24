@@ -10,7 +10,7 @@ import { ImagePickerField } from '@/components/ui/ImagePickerField';
 import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { SuccessBanner } from '@/components/ui/SuccessBanner';
-import { TextField } from '@/components/ui/TextField';
+import { InputField } from '@/components/ui/InputField';
 import { mockSellerProducts } from '@/lib/mockProducts';
 import {
   productCategories,
@@ -93,7 +93,7 @@ export default function EditProductScreen() {
           control={control}
           name="name"
           render={({ field }) => (
-            <TextField
+            <InputField
               ref={nameRef}
               label="Product name"
               value={field.value}
@@ -103,7 +103,7 @@ export default function EditProductScreen() {
               }}
               onBlur={field.onBlur}
               error={errors.name?.message}
-              required
+              isRequired
               autoCapitalize="words"
               returnKeyType="next"
               onSubmitEditing={() => descriptionRef.current?.focus()}
@@ -115,7 +115,7 @@ export default function EditProductScreen() {
           control={control}
           name="description"
           render={({ field }) => (
-            <TextField
+            <InputField
               ref={descriptionRef}
               label="Description"
               value={field.value}
@@ -125,10 +125,7 @@ export default function EditProductScreen() {
               }}
               onBlur={field.onBlur}
               error={errors.description?.message}
-              required
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
+              isRequired
               returnKeyType="next"
               onSubmitEditing={() => priceRef.current?.focus()}
             />
@@ -140,7 +137,7 @@ export default function EditProductScreen() {
             control={control}
             name="price"
             render={({ field }) => (
-              <TextField
+              <InputField
                 ref={priceRef}
                 label="Price"
                 value={field.value}
@@ -150,12 +147,12 @@ export default function EditProductScreen() {
                 }}
                 onBlur={field.onBlur}
                 error={errors.price?.message}
-                required
-                showMic={false}
+                isRequired
+                isMicVisible={false}
                 keyboardType="decimal-pad"
                 returnKeyType="next"
                 onSubmitEditing={() => stockQuantityRef.current?.focus()}
-                containerClassName="flex-1"
+                width="half"
               />
             )}
           />
@@ -164,7 +161,7 @@ export default function EditProductScreen() {
             control={control}
             name="stockQuantity"
             render={({ field }) => (
-              <TextField
+              <InputField
                 ref={stockQuantityRef}
                 label="Stock quantity"
                 value={field.value}
@@ -174,12 +171,12 @@ export default function EditProductScreen() {
                 }}
                 onBlur={field.onBlur}
                 error={errors.stockQuantity?.message}
-                required
-                showMic={false}
+                isRequired
+                isMicVisible={false}
                 keyboardType="number-pad"
                 returnKeyType="done"
                 onSubmitEditing={submit}
-                containerClassName="flex-1"
+                width="half"
               />
             )}
           />
