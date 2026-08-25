@@ -48,7 +48,7 @@ export default function EditProductScreen() {
 
   useEffect(() => {
     if (!product) {
-      router.replace('/products');
+      router.replace('/(seller)/index');
     }
   }, [product]);
 
