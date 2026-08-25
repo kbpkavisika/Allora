@@ -1,13 +1,21 @@
 import { Tabs } from 'expo-router';
 
-import { BottomTabBar } from '@/components/ui/BottomTabBar';
+import { BottomTabBar, type TabDefinition } from '@/components/ui/BottomTabBar';
 import { Header } from '@/components/ui/Header';
+
+const BUYER_TABS: Record<string, TabDefinition> = {
+  index: { label: 'Shop', icon: 'shop' },
+  'cart/index': { label: 'Cart', icon: 'cart' },
+  'saved/index': { label: 'Saved', icon: 'save' },
+  'orders/index': { label: 'Orders', icon: 'orders' },
+  'account/index': { label: 'Account', icon: 'account' },
+};
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{ header: () => <Header /> }}
-      tabBar={(props) => <BottomTabBar {...props} />}>
+      tabBar={(props) => <BottomTabBar {...props} tabs={BUYER_TABS} />}>
       <Tabs.Screen name="index" options={{ title: 'Shop' }} />
       <Tabs.Screen name="cart/index" options={{ title: 'Cart' }} />
       <Tabs.Screen name="saved/index" options={{ title: 'Saved' }} />
