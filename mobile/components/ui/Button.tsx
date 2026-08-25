@@ -71,7 +71,11 @@ export function Button({
 
   const labelColor = inert ? 'text-disabled' : LABEL[variant];
   const isLink = variant === 'link';
-  const sizing = isLink ? 'min-h-tap px-0' : SIZE[size];
+  const sizing = isLink
+    ? 'min-h-tap px-0'
+    : variant === 'social' && size === 'lg'
+      ? 'min-h-control-field px-6'
+      : SIZE[size];
   const width = fullWidth && !isLink ? 'w-full' : 'self-start';
   const press = !inert && !reduceMotion && variant === 'primary' ? 'active:scale-[0.97]' : '';
 

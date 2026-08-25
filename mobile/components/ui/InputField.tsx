@@ -125,6 +125,11 @@ const WIDTH: Record<InputFieldWidth, string> = {
   auto: 'self-start',
 };
 
+const MIN_HEIGHT: Record<InputFieldVariant, string> = {
+  field: 'min-h-control-field',
+  search: 'min-h-control-lg',
+};
+
 function resolveState(isDisabled: boolean, hasError: boolean, isActive: boolean): InputState {
   if (isDisabled) return 'disabled';
   if (hasError) return 'error';
@@ -196,6 +201,7 @@ export function InputField({
       return (
         <IconButton
           diameter={32}
+          variant="filled"
           icon={
             <Icon
               name={isPasswordRevealed ? 'hide' : 'show'}
@@ -235,6 +241,7 @@ export function InputField({
     return (
       <IconButton
         diameter={32}
+        variant="filled"
         icon={
           <Icon name="dictate" size="md" className={isMicInert ? TONE.disabled : TONE.primary} />
         }
@@ -263,7 +270,7 @@ export function InputField({
       ) : null}
 
       <View
-        className={`min-h-control-lg flex-row items-center gap-2 px-4 py-2 ${CONTAINER[variant][state]}`}>
+        className={`${MIN_HEIGHT[variant]} flex-row items-center gap-2 px-4 py-2 ${CONTAINER[variant][state]}`}>
         {isSearch ? <Icon name="search" size="md" className={TONE.secondary} /> : null}
 
         <TextInput
