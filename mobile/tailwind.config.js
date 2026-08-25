@@ -27,6 +27,7 @@ const controlHeight = {
   "control-lg": px(ControlSize.lg),
   "control-md": px(ControlSize.md),
   "control-sm": px(ControlSize.sm),
+  "control-field": px(ControlSize.field),
   tap: px(ControlSize.tap),
   glyph: px(ControlSize.glyph),
 };
