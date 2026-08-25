@@ -6,17 +6,16 @@ const email = z
   .min(1, { error: 'Enter your email address.' })
   .pipe(z.email({ error: 'Enter a valid email address, like hello@company.com.' }));
 
-const newPassword = z.string().min(6, { error: 'Use at least 6 characters.' });
+const newPassword = z.string().min(8, { error: 'Use at least 8 characters.' });
 
 export const signInSchema = z.object({
   email,
   password: z.string().min(1, { error: 'Enter your password.' }),
 });
 
-export const signUpSchema = z.object({ email });
-
-export const createPasswordSchema = z
+export const signUpSchema = z
   .object({
+    email,
     password: newPassword,
     confirmPassword: z.string().min(1, { error: 'Re-enter your password.' }),
   })
@@ -58,7 +57,6 @@ export const resetPasswordSchema = z
 
 export type SignInValues = z.infer<typeof signInSchema>;
 export type SignUpValues = z.infer<typeof signUpSchema>;
-export type CreatePasswordValues = z.infer<typeof createPasswordSchema>;
 export type ProfileValues = z.infer<typeof profileSchema>;
 export type AddressValues = z.infer<typeof addressSchema>;
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
