@@ -1,3 +1,5 @@
+export type UserRole = 'user' | 'seller';
+
 export interface Profile {
   id: string;
   full_name: string | null;
@@ -7,6 +9,12 @@ export interface Profile {
   preferred_carrier: string;
   leave_at_door_default: boolean;
   two_factor_enabled: boolean;
+  role: UserRole | null;
+  large_text: boolean;
+  high_contrast: boolean;
+  dictation_enabled: boolean;
+  screen_reader_support: boolean;
+  reduce_motion: boolean;
   created_at: string;
 }
 

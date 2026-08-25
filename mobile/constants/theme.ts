@@ -101,6 +101,7 @@ export const ControlSize = {
   sm: 36,
   tap: 44,
   glyph: 32,
+  field: 54,
 } as const;
 
 export const Fonts = {
@@ -122,10 +123,10 @@ type TypographySpec = Omit<TextStyle, 'color'> & { colorToken: ColorToken };
 
 export const typographySpecs = {
   splash: {
-    fontFamily: Fonts.archivo.black,
-    fontSize: 60,
-    lineHeight: 64,
-    letterSpacing: -0.03 * 60,
+    fontFamily: Fonts.archivo.extraBold,
+    fontSize: 56,
+    lineHeight: 56,
+    letterSpacing: -0.03 * 56,
     colorToken: 'primary',
   },
   display: {

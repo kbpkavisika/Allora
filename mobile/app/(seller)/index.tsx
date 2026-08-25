@@ -4,7 +4,7 @@ import { FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
-import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { SectionHeader } from '@/components/ui/SectionHeader';
 import { mockSellerProducts, type SellerProduct } from '@/lib/mockProducts';
 
 function stockStatus(stockQuantity: string) {
@@ -51,14 +51,16 @@ function ProductCard({ product }: { product: SellerProduct }) {
           label="Edit"
           fullWidth={false}
           className="mt-2"
-          onPress={() => router.push({ pathname: '/edit-product', params: { id: product.id } })}
+          onPress={() =>
+            router.push({ pathname: '/seller/edit-product', params: { id: product.id } })
+          }
         />
       </View>
     </View>
   );
 }
 
-export default function ProductsScreen() {
+export default function ShopScreen() {
   const insets = useSafeAreaInsets();
 
   return (
@@ -74,12 +76,12 @@ export default function ProductsScreen() {
         }}
         ListHeaderComponent={
           <View className="mb-6 gap-4">
-            <ScreenHeader title="Your products" />
+            <SectionHeader title="Your products" />
             <Button
               variant="secondary"
               label="Add product"
               fullWidth={false}
-              onPress={() => router.push('/add-product')}
+              onPress={() => router.push('/seller/add-product')}
             />
           </View>
         }

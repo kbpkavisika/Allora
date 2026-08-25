@@ -53,7 +53,7 @@ export default function SignInScreen() {
 
   return (
     <KeyboardScreen>
-      <ScreenHeader title="Log in to Allora" className="mb-8" />
+      <ScreenHeader title="Log in to Allora" className="mb-6" />
 
       <View className="gap-5">
         <Controller

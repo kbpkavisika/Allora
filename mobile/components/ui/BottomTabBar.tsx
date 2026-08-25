@@ -8,15 +8,16 @@ import { Icon, type IconName } from '@/components/ui/Icon';
 import { BorderWidth, Fonts } from '@/constants/theme';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
-const TABS: Record<string, { label: string; icon: IconName }> = {
-  index: { label: 'Shop', icon: 'shop' },
-  'cart/index': { label: 'Cart', icon: 'cart' },
-  'saved/index': { label: 'Saved', icon: 'save' },
-  'orders/index': { label: 'Orders', icon: 'orders' },
-  'account/index': { label: 'Account', icon: 'account' },
-};
+export interface TabDefinition {
+  label: string;
+  icon: IconName;
+}
 
-export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
+export interface BottomTabBarComponentProps extends BottomTabBarProps {
+  tabs: Record<string, TabDefinition>;
+}
+
+export function BottomTabBar({ state, navigation, tabs }: BottomTabBarComponentProps) {
   const insets = useSafeAreaInsets();
   const surface = useThemeColor({}, 'surface');
   const border = useThemeColor({}, 'border');
@@ -31,7 +32,7 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
         { backgroundColor: surface, borderTopColor: border, paddingBottom: insets.bottom },
       ]}>
       {state.routes.map((route, index) => {
-        const tab = TABS[route.name];
+        const tab = tabs[route.name];
         if (!tab) return null;
         const { label, icon } = tab;
         const focused = state.index === index;

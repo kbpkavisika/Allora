@@ -23,7 +23,9 @@ export type IconName =
   | 'orders'
   | 'account'
   | 'lock'
-  | 'shield';
+  | 'shield'
+  | 'check'
+  | 'chat';
 export type IconSize = 'sm' | 'md' | 'lg';
 export type BrandName = 'apple' | 'google';
 
@@ -44,6 +46,8 @@ const GLYPH: Record<IconName, React.ComponentProps<typeof Feather>['name']> = {
   account: 'user',
   lock: 'lock',
   shield: 'shield',
+  check: 'check',
+  chat: 'message-circle',
 };
 
 const PX: Record<IconSize, number> = { sm: 16, md: 20, lg: 24 };

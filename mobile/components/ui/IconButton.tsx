@@ -6,12 +6,18 @@ export interface IconButtonProps {
   hint?: string;
   onPress?: () => void;
   diameter?: 44 | 32;
-  variant?: 'bare' | 'outlined';
+  variant?: 'bare' | 'outlined' | 'filled';
   disabled?: boolean;
   className?: string;
 }
 
 const DIAMETER: Record<44 | 32, string> = { 44: 'h-tap w-tap', 32: 'h-glyph w-glyph' };
+
+const SURFACE: Record<NonNullable<IconButtonProps['variant']>, string> = {
+  bare: 'bg-transparent',
+  outlined: 'border-1 border-border-strong bg-surface',
+  filled: 'bg-surface-sunken',
+};
 
 export function IconButton({
   icon,
@@ -23,8 +29,7 @@ export function IconButton({
   disabled = false,
   className = '',
 }: IconButtonProps) {
-  const surface =
-    variant === 'outlined' ? 'border-1 border-border-strong bg-surface' : 'bg-transparent';
+  const surface = SURFACE[variant];
 
   return (
     <Pressable
