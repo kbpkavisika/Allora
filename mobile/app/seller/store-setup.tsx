@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Text, TextInput, View } from 'react-native';
+import { Alert, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { Callout } from '@/components/ui/Callout';
@@ -16,6 +16,7 @@ import { Select } from '@/components/ui/Select';
 import { StepProgress } from '@/components/ui/StepProgress';
 import { ToggleRow } from '@/components/ui/ToggleRow';
 import { useShop } from '@/hooks/useShop';
+import { supabase } from '@/lib/supabase';
 import { shopCategories } from '@/lib/shop';
 import { storeSetupSchema, storeSetupStepFields, type StoreSetupValues } from '@/lib/sellerSchemas';
 
@@ -109,6 +110,13 @@ export default function StoreSetupScreen() {
 
   function goToShop() {
     router.replace('/(seller)');
+  }
+
+  function confirmSignOut() {
+    Alert.alert('Sign out', 'You will need to sign in again to finish setting up your shop.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Sign out', style: 'destructive', onPress: () => supabase.auth.signOut() },
+    ]);
   }
 
   function addFirstProduct() {
@@ -366,6 +374,15 @@ export default function StoreSetupScreen() {
             <Button variant="secondary" label="Go to My shop" onPress={goToShop} />
           </View>
         </View>
+      ) : null}
+
+      {step < TOTAL_STEPS ? (
+        <Button
+          variant="link"
+          label="Not your account? Sign out"
+          className="mt-8 self-center"
+          onPress={confirmSignOut}
+        />
       ) : null}
     </KeyboardScreen>
   );
