@@ -235,7 +235,6 @@ export default function StoreSetupScreen() {
                 onBlur={field.onBlur}
                 error={errors.phone?.message}
                 isRequired
-                isMicVisible={false}
                 keyboardType="phone-pad"
                 textContentType="telephoneNumber"
                 autoComplete="tel"
