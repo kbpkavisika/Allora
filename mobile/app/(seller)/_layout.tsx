@@ -6,8 +6,8 @@ import { useShop } from '@/hooks/useShop';
 
 const SELLER_TABS: Record<string, TabDefinition> = {
   index: { label: 'Shop', icon: 'shop' },
-  'chat/index': { label: 'Chat', icon: 'chat' },
   'orders/index': { label: 'Orders', icon: 'orders' },
+  'chat/index': { label: 'Chat', icon: 'chat' },
   'account/index': { label: 'Account', icon: 'account' },
 };
 
@@ -22,9 +22,9 @@ export default function SellerTabLayout() {
     <Tabs
       screenOptions={{ header: () => <Header /> }}
       tabBar={(props) => <BottomTabBar {...props} tabs={SELLER_TABS} />}>
-      <Tabs.Screen name="index" options={{ title: 'Shop' }} />
-      <Tabs.Screen name="chat/index" options={{ title: 'Chat' }} />
+      <Tabs.Screen name="index" options={{ title: 'Shop', headerShown: false }} />
       <Tabs.Screen name="orders/index" options={{ title: 'Orders' }} />
+      <Tabs.Screen name="chat/index" options={{ title: 'Chat' }} />
       <Tabs.Screen name="account/index" options={{ title: 'Account' }} />
     </Tabs>
   );
