@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Text, TextInput, View } from 'react-native';
@@ -8,11 +9,13 @@ import { Callout } from '@/components/ui/Callout';
 import { FormError } from '@/components/ui/FormError';
 import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
+import { ImagePickerField } from '@/components/ui/ImagePickerField';
 import { InputField } from '@/components/ui/InputField';
 import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
 import { Select } from '@/components/ui/Select';
 import { StepProgress } from '@/components/ui/StepProgress';
 import { ToggleRow } from '@/components/ui/ToggleRow';
+import { useShop } from '@/hooks/useShop';
 import { shopCategories } from '@/lib/shop';
 import { storeSetupSchema, storeSetupStepFields, type StoreSetupValues } from '@/lib/sellerSchemas';
 
@@ -38,7 +41,9 @@ const STEP_META = [
 ];
 
 export default function StoreSetupScreen() {
+  const { saveShop } = useShop();
   const [step, setStep] = useState(1);
+  const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   const phoneRef = useRef<TextInput>(null);
@@ -46,6 +51,7 @@ export default function StoreSetupScreen() {
   const {
     control,
     trigger,
+    getValues,
     formState: { errors },
   } = useForm<StoreSetupValues>({
     resolver: zodResolver(storeSetupSchema),
@@ -74,11 +80,47 @@ export default function StoreSetupScreen() {
     setStep((current) => Math.max(1, current - 1));
   }
 
+  async function finishSetup(skipPhoto: boolean) {
+    setFormError(null);
+    setIsSaving(true);
+
+    const values = getValues();
+    const photoUri = skipPhoto ? '' : values.photoUri ?? '';
+
+    const { error } = await saveShop({
+      name: values.name,
+      category: values.category,
+      city: values.city,
+      phone: values.phone,
+      pickup_enabled: values.pickupEnabled,
+      delivery_enabled: values.deliveryEnabled,
+      photo_url: photoUri || null,
+    });
+
+    setIsSaving(false);
+
+    if (error) {
+      setFormError('Something went wrong creating your shop. Please try again.');
+      return;
+    }
+
+    setStep(TOTAL_STEPS);
+  }
+
+  function goToShop() {
+    router.replace('/(seller)');
+  }
+
+  function addFirstProduct() {
+    router.replace('/(seller)');
+    router.push('/seller/add-product');
+  }
+
   const meta = STEP_META[step - 1];
 
   return (
     <KeyboardScreen>
-      {step > 1 ? (
+      {step > 1 && step < TOTAL_STEPS ? (
         <IconButton
           variant="outlined"
           diameter={44}
@@ -96,16 +138,18 @@ export default function StoreSetupScreen() {
         Setting up your shop · Step {step} of {TOTAL_STEPS}
       </Text>
 
-      <View className="mb-8 mt-2 gap-2">
-        <Text role="heading" className="type-h1 text-primary" maxFontSizeMultiplier={1.5}>
-          {meta.title}
-        </Text>
-        {meta.description ? (
-          <Text className="type-text-primary text-secondary" maxFontSizeMultiplier={1.5}>
-            {meta.description}
+      {step < TOTAL_STEPS ? (
+        <View className="mb-8 mt-2 gap-2">
+          <Text role="heading" className="type-h1 text-primary" maxFontSizeMultiplier={1.5}>
+            {meta.title}
           </Text>
-        ) : null}
-      </View>
+          {meta.description ? (
+            <Text className="type-text-primary text-secondary" maxFontSizeMultiplier={1.5}>
+              {meta.description}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
 
       {step === 1 ? (
         <View className="gap-5">
@@ -233,15 +277,93 @@ export default function StoreSetupScreen() {
         </View>
       ) : null}
 
-      {step === 3 || step === 4 ? (
+      {step === 3 ? (
         <View className="gap-5">
-          <Text className="type-text-primary text-secondary">
-            Step {step} is wired next.
-          </Text>
+          <Controller
+            control={control}
+            name="photoUri"
+            render={({ field }) => (
+              <ImagePickerField
+                label="Shop photo"
+                imageUri={field.value || null}
+                onChange={(uri) => field.onChange(uri ?? '')}
+                placeholder="Tap to take or upload a photo"
+                fullWidth
+                aspectRatio={4 / 3}
+                allowCamera
+              />
+            )}
+          />
+
+          <Callout
+            tone="warning"
+            message="Tip: natural light and a tidy background make your shop feel trustworthy."
+          />
+
+          <FormError message={formError} />
+
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <Button variant="secondary" label="Back" onPress={goBack} />
+              <Button
+                variant="secondary"
+                label="Skip for now"
+                loading={isSaving}
+                onPress={() => finishSetup(true)}
+              />
             </View>
+            <View className="flex-1">
+              <Button label="Continue" loading={isSaving} onPress={() => finishSetup(false)} />
+            </View>
+          </View>
+        </View>
+      ) : null}
+
+      {step === 4 ? (
+        <View className="items-center gap-6 pt-6">
+          <View className="h-16 w-16 items-center justify-center rounded-full border-1 border-success bg-success-tint">
+            <Icon name="check" size="lg" className="text-success" />
+          </View>
+
+          <View className="items-center gap-2">
+            <Text
+              role="heading"
+              className="type-h1 text-center text-primary"
+              maxFontSizeMultiplier={1.5}>
+              Your shop is live!
+            </Text>
+            <Text
+              className="type-text-primary text-center text-secondary"
+              maxFontSizeMultiplier={1.5}>
+              Buyers can find {getValues('name')} now
+            </Text>
+          </View>
+
+          <View className="w-full gap-3 rounded-12 border-1 border-border bg-surface p-5">
+            <View className="flex-row items-center gap-3">
+              <Icon name="shop" size="lg" className="text-secondary" />
+              <View className="flex-1 gap-0.5">
+                <Text className="type-h3 text-primary" numberOfLines={1}>
+                  {getValues('name')}
+                </Text>
+                <Text className="type-text-secondary text-secondary">{getValues('category')}</Text>
+              </View>
+            </View>
+
+            <View className="h-px bg-border" />
+
+            <Text className="type-text-secondary text-secondary">
+              {getValues('city')} ·{' '}
+              {getValues('pickupEnabled')
+                ? 'Pickup enabled'
+                : getValues('deliveryEnabled')
+                  ? 'Delivery enabled'
+                  : 'Contact for orders'}
+            </Text>
+          </View>
+
+          <View className="w-full gap-3">
+            <Button label="Add your first product" onPress={addFirstProduct} />
+            <Button variant="secondary" label="Go to My shop" onPress={goToShop} />
           </View>
         </View>
       ) : null}
