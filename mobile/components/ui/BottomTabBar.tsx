@@ -13,6 +13,7 @@ const TABS: Record<string, { label: string; icon: IconName }> = {
   'cart/index': { label: 'Cart', icon: 'cart' },
   'saved/index': { label: 'Saved', icon: 'save' },
   'orders/index': { label: 'Orders', icon: 'orders' },
+  payment: { label: 'Payment', icon: 'payment' },
   'account/index': { label: 'Account', icon: 'account' },
 };
 

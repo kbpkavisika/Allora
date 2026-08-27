@@ -21,6 +21,7 @@ export type IconName =
   | 'shop'
   | 'save'
   | 'orders'
+  | 'payment'
   | 'account'
   | 'lock'
   | 'shield';
@@ -41,6 +42,7 @@ const GLYPH: Record<IconName, React.ComponentProps<typeof Feather>['name']> = {
   shop: 'shopping-bag',
   save: 'heart',
   orders: 'package',
+  payment: 'credit-card',
   account: 'user',
   lock: 'lock',
   shield: 'shield',
