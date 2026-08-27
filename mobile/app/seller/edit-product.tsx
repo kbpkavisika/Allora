@@ -6,8 +6,8 @@ import { Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { ChipSelect } from '@/components/ui/ChipSelect';
-import { ImagePickerField } from '@/components/ui/ImagePickerField';
 import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
+import { ProductPhotoGrid } from '@/components/ui/ProductPhotoGrid';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { SuccessBanner } from '@/components/ui/SuccessBanner';
 import { InputField } from '@/components/ui/InputField';
@@ -40,7 +40,7 @@ export default function EditProductScreen() {
       price: '',
       stockQuantity: '',
       category: '',
-      imageUri: '',
+      photos: [],
     },
     mode: 'onSubmit',
     reValidateMode: 'onChange',
@@ -48,7 +48,7 @@ export default function EditProductScreen() {
 
   useEffect(() => {
     if (!product) {
-      router.replace('/(seller)/index');
+      router.replace('/seller/products');
     }
   }, [product]);
 
@@ -74,17 +74,16 @@ export default function EditProductScreen() {
       <View className="gap-5">
         <Controller
           control={control}
-          name="imageUri"
+          name="photos"
           render={({ field }) => (
-            <ImagePickerField
-              label="Product photo"
-              imageUri={field.value || null}
-              onChange={(uri) => {
+            <ProductPhotoGrid
+              label="Product photos"
+              photos={field.value}
+              onChange={(photos) => {
                 setUpdated(false);
-                field.onChange(uri ?? '');
+                field.onChange(photos);
               }}
-              error={errors.imageUri?.message}
-              required
+              error={errors.photos?.message}
             />
           )}
         />

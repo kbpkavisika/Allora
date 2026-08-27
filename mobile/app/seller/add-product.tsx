@@ -9,14 +9,15 @@ import { Callout } from '@/components/ui/Callout';
 import { ChipSelect } from '@/components/ui/ChipSelect';
 import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
-import { ImagePickerField } from '@/components/ui/ImagePickerField';
 import { InputField } from '@/components/ui/InputField';
 import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
+import { ProductPhotoGrid } from '@/components/ui/ProductPhotoGrid';
 import { StepProgress } from '@/components/ui/StepProgress';
 import { SuccessBanner } from '@/components/ui/SuccessBanner';
 import {
   productCategories,
   productDetailsSchema,
+  productStepFields,
   type ProductDetailsValues,
 } from '@/lib/sellerSchemas';
 
@@ -44,6 +45,7 @@ export default function AddProductScreen() {
   const {
     control,
     handleSubmit,
+    trigger,
     formState: { errors, isSubmitting },
   } = useForm<ProductDetailsValues>({
     resolver: zodResolver(productDetailsSchema),
@@ -53,7 +55,7 @@ export default function AddProductScreen() {
       price: '',
       stockQuantity: '',
       category: '',
-      imageUri: '',
+      photos: [],
     },
     mode: 'onSubmit',
     reValidateMode: 'onChange',
@@ -98,6 +100,13 @@ export default function AddProductScreen() {
 
     setElapsed(0);
     setIsRecording(true);
+  }
+
+  async function goToPhotos() {
+    const valid = await trigger(productStepFields[1]);
+    if (valid) {
+      setStep(3);
+    }
   }
 
   function onSubmit(_values: ProductDetailsValues) {
@@ -281,26 +290,50 @@ export default function AddProductScreen() {
             )}
           />
 
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <Button variant="secondary" label="Re-record" onPress={goToRecord} />
+            </View>
+            <View className="flex-1">
+              <Button label="Continue" onPress={goToPhotos} />
+            </View>
+          </View>
+        </View>
+      ) : null}
+
+      {step === 3 ? (
+        <View className="gap-5">
+          <View className="gap-2">
+            <Text role="heading" className="type-h2 text-primary" maxFontSizeMultiplier={1.5}>
+              Add photos
+            </Text>
+            <Text className="type-text-primary text-secondary" maxFontSizeMultiplier={1.5}>
+              Add up to 6 photos so buyers can see the item clearly. The first photo is the cover.
+            </Text>
+          </View>
+
           <Controller
             control={control}
-            name="imageUri"
+            name="photos"
             render={({ field }) => (
-              <ImagePickerField
-                label="Product photo"
-                imageUri={field.value || null}
-                onChange={(uri) => field.onChange(uri ?? '')}
-                error={errors.imageUri?.message}
-                required
-                allowCamera
+              <ProductPhotoGrid
+                photos={field.value}
+                onChange={field.onChange}
+                error={errors.photos?.message}
               />
             )}
+          />
+
+          <Callout
+            tone="warning"
+            message="Tip: natural light and a plain background help items sell faster."
           />
 
           <SuccessBanner message={added ? 'Product ready for review this session.' : null} />
 
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <Button variant="secondary" label="Re-record" onPress={goToRecord} />
+              <Button variant="secondary" label="Skip for now" onPress={submit} />
             </View>
             <View className="flex-1">
               <Button label="Continue" loading={isSubmitting} onPress={submit} />

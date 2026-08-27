@@ -25,9 +25,9 @@ function ProductCard({ product }: { product: SellerProduct }) {
   return (
     <View className="flex-row gap-4 rounded-12 border-1 border-border bg-surface p-3">
       <View className="h-[104px] w-[104px] items-center justify-center overflow-hidden rounded-8 bg-surface-sunken">
-        {product.imageUri ? (
+        {product.photos[0] ? (
           <Image
-            source={{ uri: product.imageUri }}
+            source={{ uri: product.photos[0] }}
             style={{ width: '100%', height: '100%' }}
             contentFit="cover"
           />

@@ -13,7 +13,7 @@ export const mockSellerProducts: SellerProduct[] = [
     price: '128.00',
     stockQuantity: '42',
     category: 'Apparel',
-    imageUri: '',
+    photos: [],
   },
   {
     id: '2',
@@ -22,7 +22,7 @@ export const mockSellerProducts: SellerProduct[] = [
     price: '99.00',
     stockQuantity: '8',
     category: 'Apparel',
-    imageUri: '',
+    photos: [],
   },
   {
     id: '3',
@@ -31,6 +31,6 @@ export const mockSellerProducts: SellerProduct[] = [
     price: '145.00',
     stockQuantity: '0',
     category: 'Footwear',
-    imageUri: '',
+    photos: [],
   },
 ];
