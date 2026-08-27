@@ -1,97 +1,88 @@
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { FlatList, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/ui/Button';
+import { ActionCard } from '@/components/ui/ActionCard';
 import { SectionHeader } from '@/components/ui/SectionHeader';
-import { mockSellerProducts, type SellerProduct } from '@/lib/mockProducts';
+import { useShop } from '@/hooks/useShop';
+import { mockOrders } from '@/lib/mockOrders';
+import { mockSellerProducts } from '@/lib/mockProducts';
 
-function stockStatus(stockQuantity: string) {
-  const quantity = Number(stockQuantity);
+const UNREAD_MESSAGES: number = 0;
 
-  if (quantity <= 0) {
-    return { label: 'Sold out', className: 'text-secondary' };
-  }
-  if (quantity <= 10) {
-    return { label: `Low stock · ${quantity} left`, className: 'text-warning' };
-  }
-  return { label: `${quantity} in stock`, className: 'text-success' };
-}
-
-function ProductCard({ product }: { product: SellerProduct }) {
-  const stock = stockStatus(product.stockQuantity);
-
-  return (
-    <View className="flex-row gap-4 rounded-12 border-1 border-border bg-surface p-3">
-      <View className="h-[104px] w-[104px] items-center justify-center overflow-hidden rounded-8 bg-surface-sunken">
-        {product.imageUri ? (
-          <Image
-            source={{ uri: product.imageUri }}
-            style={{ width: '100%', height: '100%' }}
-            contentFit="cover"
-          />
-        ) : (
-          <Text className="type-label-sm text-secondary">No photo</Text>
-        )}
-      </View>
-
-      <View className="flex-1 justify-center gap-1">
-        <Text className="type-h3 text-primary" numberOfLines={1}>
-          {product.name}
-        </Text>
-        <Text className="type-text-secondary text-secondary">
-          {product.category} · ${product.price}
-        </Text>
-        <Text className={`type-label-sm ${stock.className}`}>{stock.label}</Text>
-
-        <Button
-          variant="secondary"
-          size="sm"
-          label="Edit"
-          fullWidth={false}
-          className="mt-2"
-          onPress={() =>
-            router.push({ pathname: '/seller/edit-product', params: { id: product.id } })
-          }
-        />
-      </View>
-    </View>
-  );
-}
-
-export default function ShopScreen() {
+export default function SellerShopScreen() {
   const insets = useSafeAreaInsets();
+  const { shop } = useShop();
+
+  const productCount = mockSellerProducts.length;
+  const ordersInProgress = mockOrders.filter((order) => order.status !== 'delivered').length;
 
   return (
-    <View className="flex-1 bg-surface">
-      <FlatList
-        data={mockSellerProducts}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingTop: insets.top + 16,
-          paddingBottom: insets.bottom + 32,
-          gap: 12,
-        }}
-        ListHeaderComponent={
-          <View className="mb-6 gap-4">
-            <SectionHeader title="Your products" />
-            <Button
-              variant="secondary"
-              label="Add product"
-              fullWidth={false}
-              onPress={() => router.push('/seller/add-product')}
-            />
-          </View>
-        }
-        renderItem={({ item }) => <ProductCard product={item} />}
-        ListEmptyComponent={
-          <Text className="type-text-primary text-secondary">
-            You haven&apos;t added any products yet.
-          </Text>
+    <ScrollView
+      className="flex-1 bg-surface"
+      contentContainerStyle={{
+        paddingHorizontal: 16,
+        paddingTop: insets.top + 8,
+        paddingBottom: insets.bottom + 32,
+        gap: 24,
+      }}>
+      <SectionHeader
+        title="My shop"
+        action={
+          <Pressable
+            onPress={() => router.push('/(seller)/account')}
+            role="button"
+            aria-label="Profile"
+            hitSlop={8}>
+            <Text className="type-label-lg text-primary underline">Profile</Text>
+          </Pressable>
         }
       />
-    </View>
+
+      <View className="gap-1">
+        <Text className="type-text-primary text-primary" maxFontSizeMultiplier={1.5}>
+          Today · {ordersInProgress} {ordersInProgress === 1 ? 'order' : 'orders'} in progress ·{' '}
+          {UNREAD_MESSAGES} {UNREAD_MESSAGES === 1 ? 'message' : 'messages'}
+        </Text>
+        <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={1.5}>
+          {shop?.name ? `${shop.name} · ` : ''}Add products, track orders and reply to buyers.
+        </Text>
+      </View>
+
+      <View className="gap-3">
+        <View className="flex-row gap-3">
+          <ActionCard
+            className="flex-1"
+            icon="plus"
+            title="Add a product"
+            onPress={() => router.push('/seller/add-product')}
+          />
+          <ActionCard
+            className="flex-1"
+            icon="orders"
+            title="Orders"
+            caption={`${ordersInProgress} in progress`}
+            onPress={() => router.push('/(seller)/orders')}
+          />
+        </View>
+
+        <View className="flex-row gap-3">
+          <ActionCard
+            className="flex-1"
+            icon="shop"
+            title="My products"
+            caption={`${productCount} ${productCount === 1 ? 'item' : 'items'}`}
+            onPress={() => router.push('/seller/products')}
+          />
+          <ActionCard
+            className="flex-1"
+            icon="chat"
+            title="Messages"
+            caption={`${UNREAD_MESSAGES} unread`}
+            onPress={() => router.push('/(seller)/chat')}
+          />
+        </View>
+      </View>
+    </ScrollView>
   );
 }
