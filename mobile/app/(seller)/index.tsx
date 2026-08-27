@@ -4,17 +4,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActionCard } from '@/components/ui/ActionCard';
 import { SectionHeader } from '@/components/ui/SectionHeader';
+import { useProducts } from '@/hooks/useProducts';
 import { useShop } from '@/hooks/useShop';
 import { mockOrders } from '@/lib/mockOrders';
-import { mockSellerProducts } from '@/lib/mockProducts';
 
 const UNREAD_MESSAGES: number = 0;
 
 export default function SellerShopScreen() {
   const insets = useSafeAreaInsets();
   const { shop } = useShop();
+  const { products } = useProducts();
 
-  const productCount = mockSellerProducts.length;
+  const productCount = products.length;
   const ordersInProgress = mockOrders.filter((order) => order.status !== 'delivered').length;
 
   return (

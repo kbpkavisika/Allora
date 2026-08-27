@@ -9,13 +9,15 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Callout } from '@/components/ui/Callout';
 import { ChipSelect } from '@/components/ui/ChipSelect';
+import { FormError } from '@/components/ui/FormError';
 import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
 import { InputField } from '@/components/ui/InputField';
 import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
 import { ProductPhotoGrid } from '@/components/ui/ProductPhotoGrid';
 import { StepProgress } from '@/components/ui/StepProgress';
-import { formatPrice, getStockStatus } from '@/lib/products';
+import { useProducts } from '@/hooks/useProducts';
+import { formatPrice, getStockStatus, toProductInput } from '@/lib/products';
 import {
   productCategories,
   productDetailsSchema,
@@ -39,9 +41,12 @@ export default function AddProductScreen() {
   const priceRef = useRef<TextInput>(null);
   const stockQuantityRef = useRef<TextInput>(null);
 
+  const { createProduct } = useProducts();
+
   const [step, setStep] = useState(1);
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const {
     control,
@@ -112,8 +117,16 @@ export default function AddProductScreen() {
     }
   }
 
-  // UI-only for now: a real publish will persist the product once the backend exists.
-  function onSubmit(_values: ProductDetailsValues) {
+  async function onSubmit(values: ProductDetailsValues) {
+    setFormError(null);
+
+    const { error } = await createProduct(toProductInput(values));
+
+    if (error) {
+      setFormError('Something went wrong publishing your product. Please try again.');
+      return;
+    }
+
     setStep(TOTAL_STEPS);
   }
 
@@ -122,6 +135,7 @@ export default function AddProductScreen() {
   function addAnother() {
     reset();
     setElapsed(0);
+    setFormError(null);
     setStep(1);
   }
 
@@ -350,9 +364,16 @@ export default function AddProductScreen() {
             message="Tip: natural light and a plain background help items sell faster."
           />
 
+          <FormError message={formError} />
+
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <Button variant="secondary" label="Skip for now" onPress={submit} />
+              <Button
+                variant="secondary"
+                label="Skip for now"
+                loading={isSubmitting}
+                onPress={submit}
+              />
             </View>
             <View className="flex-1">
               <Button label="Continue" loading={isSubmitting} onPress={submit} />

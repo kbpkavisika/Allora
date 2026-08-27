@@ -1,4 +1,5 @@
 import type { BadgeVariant } from '@/components/ui/Badge';
+import type { ProductDetailsValues } from '@/lib/sellerSchemas';
 
 export interface Product {
   id: string;
@@ -32,6 +33,29 @@ export function getStockStatus(stockQuantity: string | number): StockStatus {
   }
 
   return { label: `${quantity} in stock`, variant: 'success' };
+}
+
+// Form fields are strings; the numeric and integer columns come back as numbers.
+export function toProductFormValues(product: Product): ProductDetailsValues {
+  return {
+    name: product.name,
+    description: product.description,
+    price: String(product.price),
+    stockQuantity: String(product.stock_quantity),
+    category: product.category,
+    photos: product.photos,
+  };
+}
+
+export function toProductInput(values: ProductDetailsValues) {
+  return {
+    name: values.name,
+    description: values.description,
+    price: Number(values.price),
+    stock_quantity: Number(values.stockQuantity),
+    category: values.category,
+    photos: values.photos,
+  };
 }
 
 export function formatPrice(price: string | number) {

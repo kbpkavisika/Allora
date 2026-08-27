@@ -1,16 +1,16 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { FlatList, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { mockSellerProducts, type SellerProduct } from '@/lib/mockProducts';
-import { formatPrice, getStockStatus } from '@/lib/products';
+import { useProducts } from '@/hooks/useProducts';
+import { formatPrice, getStockStatus, type Product } from '@/lib/products';
 
-function ProductCard({ product }: { product: SellerProduct }) {
-  const stock = getStockStatus(product.stockQuantity);
+function ProductCard({ product }: { product: Product }) {
+  const stock = getStockStatus(product.stock_quantity);
 
   return (
     <View className="flex-row gap-4 rounded-12 border-1 border-border bg-surface p-3">
@@ -52,11 +52,12 @@ function ProductCard({ product }: { product: SellerProduct }) {
 
 export default function SellerProductsScreen() {
   const insets = useSafeAreaInsets();
+  const { products, isLoading } = useProducts();
 
   return (
     <View className="flex-1 bg-surface">
       <FlatList
-        data={mockSellerProducts}
+        data={products}
         keyExtractor={(item) => item.id}
         contentContainerStyle={{
           paddingHorizontal: 16,
@@ -77,9 +78,13 @@ export default function SellerProductsScreen() {
         }
         renderItem={({ item }) => <ProductCard product={item} />}
         ListEmptyComponent={
-          <Text className="type-text-primary text-secondary">
-            You haven&apos;t added any products yet.
-          </Text>
+          isLoading ? (
+            <ActivityIndicator className="text-secondary" />
+          ) : (
+            <Text className="type-text-primary text-secondary">
+              You haven&apos;t added any products yet.
+            </Text>
+          )
         }
       />
     </View>

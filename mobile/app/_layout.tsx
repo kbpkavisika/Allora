@@ -19,6 +19,7 @@ import 'react-native-reanimated';
 import { BrandSplash } from '@/components/BrandSplash';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/lib/AuthProvider';
+import { ProductsProvider } from '@/lib/ProductsProvider';
 import { ProfileProvider, useProfile } from '@/lib/ProfileProvider';
 import { ShopProvider, useShop } from '@/lib/ShopProvider';
 
@@ -38,7 +39,9 @@ export default function RootLayout() {
     <AuthProvider>
       <ProfileProvider>
         <ShopProvider>
-          <RootNavigator />
+          <ProductsProvider>
+            <RootNavigator />
+          </ProductsProvider>
         </ShopProvider>
       </ProfileProvider>
     </AuthProvider>
