@@ -3,24 +3,14 @@ import { router } from 'expo-router';
 import { FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { mockSellerProducts, type SellerProduct } from '@/lib/mockProducts';
-
-function stockStatus(stockQuantity: string) {
-  const quantity = Number(stockQuantity);
-
-  if (quantity <= 0) {
-    return { label: 'Sold out', className: 'text-secondary' };
-  }
-  if (quantity <= 10) {
-    return { label: `Low stock · ${quantity} left`, className: 'text-warning' };
-  }
-  return { label: `${quantity} in stock`, className: 'text-success' };
-}
+import { formatPrice, getStockStatus } from '@/lib/products';
 
 function ProductCard({ product }: { product: SellerProduct }) {
-  const stock = stockStatus(product.stockQuantity);
+  const stock = getStockStatus(product.stockQuantity);
 
   return (
     <View className="flex-row gap-4 rounded-12 border-1 border-border bg-surface p-3">
@@ -41,9 +31,9 @@ function ProductCard({ product }: { product: SellerProduct }) {
           {product.name}
         </Text>
         <Text className="type-text-secondary text-secondary">
-          {product.category} · ${product.price}
+          {product.category} · {formatPrice(product.price)}
         </Text>
-        <Text className={`type-label-sm ${stock.className}`}>{stock.label}</Text>
+        <Badge label={stock.label} variant={stock.variant} />
 
         <Button
           variant="secondary"

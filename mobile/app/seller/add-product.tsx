@@ -1,9 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Callout } from '@/components/ui/Callout';
 import { ChipSelect } from '@/components/ui/ChipSelect';
@@ -13,7 +15,7 @@ import { InputField } from '@/components/ui/InputField';
 import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
 import { ProductPhotoGrid } from '@/components/ui/ProductPhotoGrid';
 import { StepProgress } from '@/components/ui/StepProgress';
-import { SuccessBanner } from '@/components/ui/SuccessBanner';
+import { formatPrice, getStockStatus } from '@/lib/products';
 import {
   productCategories,
   productDetailsSchema,
@@ -40,12 +42,13 @@ export default function AddProductScreen() {
   const [step, setStep] = useState(1);
   const [isRecording, setIsRecording] = useState(false);
   const [elapsed, setElapsed] = useState(0);
-  const [added, setAdded] = useState(false);
 
   const {
     control,
     handleSubmit,
     trigger,
+    reset,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<ProductDetailsValues>({
     resolver: zodResolver(productDetailsSchema),
@@ -109,23 +112,41 @@ export default function AddProductScreen() {
     }
   }
 
+  // UI-only for now: a real publish will persist the product once the backend exists.
   function onSubmit(_values: ProductDetailsValues) {
-    setAdded(true);
+    setStep(TOTAL_STEPS);
   }
 
   const submit = handleSubmit(onSubmit, () => nameRef.current?.focus());
 
+  function addAnother() {
+    reset();
+    setElapsed(0);
+    setStep(1);
+  }
+
+  function goToShop() {
+    router.replace('/(seller)');
+  }
+
+  function viewListing() {
+    router.replace('/(seller)');
+    router.push('/seller/products');
+  }
+
   return (
     <KeyboardScreen>
-      <IconButton
-        variant="outlined"
-        diameter={44}
-        icon={<Icon name="back" size="lg" className="text-primary" />}
-        label={step === 1 ? 'Close' : 'Go back'}
-        hint={step === 1 ? 'Closes without adding a product' : 'Returns to the previous step'}
-        onPress={goBack}
-        className="mb-6"
-      />
+      {step < TOTAL_STEPS ? (
+        <IconButton
+          variant="outlined"
+          diameter={44}
+          icon={<Icon name="back" size="lg" className="text-primary" />}
+          label={step === 1 ? 'Close' : 'Go back'}
+          hint={step === 1 ? 'Closes without adding a product' : 'Returns to the previous step'}
+          onPress={goBack}
+          className="mb-6"
+        />
+      ) : null}
 
       <StepProgress current={step} total={TOTAL_STEPS} />
 
@@ -329,8 +350,6 @@ export default function AddProductScreen() {
             message="Tip: natural light and a plain background help items sell faster."
           />
 
-          <SuccessBanner message={added ? 'Product ready for review this session.' : null} />
-
           <View className="flex-row gap-3">
             <View className="flex-1">
               <Button variant="secondary" label="Skip for now" onPress={submit} />
@@ -341,6 +360,72 @@ export default function AddProductScreen() {
           </View>
         </View>
       ) : null}
+
+      {step === TOTAL_STEPS ? (
+        <View className="gap-6">
+          <PublishedStep values={getValues()} />
+
+          <View className="w-full gap-3">
+            <Button label="Add another product" onPress={addAnother} />
+            <Button variant="secondary" label="View listing" onPress={viewListing} />
+            <Button
+              variant="link"
+              label="Back to my shop"
+              className="self-center"
+              onPress={goToShop}
+            />
+          </View>
+        </View>
+      ) : null}
     </KeyboardScreen>
+  );
+}
+
+function PublishedStep({ values }: { values: ProductDetailsValues }) {
+  const stock = getStockStatus(values.stockQuantity);
+  const cover = values.photos[0];
+
+  return (
+    <View className="items-center gap-6">
+      <View className="h-16 w-16 items-center justify-center rounded-full border-1 border-success bg-success-tint">
+        <Icon name="check" size="lg" className="text-success" />
+      </View>
+
+      <View className="items-center gap-2">
+        <Text
+          role="heading"
+          className="type-h1 text-center text-primary"
+          maxFontSizeMultiplier={1.5}>
+          {values.name} is live!
+        </Text>
+        <Text
+          className="type-text-primary text-center text-secondary"
+          maxFontSizeMultiplier={1.5}>
+          Buyers browsing {values.category} can find it now
+        </Text>
+      </View>
+
+      <View className="w-full flex-row items-center gap-3 rounded-12 border-1 border-border bg-surface p-3">
+        <View className="h-16 w-16 items-center justify-center overflow-hidden rounded-8 bg-surface-sunken">
+          {cover ? (
+            <Image
+              source={{ uri: cover }}
+              style={{ width: '100%', height: '100%' }}
+              contentFit="cover"
+            />
+          ) : (
+            <Icon name="shop" size="lg" className="text-secondary" />
+          )}
+        </View>
+
+        <View className="flex-1 gap-1">
+          <Text className="type-h3 text-primary" numberOfLines={1}>
+            {values.name}
+          </Text>
+          <Text className="type-text-secondary text-secondary">{formatPrice(values.price)}</Text>
+          <Badge label={stock.label} variant={stock.variant} />
+        </View>
+      </View>
+    </View>
   );
 }
