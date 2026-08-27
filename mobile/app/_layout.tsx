@@ -109,6 +109,7 @@ function RootNavigator() {
             options={{ presentation: 'modal', headerShown: false }}
           />
           <Stack.Screen name="seller/store-setup" options={{ headerShown: false }} />
+          <Stack.Screen name="seller/products" options={{ headerShown: false }} />
         </Stack.Protected>
 
         <Stack.Protected guard={showApp}>
