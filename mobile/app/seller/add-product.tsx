@@ -1,26 +1,44 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRef, useState } from 'react';
+import { router } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
+import { Callout } from '@/components/ui/Callout';
 import { ChipSelect } from '@/components/ui/ChipSelect';
+import { Icon } from '@/components/ui/Icon';
+import { IconButton } from '@/components/ui/IconButton';
 import { ImagePickerField } from '@/components/ui/ImagePickerField';
-import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
-import { ScreenHeader } from '@/components/ui/ScreenHeader';
-import { SuccessBanner } from '@/components/ui/SuccessBanner';
 import { InputField } from '@/components/ui/InputField';
+import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
+import { StepProgress } from '@/components/ui/StepProgress';
+import { SuccessBanner } from '@/components/ui/SuccessBanner';
 import {
   productCategories,
   productDetailsSchema,
   type ProductDetailsValues,
 } from '@/lib/sellerSchemas';
 
+const TOTAL_STEPS = 4;
+
+const STEP_CAPTIONS = ['record', 'review', 'photos', 'done'];
+
+function formatDuration(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  const remainder = seconds % 60;
+  return `${minutes}:${String(remainder).padStart(2, '0')}`;
+}
+
 export default function AddProductScreen() {
   const nameRef = useRef<TextInput>(null);
   const descriptionRef = useRef<TextInput>(null);
   const priceRef = useRef<TextInput>(null);
   const stockQuantityRef = useRef<TextInput>(null);
+
+  const [step, setStep] = useState(1);
+  const [isRecording, setIsRecording] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
   const [added, setAdded] = useState(false);
 
   const {
@@ -41,7 +59,47 @@ export default function AddProductScreen() {
     reValidateMode: 'onChange',
   });
 
-  // UI-only for now: a real submit will POST to the backend once that exists.
+  useEffect(() => {
+    if (!isRecording) {
+      return;
+    }
+
+    const timer = setInterval(() => setElapsed((current) => current + 1), 1000);
+    return () => clearInterval(timer);
+  }, [isRecording]);
+
+  function goBack() {
+    if (step === 1) {
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(seller)');
+      }
+      return;
+    }
+
+    setStep((current) => Math.max(1, current - 1));
+  }
+
+  function goToRecord() {
+    setIsRecording(false);
+    setElapsed(0);
+    setStep(1);
+  }
+
+  // Capture is mocked until the recorder and transcription are wired up: stopping simply
+  // advances to the review step so the seller can type the details in.
+  function toggleRecording() {
+    if (isRecording) {
+      setIsRecording(false);
+      setStep(2);
+      return;
+    }
+
+    setElapsed(0);
+    setIsRecording(true);
+  }
+
   function onSubmit(_values: ProductDetailsValues) {
     setAdded(true);
   }
@@ -50,131 +108,206 @@ export default function AddProductScreen() {
 
   return (
     <KeyboardScreen>
-      <ScreenHeader title="Add a product" className="mb-2" />
+      <IconButton
+        variant="outlined"
+        diameter={44}
+        icon={<Icon name="back" size="lg" className="text-primary" />}
+        label={step === 1 ? 'Close' : 'Go back'}
+        hint={step === 1 ? 'Closes without adding a product' : 'Returns to the previous step'}
+        onPress={goBack}
+        className="mb-6"
+      />
 
-      <Text className="type-text-primary mb-8 text-secondary">
-        Give buyers the details they need to make a purchase.
-      </Text>
+      <StepProgress current={step} total={TOTAL_STEPS} />
 
-      <View className="gap-5">
-        <Controller
-          control={control}
-          name="imageUri"
-          render={({ field }) => (
-            <ImagePickerField
-              label="Product photo"
-              imageUri={field.value || null}
-              onChange={(uri) => field.onChange(uri ?? '')}
-              error={errors.imageUri?.message}
-              required
-            />
+      <View className="mb-8 mt-3 items-center gap-1">
+        <Text role="heading" className="type-h1 text-primary" maxFontSizeMultiplier={1.5}>
+          New product
+        </Text>
+        <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
+          Step {step} of {TOTAL_STEPS} · {STEP_CAPTIONS[step - 1]}
+        </Text>
+      </View>
+
+      {step === 1 ? (
+        <View className="items-center gap-6">
+          <View className="items-center gap-2">
+            <Text
+              role="heading"
+              className="type-h2 text-center text-primary"
+              maxFontSizeMultiplier={1.5}>
+              Tell us about your product
+            </Text>
+            <Text
+              className="type-text-primary text-center text-secondary"
+              maxFontSizeMultiplier={1.5}>
+              Press the mic and say the name, the price and how many you have.
+            </Text>
+          </View>
+
+          <View className="rounded-full border-1 border-border p-5">
+            <Pressable
+              onPress={toggleRecording}
+              role="button"
+              aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+              aria-pressed={isRecording}
+              className="h-16 w-16 items-center justify-center rounded-full bg-primary active:bg-primary-hover">
+              <Icon name={isRecording ? 'stop' : 'dictate'} size="lg" className="text-surface" />
+            </Pressable>
+          </View>
+
+          {isRecording ? (
+            <View className="flex-row items-center gap-2" aria-live="polite">
+              <View className="h-2 w-2 rounded-full bg-accent" aria-hidden />
+              <Text className="type-overline text-accent-pressed">Recording</Text>
+              <Text className="type-mono text-primary">{formatDuration(elapsed)}</Text>
+            </View>
+          ) : (
+            <Text className="type-text-secondary text-secondary">Tap the mic to start</Text>
           )}
-        />
 
-        <Controller
-          control={control}
-          name="name"
-          render={({ field }) => (
-            <InputField
-              ref={nameRef}
-              label="Product name"
-              placeholder="e.g. Ridge Shell Jacket"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.name?.message}
-              isRequired
-              autoCapitalize="words"
-              returnKeyType="next"
-              onSubmitEditing={() => descriptionRef.current?.focus()}
-            />
-          )}
-        />
+          <Callout message="Try: “Teak serving tray, two thousand rupees, five in stock, handmade from recycled teak.”" />
 
-        <Controller
-          control={control}
-          name="description"
-          render={({ field }) => (
-            <InputField
-              ref={descriptionRef}
-              label="Description"
-              placeholder="Describe the fit, material, and details"
-              value={field.value}
-              onChangeText={field.onChange}
-              onBlur={field.onBlur}
-              error={errors.description?.message}
-              isRequired
-              returnKeyType="next"
-              onSubmitEditing={() => priceRef.current?.focus()}
-            />
-          )}
-        />
-
-        <View className="flex-row gap-4">
-          <Controller
-            control={control}
-            name="price"
-            render={({ field }) => (
-              <InputField
-                ref={priceRef}
-                label="Price"
-                placeholder="0.00"
-                value={field.value}
-                onChangeText={field.onChange}
-                onBlur={field.onBlur}
-                error={errors.price?.message}
-                isRequired
-                isMicVisible={false}
-                keyboardType="decimal-pad"
-                returnKeyType="next"
-                onSubmitEditing={() => stockQuantityRef.current?.focus()}
-                width="half"
-              />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="stockQuantity"
-            render={({ field }) => (
-              <InputField
-                ref={stockQuantityRef}
-                label="Stock quantity"
-                placeholder="0"
-                value={field.value}
-                onChangeText={field.onChange}
-                onBlur={field.onBlur}
-                error={errors.stockQuantity?.message}
-                isRequired
-                isMicVisible={false}
-                keyboardType="number-pad"
-                returnKeyType="done"
-                onSubmitEditing={submit}
-                width="half"
-              />
-            )}
+          <Button
+            variant="link"
+            label="Type it in instead"
+            fullWidth={false}
+            onPress={() => setStep(2)}
           />
         </View>
+      ) : null}
 
-        <Controller
-          control={control}
-          name="category"
-          render={({ field }) => (
-            <ChipSelect
-              label="Category"
-              options={productCategories}
-              value={field.value}
-              onChange={field.onChange}
-              error={errors.category?.message}
-              required
+      {step === 2 ? (
+        <View className="gap-5">
+          <Callout message="We heard this — check if it's right!" />
+
+          <Controller
+            control={control}
+            name="name"
+            render={({ field }) => (
+              <InputField
+                ref={nameRef}
+                label="Product name"
+                placeholder="e.g. Teak serving tray"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.name?.message}
+                isRequired
+                autoCapitalize="words"
+                returnKeyType="next"
+                onSubmitEditing={() => priceRef.current?.focus()}
+              />
+            )}
+          />
+
+          <View className="flex-row gap-4">
+            <Controller
+              control={control}
+              name="price"
+              render={({ field }) => (
+                <InputField
+                  ref={priceRef}
+                  label="Price (LKR)"
+                  placeholder="0.00"
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.price?.message}
+                  isRequired
+                  isMicVisible={false}
+                  keyboardType="decimal-pad"
+                  returnKeyType="next"
+                  onSubmitEditing={() => stockQuantityRef.current?.focus()}
+                  width="half"
+                />
+              )}
             />
-          )}
-        />
 
-        <SuccessBanner message={added ? 'Product ready for review this session.' : null} />
+            <Controller
+              control={control}
+              name="stockQuantity"
+              render={({ field }) => (
+                <InputField
+                  ref={stockQuantityRef}
+                  label="In stock"
+                  placeholder="0"
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onBlur={field.onBlur}
+                  error={errors.stockQuantity?.message}
+                  isRequired
+                  isMicVisible={false}
+                  keyboardType="number-pad"
+                  returnKeyType="next"
+                  onSubmitEditing={() => descriptionRef.current?.focus()}
+                  width="half"
+                />
+              )}
+            />
+          </View>
 
-        <Button label="Add product" loading={isSubmitting} onPress={submit} />
-      </View>
+          <Controller
+            control={control}
+            name="description"
+            render={({ field }) => (
+              <InputField
+                ref={descriptionRef}
+                label="Description"
+                placeholder="Describe the material, size and finish"
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                error={errors.description?.message}
+                isRequired
+                returnKeyType="done"
+                onSubmitEditing={submit}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="category"
+            render={({ field }) => (
+              <ChipSelect
+                label="Category"
+                options={productCategories}
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.category?.message}
+                required
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="imageUri"
+            render={({ field }) => (
+              <ImagePickerField
+                label="Product photo"
+                imageUri={field.value || null}
+                onChange={(uri) => field.onChange(uri ?? '')}
+                error={errors.imageUri?.message}
+                required
+                allowCamera
+              />
+            )}
+          />
+
+          <SuccessBanner message={added ? 'Product ready for review this session.' : null} />
+
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <Button variant="secondary" label="Re-record" onPress={goToRecord} />
+            </View>
+            <View className="flex-1">
+              <Button label="Continue" loading={isSubmitting} onPress={submit} />
+            </View>
+          </View>
+        </View>
+      ) : null}
     </KeyboardScreen>
   );
 }
