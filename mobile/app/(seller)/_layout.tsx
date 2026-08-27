@@ -1,7 +1,8 @@
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 
 import { BottomTabBar, type TabDefinition } from '@/components/ui/BottomTabBar';
 import { Header } from '@/components/ui/Header';
+import { useShop } from '@/hooks/useShop';
 
 const SELLER_TABS: Record<string, TabDefinition> = {
   index: { label: 'Shop', icon: 'shop' },
@@ -11,6 +12,12 @@ const SELLER_TABS: Record<string, TabDefinition> = {
 };
 
 export default function SellerTabLayout() {
+  const { shop, isLoading } = useShop();
+
+  if (!isLoading && !shop) {
+    return <Redirect href="/seller/store-setup" />;
+  }
+
   return (
     <Tabs
       screenOptions={{ header: () => <Header /> }}

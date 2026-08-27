@@ -20,6 +20,7 @@ import { BrandSplash } from '@/components/BrandSplash';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/lib/AuthProvider';
 import { ProfileProvider, useProfile } from '@/lib/ProfileProvider';
+import { ShopProvider, useShop } from '@/lib/ShopProvider';
 
 import '../global.css';
 
@@ -36,7 +37,9 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <ProfileProvider>
-        <RootNavigator />
+        <ShopProvider>
+          <RootNavigator />
+        </ShopProvider>
       </ProfileProvider>
     </AuthProvider>
   );
@@ -46,6 +49,7 @@ function RootNavigator() {
   const colorScheme = useColorScheme();
   const { session, isLoading } = useAuth();
   const { profile, isLoading: isProfileLoading } = useProfile();
+  const { isLoading: isShopLoading } = useShop();
   const [fontsLoaded] = useFonts({
     Archivo_400Regular,
     Archivo_500Medium,
@@ -59,7 +63,7 @@ function RootNavigator() {
 
   const [minHoldElapsed, setMinHoldElapsed] = useState(false);
 
-  const ready = fontsLoaded && !isLoading && !isProfileLoading;
+  const ready = fontsLoaded && !isLoading && !isProfileLoading && !isShopLoading;
   // Defaults to "in the app" while the profile is still loading (masked by the splash below)
   // so exactly one Stack.Protected guard is ever true — never zero, which expo-router can get
   // stuck on if the current screen falls outside every protected branch at once.
@@ -104,6 +108,7 @@ function RootNavigator() {
             name="seller/shop-registration"
             options={{ presentation: 'modal', headerShown: false }}
           />
+          <Stack.Screen name="seller/store-setup" options={{ headerShown: false }} />
         </Stack.Protected>
 
         <Stack.Protected guard={showApp}>
