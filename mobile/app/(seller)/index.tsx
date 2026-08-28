@@ -73,7 +73,7 @@ export default function SellerShopScreen() {
             icon="shop"
             title="My products"
             caption={`${productCount} ${productCount === 1 ? 'item' : 'items'}`}
-            onPress={() => router.push('/seller/products')}
+            onPress={() => router.push('/(seller)/products')}
           />
           <ActionCard
             className="flex-1"

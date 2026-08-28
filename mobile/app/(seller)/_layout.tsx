@@ -26,6 +26,8 @@ export default function SellerTabLayout() {
       <Tabs.Screen name="orders/index" options={{ title: 'Orders' }} />
       <Tabs.Screen name="chat/index" options={{ title: 'Chat' }} />
       <Tabs.Screen name="account/index" options={{ title: 'Account' }} />
+      {/* Reached from the dashboard, not the tab bar: BottomTabBar skips routes SELLER_TABS omits. */}
+      <Tabs.Screen name="products" options={{ title: 'My products', headerShown: false }} />
     </Tabs>
   );
 }
