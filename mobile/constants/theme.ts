@@ -4,7 +4,7 @@
  * hex values or font specs elsewhere — use these tokens instead.
  */
 
-import type { TextStyle } from 'react-native';
+import type { TextStyle, ViewStyle } from 'react-native';
 
 export type ColorScheme = 'light' | 'dark';
 
@@ -28,6 +28,7 @@ const palette = {
     info: '#2F6BD8',
     'info-track': '#B9CDF2',
     'info-tint': '#EDF2FC',
+    'info-tint-border': '#DDE6F8',
     success: '#197A4B',
     'success-tint': '#E8F3EC',
     warning: '#8A5300',
@@ -52,6 +53,7 @@ const palette = {
     info: '#2F6BD8',
     'info-track': '#24406E',
     'info-tint': '#16233B',
+    'info-tint-border': '#223655',
     success: '#22A566',
     'success-tint': '#12261C',
     warning: '#C97F1D',
@@ -107,6 +109,37 @@ export const ControlSize = {
   glyph: 32,
   field: 54,
 } as const;
+
+export const Elevation = {
+  e1: {
+    shadowColor: palette.light.primary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  e2: {
+    shadowColor: palette.light.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  e3: {
+    shadowColor: palette.light.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  e4: {
+    shadowColor: palette.light.primary,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.16,
+    shadowRadius: 40,
+    elevation: 16,
+  },
+} as const satisfies Record<string, ViewStyle>;
 
 export const Fonts = {
   archivo: {

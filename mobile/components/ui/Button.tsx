@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View, type PressableProps } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'social' | 'link';
+export type ButtonVariant = 'primary' | 'secondary' | 'social' | 'link' | 'destructive';
 export type ButtonSize = 'lg' | 'md' | 'sm';
 
 export interface ButtonProps
@@ -24,6 +24,7 @@ const CONTAINER: Record<ButtonVariant, string> = {
   secondary: 'bg-surface border-1.5 border-primary active:bg-surface-sunken',
   social: 'bg-surface border-1.5 border-border-strong active:bg-surface-sunken',
   link: 'bg-transparent',
+  destructive: 'bg-error',
 };
 
 // The active: classes here repeat the resting fill rather than changing it — a disabled Pressable
@@ -35,6 +36,7 @@ const CONTAINER_INERT: Record<ButtonVariant, string> = {
   secondary: 'bg-surface border-1.5 border-border active:bg-surface',
   social: 'bg-surface border-1 border-border active:bg-surface',
   link: 'bg-transparent',
+  destructive: 'bg-border',
 };
 
 const SIZE: Record<ButtonSize, string> = {
@@ -48,6 +50,7 @@ const LABEL: Record<ButtonVariant, string> = {
   secondary: 'text-primary',
   social: 'text-primary',
   link: 'text-primary underline',
+  destructive: 'text-surface',
 };
 
 const LABEL_SIZE: Record<ButtonSize, string> = {
@@ -81,10 +84,8 @@ export function Button({
       ? 'min-h-control-field px-6'
       : SIZE[size];
   const width = fullWidth && !isLink ? 'w-full' : 'self-start';
-  // Not gated on `inert`: css-interop makes a component animated only on the initial render, and
-  // warns (throwing while it serialises props) if a transform first appears once a button that
-  // mounted disabled becomes enabled. A disabled Pressable never presses, so this stays invisible.
-  const press = !reduceMotion && variant === 'primary' ? 'active:scale-[0.97]' : '';
+  const isFilled = variant === 'primary' || variant === 'destructive';
+  const press = !inert && !reduceMotion && isFilled ? 'active:scale-[0.97]' : '';
 
   return (
     <Pressable

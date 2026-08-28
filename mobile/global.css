@@ -19,6 +19,7 @@
   --color-info: 47 107 216;
   --color-info-track: 185 205 242;
   --color-info-tint: 237 242 252;
+  --color-info-tint-border: 221 230 248;
   --color-success: 25 122 75;
   --color-success-tint: 232 243 236;
   --color-warning: 138 83 0;
@@ -45,6 +46,7 @@
     --color-info: 47 107 216;
     --color-info-track: 36 64 110;
     --color-info-tint: 22 35 59;
+    --color-info-tint-border: 34 54 85;
     --color-success: 34 165 102;
     --color-success-tint: 18 38 28;
     --color-warning: 201 127 29;

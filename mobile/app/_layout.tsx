@@ -129,6 +129,10 @@ function RootNavigator() {
             options={{ presentation: 'modal', headerShown: false }}
           />
           <Stack.Screen
+            name="account/accessibility"
+            options={{ presentation: 'modal', headerShown: false }}
+          />
+          <Stack.Screen
             name="account/reset-password"
             options={{ presentation: 'modal', headerShown: false }}
           />

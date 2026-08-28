@@ -16,16 +16,19 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 
 export type InputFieldVariant = 'field' | 'search';
 export type InputFieldWidth = 'full' | 'half' | 'auto';
+export type InputFieldValueVariant = 'text' | 'mono';
 
 type InputState = 'rest' | 'focus' | 'error' | 'disabled';
 
-const VALUE_TEXT = typographySpecs['text-primary'];
+function toValueTextStyle(token: 'text-primary' | 'mono') {
+  const spec = typographySpecs[token];
+  return { fontFamily: spec.fontFamily, fontSize: spec.fontSize, includeFontPadding: false } as const;
+}
 
-const valueTextStyle = {
-  fontFamily: VALUE_TEXT.fontFamily,
-  fontSize: VALUE_TEXT.fontSize,
-  includeFontPadding: false,
-} as const;
+const VALUE_TEXT_STYLE: Record<InputFieldValueVariant, ReturnType<typeof toValueTextStyle>> = {
+  text: toValueTextStyle('text-primary'),
+  mono: toValueTextStyle('mono'),
+};
 
 const TONE = {
   primary: 'text-primary',
@@ -56,6 +59,7 @@ type BaseProps = Omit<
   onChangeText: (text: string) => void;
 
   error?: string | null;
+  helperText?: string;
   isDisabled?: boolean;
   isRevealed?: boolean;
 
@@ -67,6 +71,7 @@ type BaseProps = Omit<
   onRevealToggle?: (isNextRevealed: boolean) => void;
 
   width?: InputFieldWidth;
+  valueVariant?: InputFieldValueVariant;
   isMicVisible?: boolean;
   className?: string;
   ref?: React.Ref<TextInput>;
@@ -143,12 +148,14 @@ export function InputField({
   value,
   onChangeText,
   error,
+  helperText,
   isDisabled = false,
   isRevealed,
   isRequired = false,
   isSecure = false,
   isMicVisible = true,
   width = 'full',
+  valueVariant = 'text',
   onFocus,
   onBlur,
   onSubmitEditing,
@@ -276,7 +283,7 @@ export function InputField({
         <TextInput
           ref={ref}
           className={`flex-1 self-stretch p-0 ${VALUE_TONE[state]}`}
-          style={valueTextStyle}
+          style={VALUE_TEXT_STYLE[valueVariant]}
           textAlignVertical="center"
           value={value}
           onChangeText={onChangeText}
@@ -312,6 +319,12 @@ export function InputField({
           className={`type-text-primary mt-1 ${TONE.error}`}
           maxFontSizeMultiplier={2}>
           {error}
+        </Text>
+      ) : helperText ? (
+        <Text
+          className={`type-text-secondary mt-1 ${isDisabled ? TONE.disabled : TONE.secondary}`}
+          maxFontSizeMultiplier={2}>
+          {helperText}
         </Text>
       ) : null}
     </View>
