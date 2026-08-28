@@ -7,11 +7,11 @@ import {
   itemSummary,
   nextStatusLabel,
   statusPresentation,
-  type SellerOrder,
+  type Order,
 } from '@/lib/orders';
 
 export interface SellerOrderCardProps {
-  order: SellerOrder;
+  order: Order;
   onPress: () => void;
   onAdvance: () => void;
   isAdvancing?: boolean;
@@ -31,7 +31,7 @@ export function SellerOrderCard({
       <Pressable
         onPress={onPress}
         role="button"
-        aria-label={`Order ${order.order_number}, ${order.buyer_name}, ${status.label}`}
+        aria-label={`Order ${order.order_number}, ${order.ship_name ?? 'Buyer'}, ${status.label}`}
         accessibilityHint="Opens the order details"
         className="flex-row items-center gap-3 active:bg-surface-muted">
         <View className="h-14 w-14 items-center justify-center rounded-8 bg-surface-sunken">
@@ -46,7 +46,7 @@ export function SellerOrderCard({
             className="type-label-lg text-primary"
             numberOfLines={1}
             maxFontSizeMultiplier={1.5}>
-            {order.buyer_name}
+            {order.ship_name ?? 'Buyer'}
           </Text>
           <Text className="type-text-secondary text-secondary" numberOfLines={1}>
             {itemSummary(order.items)}

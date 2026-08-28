@@ -73,6 +73,7 @@ type BaseProps = Omit<
   width?: InputFieldWidth;
   valueVariant?: InputFieldValueVariant;
   isMicVisible?: boolean;
+  multiline?: boolean;
   className?: string;
   ref?: React.Ref<TextInput>;
 };
@@ -156,6 +157,7 @@ export function InputField({
   isMicVisible = true,
   width = 'full',
   valueVariant = 'text',
+  multiline = false,
   onFocus,
   onBlur,
   onSubmitEditing,
@@ -277,14 +279,17 @@ export function InputField({
       ) : null}
 
       <View
-        className={`${MIN_HEIGHT[variant]} flex-row items-center gap-2 px-4 py-2 ${CONTAINER[variant][state]}`}>
+        className={`${MIN_HEIGHT[variant]} flex-row gap-2 px-4 py-2 ${
+          multiline ? 'items-start' : 'items-center'
+        } ${CONTAINER[variant][state]}`}>
         {isSearch ? <Icon name="search" size="md" className={TONE.secondary} /> : null}
 
         <TextInput
           ref={ref}
           className={`flex-1 self-stretch p-0 ${VALUE_TONE[state]}`}
-          style={VALUE_TEXT_STYLE[valueVariant]}
-          textAlignVertical="center"
+          style={[VALUE_TEXT_STYLE[valueVariant], multiline ? { minHeight: 96 } : null]}
+          multiline={multiline}
+          textAlignVertical={multiline ? 'top' : 'center'}
           value={value}
           onChangeText={onChangeText}
           onFocus={(e) => {

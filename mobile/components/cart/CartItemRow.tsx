@@ -4,17 +4,17 @@ import { Text, View } from 'react-native';
 import { QuantityStepper } from '@/components/ui/QuantityStepper';
 import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
-import type { CartLineItem } from '@/lib/CartProvider';
+import type { CartLine } from '@/lib/cart';
+import { formatMoney } from '@/lib/orders';
 
 export interface CartItemRowProps {
-  item: CartLineItem;
+  line: CartLine;
   onChangeQuantity: (quantity: number) => void;
   onRemove: () => void;
 }
 
-export function CartItemRow({ item, onChangeQuantity, onRemove }: CartItemRowProps) {
-  const { product, quantity } = item;
-  const lineTotal = (Number(product.price) * quantity).toFixed(2);
+export function CartItemRow({ line, onChangeQuantity, onRemove }: CartItemRowProps) {
+  const { product, quantity } = line;
 
   return (
     <View className="gap-3 rounded-12 border-1 border-border bg-surface p-3">
@@ -27,7 +27,7 @@ export function CartItemRow({ item, onChangeQuantity, onRemove }: CartItemRowPro
               contentFit="cover"
             />
           ) : (
-            <Text className="type-label-sm text-secondary">No photo</Text>
+            <Icon name="shop" size="md" className="text-secondary" />
           )}
         </View>
 
@@ -35,7 +35,9 @@ export function CartItemRow({ item, onChangeQuantity, onRemove }: CartItemRowPro
           <Text className="type-h3 text-primary" numberOfLines={1}>
             {product.name}
           </Text>
-          <Text className="type-text-primary text-primary">${lineTotal}</Text>
+          <Text className="type-text-secondary text-secondary">
+            {formatMoney(product.price)} each
+          </Text>
         </View>
       </View>
 
