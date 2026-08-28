@@ -14,7 +14,15 @@ function extensionOf(uri: string) {
   return (match?.[1] ?? 'jpg').toLowerCase();
 }
 
-async function uploadPhoto(uri: string) {
+/**
+ * Photos arrive as on-device `file://` uris from the picker, while anything already on Cloudinary
+ * comes back as an `https://` url that must be left alone.
+ */
+export function uploadPhoto(uri: string): Promise<string> {
+  return uri.startsWith('http') ? Promise.resolve(uri) : upload(uri);
+}
+
+async function upload(uri: string) {
   if (!CLOUD_NAME || !UPLOAD_PRESET) {
     throw new Error('Cloudinary is not configured.');
   }
@@ -45,12 +53,6 @@ async function uploadPhoto(uri: string) {
   return data.secure_url as string;
 }
 
-/**
- * Photos arrive as on-device `file://` uris from the picker. Editing an existing product mixes
- * those with the `https://` urls of photos already on Cloudinary, which must be left as they are.
- */
 export function uploadProductPhotos(uris: string[]) {
-  return Promise.all(
-    uris.map((uri) => (uri.startsWith('http') ? Promise.resolve(uri) : uploadPhoto(uri)))
-  );
+  return Promise.all(uris.map(uploadPhoto));
 }
