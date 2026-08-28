@@ -83,7 +83,7 @@ export function PaymentAuthentication({
         </Text>
       </View>
 
-      <View accessibilityRole="group" accessibilityLabel="Six-digit payment authentication code" className="flex-row gap-2">
+      <View accessibilityLabel="Six-digit payment authentication code" className="flex-row gap-2">
         {Array.from({ length: 6 }, (_, index) => {
           const digit = otp[index];
           return (
