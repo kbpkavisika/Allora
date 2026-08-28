@@ -23,7 +23,7 @@ export default function SellerTabLayout() {
       screenOptions={{ header: () => <Header /> }}
       tabBar={(props) => <BottomTabBar {...props} tabs={SELLER_TABS} />}>
       <Tabs.Screen name="index" options={{ title: 'Shop', headerShown: false }} />
-      <Tabs.Screen name="orders/index" options={{ title: 'Orders' }} />
+      <Tabs.Screen name="orders/index" options={{ title: 'Orders', headerShown: false }} />
       <Tabs.Screen name="chat/index" options={{ title: 'Chat' }} />
       <Tabs.Screen name="account/index" options={{ title: 'Account' }} />
       {/* Reached from the dashboard, not the tab bar: BottomTabBar skips routes SELLER_TABS omits. */}
