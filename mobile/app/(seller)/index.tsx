@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ActionCard } from '@/components/ui/ActionCard';
+import { Button } from '@/components/ui/Button';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { useProducts } from '@/hooks/useProducts';
 import { useShop } from '@/hooks/useShop';
@@ -84,6 +85,13 @@ export default function SellerShopScreen() {
           />
         </View>
       </View>
+
+      <Button
+        variant="secondary"
+        label="Quick stock update"
+        disabled={productCount === 0}
+        onPress={() => router.push('/seller/quick-stock')}
+      />
     </ScrollView>
   );
 }

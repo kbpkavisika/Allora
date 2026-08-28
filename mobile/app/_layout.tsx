@@ -113,6 +113,10 @@ function RootNavigator() {
           />
           <Stack.Screen name="seller/store-setup" options={{ headerShown: false }} />
           <Stack.Screen name="seller/orders/[id]" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="seller/quick-stock"
+            options={{ presentation: 'transparentModal', animation: 'fade', headerShown: false }}
+          />
         </Stack.Protected>
 
         <Stack.Protected guard={showApp}>
