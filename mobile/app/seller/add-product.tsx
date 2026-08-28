@@ -145,7 +145,7 @@ export default function AddProductScreen() {
 
   function viewListing() {
     router.replace('/(seller)');
-    router.push('/seller/products');
+    router.push('/(seller)/products');
   }
 
   return (

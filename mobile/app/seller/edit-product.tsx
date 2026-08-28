@@ -60,7 +60,7 @@ export default function EditProductScreen() {
 
   useEffect(() => {
     if (!isLoading && !product) {
-      router.replace('/seller/products');
+      router.replace('/(seller)/products');
     }
   }, [isLoading, product]);
 

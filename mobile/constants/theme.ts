@@ -170,6 +170,13 @@ export const typographySpecs = {
     lineHeight: 24,
     colorToken: 'primary',
   },
+  // design.md §07: inactive scroll tabs are 17/500 in `secondary`.
+  'title-muted': {
+    fontFamily: Fonts.archivo.medium,
+    fontSize: 17,
+    lineHeight: 24,
+    colorToken: 'secondary',
+  },
   'text-lg': {
     fontFamily: Fonts.archivo.regular,
     fontSize: 17,
