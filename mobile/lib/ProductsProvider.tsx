@@ -1,6 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 
-import { useAuth } from '@/lib/AuthProvider';
 import { uploadProductPhotos } from '@/lib/photoUpload';
 import type { Product } from '@/lib/products';
 import { useShop } from '@/lib/ShopProvider';
@@ -30,10 +29,8 @@ export interface ProductsProviderProps {
 const ProductsContext = createContext<ProductsContextValue | null>(null);
 
 export function ProductsProvider({ children }: ProductsProviderProps) {
-  const { session } = useAuth();
   const { shop } = useShop();
 
-  const userId = session?.user.id;
   const shopId = shop?.id;
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -63,12 +60,12 @@ export function ProductsProvider({ children }: ProductsProviderProps) {
   }, [load]);
 
   async function createProduct(input: ProductInput) {
-    if (!shopId || !userId) {
+    if (!shopId) {
       return { error: new Error('No shop to add a product to.') };
     }
 
     try {
-      const photos = await uploadProductPhotos(input.photos, userId);
+      const photos = await uploadProductPhotos(input.photos);
 
       const { data, error } = await supabase
         .from('products')
@@ -88,12 +85,8 @@ export function ProductsProvider({ children }: ProductsProviderProps) {
   }
 
   async function updateProduct(id: string, input: ProductInput) {
-    if (!userId) {
-      return { error: new Error('Not signed in.') };
-    }
-
     try {
-      const photos = await uploadProductPhotos(input.photos, userId);
+      const photos = await uploadProductPhotos(input.photos);
 
       const { data, error } = await supabase
         .from('products')
