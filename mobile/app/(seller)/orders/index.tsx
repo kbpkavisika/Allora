@@ -1,14 +1,14 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SellerOrderCard } from '@/components/seller/SellerOrderCard';
 import { Icon } from '@/components/ui/Icon';
 import { ScrollTabs, type ScrollTabItem } from '@/components/ui/ScrollTabs';
 import { TopBar } from '@/components/ui/TopBar';
-import { mockSellerOrders } from '@/lib/mockSellerOrders';
-import { nextStatus, orderStatuses, type OrderStatus, type SellerOrder } from '@/lib/orders';
+import { orderStatuses, type OrderStatus } from '@/lib/orders';
+import { useOrders } from '@/lib/OrdersProvider';
 
 const TAB_LABEL: Record<OrderStatus, string> = {
   new: 'New',
@@ -24,9 +24,10 @@ const EMPTY_MESSAGE: Record<OrderStatus, string> = {
 
 export default function SellerOrdersScreen() {
   const insets = useSafeAreaInsets();
+  const { orders, isLoading, advanceStatus } = useOrders();
 
-  const [orders, setOrders] = useState<SellerOrder[]>(mockSellerOrders);
   const [tab, setTab] = useState<OrderStatus>('new');
+  const [advancingId, setAdvancingId] = useState<string | null>(null);
 
   const tabs = useMemo<ScrollTabItem[]>(
     () =>
@@ -43,13 +44,10 @@ export default function SellerOrdersScreen() {
     [orders, tab]
   );
 
-  function advance(order: SellerOrder) {
-    const next = nextStatus(order.status);
-    if (!next) return;
-
-    setOrders((current) =>
-      current.map((item) => (item.id === order.id ? { ...item, status: next } : item))
-    );
+  async function advance(orderId: string) {
+    setAdvancingId(orderId);
+    await advanceStatus(orderId);
+    setAdvancingId(null);
   }
 
   return (
@@ -75,22 +73,27 @@ export default function SellerOrdersScreen() {
         renderItem={({ item }) => (
           <SellerOrderCard
             order={item}
+            isAdvancing={advancingId === item.id}
             onPress={() =>
               router.push({ pathname: '/seller/orders/[id]', params: { id: item.id } })
             }
-            onAdvance={() => advance(item)}
+            onAdvance={() => advance(item.id)}
           />
         )}
         ListEmptyComponent={
-          <View className="items-center gap-3 pt-16">
-            <Icon name="orders" size="lg" className="text-secondary" />
-            <Text role="heading" className="type-h3 text-primary">
-              No {TAB_LABEL[tab].toLowerCase()} orders
-            </Text>
-            <Text className="type-text-primary text-center text-secondary">
-              {EMPTY_MESSAGE[tab]}
-            </Text>
-          </View>
+          isLoading ? (
+            <ActivityIndicator className="mt-16 text-secondary" />
+          ) : (
+            <View className="items-center gap-3 pt-16">
+              <Icon name="orders" size="lg" className="text-secondary" />
+              <Text role="heading" className="type-h3 text-primary">
+                No {TAB_LABEL[tab].toLowerCase()} orders
+              </Text>
+              <Text className="type-text-primary text-center text-secondary">
+                {EMPTY_MESSAGE[tab]}
+              </Text>
+            </View>
+          )
         }
       />
     </View>

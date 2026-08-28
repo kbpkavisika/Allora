@@ -7,24 +7,23 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TopBar } from '@/components/ui/TopBar';
-import { mockSellerOrders } from '@/lib/mockSellerOrders';
 import {
+  formatMoney,
   formatPlacedAt,
-  nextStatus,
   nextStatusLabel,
   statusPresentation,
-  type OrderStatus,
 } from '@/lib/orders';
-import { formatPrice } from '@/lib/products';
+import { useOrders } from '@/lib/OrdersProvider';
 
 export default function SellerOrderDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
+  const { getOrder, advanceStatus } = useOrders();
 
-  const order = mockSellerOrders.find((item) => item.id === id);
-  const [status, setStatus] = useState<OrderStatus | null>(order?.status ?? null);
+  const order = id ? getOrder(id) : undefined;
+  const [isAdvancing, setIsAdvancing] = useState(false);
 
-  if (!order || !status) {
+  if (!order) {
     return (
       <View className="flex-1 bg-surface">
         <TopBar title="Order" />
@@ -46,13 +45,17 @@ export default function SellerOrderDetailScreen() {
     );
   }
 
-  const presentation = statusPresentation(status);
-  const advanceLabel = nextStatusLabel(status);
-  const itemsTotal = order.items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
+  const presentation = statusPresentation(order.status);
+  const advanceLabel = nextStatusLabel(order.status);
+  const itemsTotal = order.items.reduce(
+    (sum, item) => sum + item.unit_price * item.quantity,
+    0
+  );
 
-  function advance() {
-    const next = status ? nextStatus(status) : null;
-    if (next) setStatus(next);
+  async function advance() {
+    setIsAdvancing(true);
+    await advanceStatus(order!.id);
+    setIsAdvancing(false);
   }
 
   return (
@@ -60,14 +63,10 @@ export default function SellerOrderDetailScreen() {
       <TopBar title={`Order ${order.order_number}`} />
 
       <ScrollView
-        contentContainerStyle={{
-          padding: 16,
-          paddingBottom: insets.bottom + 32,
-          gap: 24,
-        }}>
+        contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32, gap: 24 }}>
         <View className="gap-2">
           <Badge label={presentation.label} variant={presentation.variant} />
-          <Text className="type-h2 text-primary">{order.buyer_name}</Text>
+          <Text className="type-h2 text-primary">{order.ship_name ?? 'Buyer'}</Text>
           <Text className="type-text-secondary text-secondary">
             Placed {formatPlacedAt(order.placed_at)}
           </Text>
@@ -79,7 +78,7 @@ export default function SellerOrderDetailScreen() {
           <View className="rounded-12 border-1 border-border bg-surface px-4">
             {order.items.map((item, index) => (
               <View
-                key={item.product_id}
+                key={item.id}
                 className={`min-h-tap flex-row items-center gap-3 py-3 ${
                   index < order.items.length - 1 ? 'border-b-1 border-border' : ''
                 }`}>
@@ -88,12 +87,12 @@ export default function SellerOrderDetailScreen() {
                     {item.product_name}
                   </Text>
                   <Text className="type-text-secondary text-secondary">
-                    {formatPrice(item.unit_price)} × {item.quantity}
+                    {formatMoney(item.unit_price)} × {item.quantity}
                   </Text>
                 </View>
 
                 <Text className="type-text-primary text-primary">
-                  {formatPrice(item.unit_price * item.quantity)}
+                  {formatMoney(item.unit_price * item.quantity)}
                 </Text>
               </View>
             ))}
@@ -101,12 +100,12 @@ export default function SellerOrderDetailScreen() {
 
           <View className="flex-row items-center justify-between gap-3 px-4">
             <Text className="type-label-lg text-primary">Total</Text>
-            <Text className="type-label-lg text-primary">{formatPrice(itemsTotal)}</Text>
+            <Text className="type-label-lg text-primary">{formatMoney(itemsTotal)}</Text>
           </View>
         </View>
 
         {advanceLabel ? (
-          <Button label={advanceLabel} onPress={advance} />
+          <Button label={advanceLabel} loading={isAdvancing} onPress={advance} />
         ) : (
           <Text className="type-text-secondary text-center text-secondary">
             This order is complete.

@@ -5,9 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ActionCard } from '@/components/ui/ActionCard';
 import { Button } from '@/components/ui/Button';
 import { SectionHeader } from '@/components/ui/SectionHeader';
+import { useOrders } from '@/hooks/useOrders';
 import { useProducts } from '@/hooks/useProducts';
 import { useShop } from '@/hooks/useShop';
-import { mockOrders } from '@/lib/mockOrders';
 
 const UNREAD_MESSAGES: number = 0;
 
@@ -15,9 +15,10 @@ export default function SellerShopScreen() {
   const insets = useSafeAreaInsets();
   const { shop } = useShop();
   const { products } = useProducts();
+  const { orders } = useOrders();
 
   const productCount = products.length;
-  const ordersInProgress = mockOrders.filter((order) => order.status !== 'delivered').length;
+  const ordersInProgress = orders.filter((order) => order.status !== 'completed').length;
 
   return (
     <ScrollView
