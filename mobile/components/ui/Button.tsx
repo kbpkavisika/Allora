@@ -81,7 +81,10 @@ export function Button({
       ? 'min-h-control-field px-6'
       : SIZE[size];
   const width = fullWidth && !isLink ? 'w-full' : 'self-start';
-  const press = !inert && !reduceMotion && variant === 'primary' ? 'active:scale-[0.97]' : '';
+  // Not gated on `inert`: css-interop makes a component animated only on the initial render, and
+  // warns (throwing while it serialises props) if a transform first appears once a button that
+  // mounted disabled becomes enabled. A disabled Pressable never presses, so this stays invisible.
+  const press = !reduceMotion && variant === 'primary' ? 'active:scale-[0.97]' : '';
 
   return (
     <Pressable
