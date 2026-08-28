@@ -19,6 +19,7 @@ import 'react-native-reanimated';
 import { BrandSplash } from '@/components/BrandSplash';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/lib/AuthProvider';
+import { ProductsProvider } from '@/lib/ProductsProvider';
 import { ProfileProvider, useProfile } from '@/lib/ProfileProvider';
 import { ShopProvider, useShop } from '@/lib/ShopProvider';
 
@@ -38,7 +39,9 @@ export default function RootLayout() {
     <AuthProvider>
       <ProfileProvider>
         <ShopProvider>
-          <RootNavigator />
+          <ProductsProvider>
+            <RootNavigator />
+          </ProductsProvider>
         </ShopProvider>
       </ProfileProvider>
     </AuthProvider>
@@ -109,6 +112,11 @@ function RootNavigator() {
             options={{ presentation: 'modal', headerShown: false }}
           />
           <Stack.Screen name="seller/store-setup" options={{ headerShown: false }} />
+          <Stack.Screen name="seller/orders/[id]" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="seller/quick-stock"
+            options={{ presentation: 'transparentModal', animation: 'fade', headerShown: false }}
+          />
         </Stack.Protected>
 
         <Stack.Protected guard={showApp}>

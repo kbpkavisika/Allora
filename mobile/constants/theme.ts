@@ -16,6 +16,9 @@ const palette = {
     disabled: '#9BA0A5',
     border: '#E4E6E8',
     'border-strong': '#8C9297',
+    // design.md uses #C9CDD1 for inert furniture §01 never names: the sheet grabber,
+    // inactive carousel dots, and disabled chip / sold-out cell text.
+    inert: '#C9CDD1',
     surface: '#FFFFFF',
     'surface-muted': '#F7F8F8',
     'surface-sunken': '#F1F2F3',
@@ -40,6 +43,7 @@ const palette = {
     disabled: '#5C6165',
     border: '#2A2B2D',
     'border-strong': '#72777C',
+    inert: '#4A4E52',
     surface: '#101112',
     'surface-muted': '#1C1D1E',
     'surface-sunken': '#252627',
@@ -195,6 +199,20 @@ export const typographySpecs = {
     lineHeight: 24,
     letterSpacing: -0.01 * 18,
     colorToken: 'primary',
+  },
+  // design.md §07: top bar titles are 17/600, a ramp §02 does not otherwise list.
+  title: {
+    fontFamily: Fonts.archivo.semiBold,
+    fontSize: 17,
+    lineHeight: 24,
+    colorToken: 'primary',
+  },
+  // design.md §07: inactive scroll tabs are 17/500 in `secondary`.
+  'title-muted': {
+    fontFamily: Fonts.archivo.medium,
+    fontSize: 17,
+    lineHeight: 24,
+    colorToken: 'secondary',
   },
   'text-lg': {
     fontFamily: Fonts.archivo.regular,

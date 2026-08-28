@@ -76,10 +76,16 @@ export const productDetailsSchema = z.object({
   price: priceString,
   stockQuantity: stockQuantityString,
   category: categoryString,
-  imageUri: z.string().min(1, { error: 'Add a product photo.' }),
+  photos: z.array(z.string()).max(6, { error: 'Add up to 6 photos.' }),
 });
 
 export type ProductDetailsValues = z.infer<typeof productDetailsSchema>;
+
+export const productStepFields: readonly (readonly (keyof ProductDetailsValues)[])[] = [
+  [],
+  ['name', 'price', 'stockQuantity', 'description', 'category'],
+  ['photos'],
+];
 
 const shopCategoryString = z
   .string()

@@ -27,10 +27,14 @@ const CONTAINER: Record<ButtonVariant, string> = {
   destructive: 'bg-error',
 };
 
+// The active: classes here repeat the resting fill rather than changing it — a disabled Pressable
+// never enters a press state. They exist so a button that mounts inert still carries pseudo-class
+// styles: css-interop upgrades View to Pressable only on the initial render, and warns (throwing
+// while it serialises props) if pseudo-classes first appear when a button later becomes enabled.
 const CONTAINER_INERT: Record<ButtonVariant, string> = {
-  primary: 'bg-border',
-  secondary: 'bg-surface border-1.5 border-border',
-  social: 'bg-surface border-1 border-border',
+  primary: 'bg-border active:bg-border',
+  secondary: 'bg-surface border-1.5 border-border active:bg-surface',
+  social: 'bg-surface border-1 border-border active:bg-surface',
   link: 'bg-transparent',
   destructive: 'bg-border',
 };

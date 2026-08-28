@@ -6,12 +6,14 @@ import { Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { ChipSelect } from '@/components/ui/ChipSelect';
-import { ImagePickerField } from '@/components/ui/ImagePickerField';
+import { FormError } from '@/components/ui/FormError';
 import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
+import { ProductPhotoGrid } from '@/components/ui/ProductPhotoGrid';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { SuccessBanner } from '@/components/ui/SuccessBanner';
 import { InputField } from '@/components/ui/InputField';
-import { mockSellerProducts } from '@/lib/mockProducts';
+import { useProducts } from '@/hooks/useProducts';
+import { toProductFormValues, toProductInput } from '@/lib/products';
 import {
   productCategories,
   productDetailsSchema,
@@ -20,40 +22,62 @@ import {
 
 export default function EditProductScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const product = mockSellerProducts.find((item) => item.id === id);
+  const { products, isLoading, updateProduct } = useProducts();
+  const product = products.find((item) => item.id === id);
 
   const nameRef = useRef<TextInput>(null);
   const descriptionRef = useRef<TextInput>(null);
   const priceRef = useRef<TextInput>(null);
   const stockQuantityRef = useRef<TextInput>(null);
   const [updated, setUpdated] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const {
     control,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<ProductDetailsValues>({
     resolver: zodResolver(productDetailsSchema),
-    defaultValues: product ?? {
+    defaultValues: {
       name: '',
       description: '',
       price: '',
       stockQuantity: '',
       category: '',
-      imageUri: '',
+      photos: [],
     },
     mode: 'onSubmit',
     reValidateMode: 'onChange',
   });
 
+  // The product list loads asynchronously, so the form is filled once its row arrives.
   useEffect(() => {
-    if (!product) {
-      router.replace('/(seller)/index');
+    if (product) {
+      reset(toProductFormValues(product));
     }
-  }, [product]);
+  }, [product, reset]);
 
-  // UI-only for now: a real submit will PATCH the backend once that exists.
-  function onSubmit(_values: ProductDetailsValues) {
+  useEffect(() => {
+    if (!isLoading && !product) {
+      router.replace('/(seller)/products');
+    }
+  }, [isLoading, product]);
+
+  async function onSubmit(values: ProductDetailsValues) {
+    if (!product) {
+      return;
+    }
+
+    setFormError(null);
+
+    const { error } = await updateProduct(product.id, toProductInput(values));
+
+    if (error) {
+      setFormError('Something went wrong saving your changes. Please try again.');
+      return;
+    }
+
     setUpdated(true);
   }
 
@@ -74,17 +98,16 @@ export default function EditProductScreen() {
       <View className="gap-5">
         <Controller
           control={control}
-          name="imageUri"
+          name="photos"
           render={({ field }) => (
-            <ImagePickerField
-              label="Product photo"
-              imageUri={field.value || null}
-              onChange={(uri) => {
+            <ProductPhotoGrid
+              label="Product photos"
+              photos={field.value}
+              onChange={(photos) => {
                 setUpdated(false);
-                field.onChange(uri ?? '');
+                field.onChange(photos);
               }}
-              error={errors.imageUri?.message}
-              required
+              error={errors.photos?.message}
             />
           )}
         />
@@ -200,7 +223,9 @@ export default function EditProductScreen() {
           )}
         />
 
-        <SuccessBanner message={updated ? 'Changes saved for this session.' : null} />
+        <FormError message={formError} />
+
+        <SuccessBanner message={updated ? 'Changes saved.' : null} />
 
         <Button label="Save changes" loading={isSubmitting} onPress={submit} />
       </View>

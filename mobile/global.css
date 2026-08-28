@@ -9,6 +9,7 @@
   --color-disabled: 155 160 165;
   --color-border: 228 230 232;
   --color-border-strong: 140 146 151;
+  --color-inert: 201 205 209;
   --color-surface: 255 255 255;
   --color-surface-muted: 247 248 248;
   --color-surface-sunken: 241 242 243;
@@ -35,6 +36,7 @@
     --color-disabled: 92 97 101;
     --color-border: 42 43 45;
     --color-border-strong: 114 119 124;
+    --color-inert: 74 78 82;
     --color-surface: 16 17 18;
     --color-surface-muted: 28 29 30;
     --color-surface-sunken: 37 38 39;

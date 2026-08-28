@@ -1,9 +1,9 @@
 import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
-import * as ImagePicker from 'expo-image-picker';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { pickImage } from '@/lib/imagePicker';
 
 export interface ImagePickerFieldProps {
   label: string;
@@ -35,52 +35,16 @@ export function ImagePickerField({
 
   const cropAspect: [number, number] = aspectRatio >= 1 ? [4, 3] : [3, 4];
 
-  async function pickFromLibrary() {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      return;
-    }
-
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
+  async function handlePress() {
+    const uri = await pickImage({
       aspect: cropAspect,
-      quality: 0.8,
+      allowCamera,
+      title: `Add ${label.toLowerCase()}`,
     });
 
-    if (!result.canceled && result.assets[0]) {
-      onChange(result.assets[0].uri);
+    if (uri) {
+      onChange(uri);
     }
-  }
-
-  async function pickFromCamera() {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: cropAspect,
-      quality: 0.8,
-    });
-
-    if (!result.canceled && result.assets[0]) {
-      onChange(result.assets[0].uri);
-    }
-  }
-
-  function handlePress() {
-    if (!allowCamera) {
-      pickFromLibrary();
-      return;
-    }
-
-    Alert.alert(`Add ${label.toLowerCase()}`, undefined, [
-      { text: 'Take photo', onPress: pickFromCamera },
-      { text: 'Choose from library', onPress: pickFromLibrary },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
   }
 
   return (
