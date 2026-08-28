@@ -1,34 +1,12 @@
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OrderListCard } from '@/components/orders/OrderListCard';
+import { FilterChip } from '@/components/ui/FilterChip';
 import { mockOrders } from '@/lib/mockOrders';
 
 type OrderFilter = 'active' | 'past';
-
-function FilterChip({
-  label,
-  selected,
-  onPress,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      role="radio"
-      aria-checked={selected}
-      aria-label={label}
-      className={`min-h-control-md items-center justify-center rounded-8 px-4 ${
-        selected ? 'border-1.5 border-primary bg-surface-sunken' : 'border-1 border-border-strong bg-surface'
-      }`}>
-      <Text className={`type-label ${selected ? 'text-primary' : 'text-secondary'}`}>{label}</Text>
-    </Pressable>
-  );
-}
 
 export default function OrdersScreen() {
   const insets = useSafeAreaInsets();

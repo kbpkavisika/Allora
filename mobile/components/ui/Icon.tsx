@@ -10,6 +10,8 @@ cssInterop(FontAwesome6, { className: { target: 'style', nativeStyleToProp: { co
 export type IconName =
   | 'back'
   | 'forward'
+  | 'chevron'
+  | 'filters'
   | 'dictate'
   | 'search'
   | 'show'
@@ -34,6 +36,8 @@ export type BrandName = 'apple' | 'google';
 const GLYPH: Record<IconName, React.ComponentProps<typeof Feather>['name']> = {
   back: 'chevron-left',
   forward: 'chevron-right',
+  chevron: 'chevron-down',
+  filters: 'sliders',
   dictate: 'mic',
   search: 'search',
   show: 'eye',
