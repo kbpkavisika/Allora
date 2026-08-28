@@ -1,71 +1,111 @@
-import * as WebBrowser from 'expo-web-browser';
+import PayHere from '@payhere/payhere-mobilesdk-reactnative';
 
-export type PaymentOutcomeStatus = 'success' | 'failure';
+import type { CartLine } from '@/lib/cart';
+import type { Address } from '@/lib/profile';
+
+export type PaymentOutcomeStatus = 'completed' | 'failed' | 'cancelled';
 
 export interface PayHereCheckoutInput {
   orderId: string;
   amountLkr: number;
+  lines: CartLine[];
+  customer: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+  };
+  address: Address;
 }
 
 export interface PaymentOutcome {
   status: PaymentOutcomeStatus;
-  reference: string;
-  message: string;
+  orderId: string;
+  paymentId?: string;
+  error?: string;
 }
 
-function buildReference(orderId: string) {
-  return `PH-${orderId}-${Date.now()}`;
+function buildItemsDescription(lines: CartLine[]) {
+  return lines.map(({ product, quantity }) => `${product.name} x ${quantity}`).join(', ');
 }
 
-export async function startPayHereCheckout({ orderId, amountLkr }: PayHereCheckoutInput): Promise<PaymentOutcome> {
-  const reference = buildReference(orderId);
-  const mockResult = process.env.EXPO_PUBLIC_PAYHERE_MOCK_RESULT;
+export async function startPayHereCheckout({
+  orderId,
+  amountLkr,
+  lines,
+  customer,
+  address,
+}: PayHereCheckoutInput): Promise<PaymentOutcome> {
+  const merchantId = process.env.EXPO_PUBLIC_PAYHERE_MERCHANT_ID;
+  const notifyUrl = process.env.EXPO_PUBLIC_PAYHERE_NOTIFY_URL;
 
-  if (mockResult === 'failure') {
+  if (!merchantId || !notifyUrl) {
     return {
-      status: 'failure',
-      reference,
-      message: 'Payment was declined. Please try again or use another method.',
+      status: 'failed',
+      orderId,
+      error: 'PayHere is not configured. Please try again later.',
     };
   }
 
-  if (mockResult === 'success') {
-    return {
-      status: 'success',
-      reference,
-      message: 'Payment completed successfully.',
-    };
-  }
+  return new Promise((resolve) => {
+    try {
+      const paymentObject = {
+        sandbox: true,
+        merchant_id: merchantId,
+        notify_url: notifyUrl,
+        order_id: orderId,
+        items: buildItemsDescription(lines),
+        amount: amountLkr.toFixed(2),
+        currency: 'LKR',
+        first_name: customer.firstName,
+        last_name: customer.lastName,
+        email: customer.email,
+        phone: customer.phone,
+        address: address.line1,
+        city: address.city,
+        country: address.country,
+        delivery_address: [address.line1, address.line2].filter(Boolean).join(', '),
+        delivery_city: address.city,
+        delivery_country: address.country,
+      };
 
-  const checkoutUrl = process.env.EXPO_PUBLIC_PAYHERE_CHECKOUT_URL;
+      console.log('[PayHere] starting', {
+        sandbox: paymentObject.sandbox,
+        orderId: paymentObject.order_id,
+        amount: paymentObject.amount,
+        currency: paymentObject.currency,
+        merchantIdPresent: Boolean(merchantId),
+        notifyUrlPresent: Boolean(notifyUrl),
+        emailPresent: Boolean(paymentObject.email),
+        phonePresent: Boolean(paymentObject.phone),
+        firstNamePresent: Boolean(paymentObject.first_name),
+        lastNamePresent: Boolean(paymentObject.last_name),
+        addressPresent: Boolean(paymentObject.address),
+        cityPresent: Boolean(paymentObject.city),
+        country: paymentObject.country,
+      });
 
-  if (!checkoutUrl) {
-    return {
-      status: 'failure',
-      reference,
-      message: 'PayHere checkout URL is not configured.',
-    };
-  }
-
-  const query = new URLSearchParams({
-    orderId,
-    amount: amountLkr.toFixed(2),
-    currency: 'LKR',
+      PayHere.startPayment(
+        paymentObject,
+        (paymentId: string) => {
+          console.log('[PayHere] completed', { paymentIdPresent: Boolean(paymentId) });
+          resolve({ status: 'completed', orderId, paymentId });
+        },
+        (error: unknown) => {
+          console.error('[PayHere] error', error);
+          resolve({
+            status: 'failed',
+            orderId,
+            error: typeof error === 'string' ? error : 'PayHere payment failed.',
+          });
+        },
+        () => {
+          console.log('[PayHere] dismissed');
+          resolve({ status: 'cancelled', orderId });
+        }
+      );
+    } catch {
+      resolve({ status: 'failed', orderId, error: 'Could not start PayHere payment.' });
+    }
   });
-
-  const result = await WebBrowser.openBrowserAsync(`${checkoutUrl}?${query.toString()}`);
-
-  if (result.type === 'cancel' || result.type === 'dismiss') {
-    return {
-      status: 'failure',
-      reference,
-      message: 'Payment was canceled before confirmation.',
-    };
-  }
-
-  return {
-    status: 'success',
-    reference,
-    message: 'Payment submitted. Final verification should be completed by backend confirmation.',
-  };
 }

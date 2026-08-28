@@ -9,6 +9,7 @@ import { FormError } from '@/components/ui/FormError';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TopBar } from '@/components/ui/TopBar';
 import { useCart } from '@/lib/CartProvider';
+import { useAuth } from '@/lib/AuthProvider';
 import { formatMoney, type PaymentMethod } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 import { formatAddressLines } from '@/lib/profile';
@@ -18,7 +19,8 @@ import { startPayHereCheckout } from '@/lib/payments/payHere';
 export default function CheckoutScreen() {
   const insets = useSafeAreaInsets();
   const { lines, subtotal, clear } = useCart();
-  const { addresses } = useProfile();
+  const { addresses, profile } = useProfile();
+  const { session } = useAuth();
   const { placeOrder } = useOrders();
 
   const address = useMemo(
@@ -46,12 +48,22 @@ export default function CheckoutScreen() {
     setIsSubmitting(true);
 
     if (method === 'payhere') {
+      const fullName = profile?.full_name?.trim() ?? '';
+      const [firstName, ...lastNameParts] = fullName.split(/\s+/).filter(Boolean);
       const outcome = await startPayHereCheckout({
         orderId: `CART-${Date.now()}`,
         amountLkr: total,
+        lines,
+        customer: {
+          firstName: firstName || 'Customer',
+          lastName: lastNameParts.join(' ') || firstName || 'Customer',
+          email: session?.user.email ?? '',
+          phone: profile?.phone ?? '',
+        },
+        address,
       });
 
-      if (outcome.status !== 'success') {
+      if (outcome.status !== 'completed') {
         setIsSubmitting(false);
         goToResult({ variant: 'failure', total: String(total) });
         return;
@@ -60,8 +72,8 @@ export default function CheckoutScreen() {
       const { orders, error: placeError } = await placeOrder({
         lines,
         paymentMethod: 'payhere',
-        paymentStatus: 'paid',
-        paymentReference: outcome.reference,
+        paymentStatus: 'pending',
+        paymentReference: outcome.paymentId,
         address,
       });
 
@@ -78,7 +90,7 @@ export default function CheckoutScreen() {
         orderId: orders[0]?.id ?? '',
         count: String(orders.length),
         total: String(total),
-        reference: outcome.reference,
+        reference: outcome.paymentId ?? '',
       });
       return;
     }
