@@ -5,17 +5,24 @@ import { Controller, useForm } from 'react-hook-form';
 import { TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
+import { Divider } from '@/components/ui/Divider';
 import { FormError } from '@/components/ui/FormError';
 import { InputField } from '@/components/ui/InputField';
 import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { useProfile } from '@/hooks/useProfile';
+import { useAuth } from '@/lib/AuthProvider';
 import { profileSchema, type ProfileValues } from '@/lib/schemas';
 
-export default function EditProfileScreen() {
+const noop = () => {};
+
+export default function EditPersonalInfoScreen() {
+  const { session } = useAuth();
   const { profile, updateProfile } = useProfile();
   const phoneRef = useRef<TextInput>(null);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const email = session?.user.email ?? '';
 
   const values = useMemo<ProfileValues>(
     () => ({ fullName: profile?.full_name ?? '', phone: profile?.phone ?? '' }),
@@ -56,7 +63,7 @@ export default function EditProfileScreen() {
 
   return (
     <KeyboardScreen>
-      <ScreenHeader title="Edit profile" className="mb-8" />
+      <ScreenHeader title="Personal info" className="mb-5" />
 
       <View className="gap-5">
         <Controller
@@ -64,7 +71,7 @@ export default function EditProfileScreen() {
           name="fullName"
           render={({ field }) => (
             <InputField
-              label="Name"
+              label="Full name"
               placeholder="Alex Mercer"
               value={field.value}
               onChangeText={field.onChange}
@@ -78,6 +85,15 @@ export default function EditProfileScreen() {
           )}
         />
 
+        <InputField
+          label="Email"
+          isRequired
+          isDisabled
+          value={email}
+          onChangeText={noop}
+          helperText="Used for order updates and password resets."
+        />
+
         <Controller
           control={control}
           name="phone"
@@ -85,11 +101,12 @@ export default function EditProfileScreen() {
             <InputField
               ref={phoneRef}
               label="Phone"
-              placeholder="+1 604 555 0148"
+              placeholder="+1 604 555 0142"
               value={field.value ?? ''}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
               error={errors.phone?.message}
+              valueVariant="mono"
               keyboardType="phone-pad"
               autoComplete="tel"
               returnKeyType="go"
@@ -99,9 +116,19 @@ export default function EditProfileScreen() {
           )}
         />
 
+        <Divider />
+
         <FormError message={formError} />
 
-        <Button label="Save changes" loading={isSubmitting} onPress={submit} />
+        <View className="gap-3">
+          <Button label="Save changes" loading={isSubmitting} onPress={submit} />
+          <Button
+            variant="secondary"
+            label="Discard"
+            onPress={() => router.back()}
+            hint="Leaves without saving your changes"
+          />
+        </View>
       </View>
     </KeyboardScreen>
   );

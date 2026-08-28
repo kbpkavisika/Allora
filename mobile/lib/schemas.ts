@@ -33,16 +33,14 @@ export const profileSchema = z.object({
     .refine((value) => !value || value.length >= 7, { error: 'Enter a valid phone number.' }),
 });
 
-export const addressSchema = z.object({
-  label: z.string().trim().min(1, { error: 'Enter a label, like Home or Work.' }).max(30),
-  line1: z.string().trim().min(1, { error: 'Enter a street address.' }),
+export const shippingAddressSchema = z.object({
+  line1: z.string().trim().min(1, { error: 'Enter your street address.' }),
   line2: z.string().trim().optional(),
-  city: z.string().trim().min(1, { error: 'Enter a city.' }),
-  region: z.string().trim().min(1, { error: 'Enter a province or state.' }),
-  postalCode: z.string().trim().min(1, { error: 'Enter a postal code.' }),
-  country: z.string().trim().min(1, { error: 'Enter a country.' }),
-  deliveryNote: z.string().trim().optional(),
-  isDefault: z.boolean(),
+  city: z.string().trim().min(1, { error: 'Enter your city.' }),
+  region: z.string().trim().min(1, { error: 'Choose a province.' }),
+  postalCode: z.string().trim().min(3, { error: 'Enter a complete postal code.' }),
+  country: z.string().trim().min(1, { error: 'Choose a country.' }),
+  leaveAtDoor: z.boolean(),
 });
 
 export const resetPasswordSchema = z
@@ -58,5 +56,5 @@ export const resetPasswordSchema = z
 export type SignInValues = z.infer<typeof signInSchema>;
 export type SignUpValues = z.infer<typeof signUpSchema>;
 export type ProfileValues = z.infer<typeof profileSchema>;
-export type AddressValues = z.infer<typeof addressSchema>;
+export type ShippingAddressValues = z.infer<typeof shippingAddressSchema>;
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
