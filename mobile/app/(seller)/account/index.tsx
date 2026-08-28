@@ -16,7 +16,7 @@ import { useProfile } from '@/hooks/useProfile';
 import { useShop } from '@/hooks/useShop';
 import { useAuth } from '@/lib/AuthProvider';
 import { getAuthErrorMessage } from '@/lib/authErrors';
-import { enabledAccessibilityFeatures } from '@/lib/profile';
+import { enabledAccessibilityFeatures, memberSince } from '@/lib/profile';
 import { supabase } from '@/lib/supabase';
 
 const ACCESSIBILITY_SUMMARY =
@@ -143,6 +143,16 @@ export default function SellerAccountScreen() {
             label="Phone"
             value={profile.phone ?? 'Not set'}
             valueVariant={profile.phone ? 'mono' : 'text'}
+            className="border-b-1 border-border"
+          />
+          <ListRow
+            label="Account type"
+            value={profile.role === 'seller' ? 'Seller' : 'Buyer'}
+            className="border-b-1 border-border"
+          />
+          <ListRow
+            label="Member since"
+            value={memberSince(profile.created_at)}
             className="border-b-1 border-border"
           />
           <ListRow
