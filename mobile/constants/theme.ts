@@ -163,6 +163,13 @@ export const typographySpecs = {
     letterSpacing: -0.01 * 18,
     colorToken: 'primary',
   },
+  // design.md §07: top bar titles are 17/600, a ramp §02 does not otherwise list.
+  title: {
+    fontFamily: Fonts.archivo.semiBold,
+    fontSize: 17,
+    lineHeight: 24,
+    colorToken: 'primary',
+  },
   'text-lg': {
     fontFamily: Fonts.archivo.regular,
     fontSize: 17,
