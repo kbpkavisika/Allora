@@ -16,6 +16,9 @@ const palette = {
     disabled: '#9BA0A5',
     border: '#E4E6E8',
     'border-strong': '#8C9297',
+    // design.md uses #C9CDD1 for inert furniture §01 never names: the sheet grabber,
+    // inactive carousel dots, and disabled chip / sold-out cell text.
+    inert: '#C9CDD1',
     surface: '#FFFFFF',
     'surface-muted': '#F7F8F8',
     'surface-sunken': '#F1F2F3',
@@ -39,6 +42,7 @@ const palette = {
     disabled: '#5C6165',
     border: '#2A2B2D',
     'border-strong': '#72777C',
+    inert: '#4A4E52',
     surface: '#101112',
     'surface-muted': '#1C1D1E',
     'surface-sunken': '#252627',
