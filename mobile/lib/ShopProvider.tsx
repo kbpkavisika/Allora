@@ -18,6 +18,7 @@ export interface ShopContextValue {
   shop: Shop | null;
   isLoading: boolean;
   saveShop: (input: ShopInput) => Promise<{ error: unknown }>;
+  deleteShop: () => Promise<{ error: unknown }>;
   refresh: () => Promise<void>;
 }
 
@@ -72,7 +73,18 @@ export function ShopProvider({ children }: ShopProviderProps) {
     return { error };
   }
 
-  const value: ShopContextValue = { shop, isLoading, saveShop, refresh: load };
+  // The products.shop_id foreign key cascades, so this takes every listing with it. Callers are
+  // responsible for confirming that with the seller first.
+  async function deleteShop() {
+    if (!shop) return { error: new Error('No shop to close.') };
+
+    const { error } = await supabase.from('shops').delete().eq('id', shop.id);
+
+    if (!error) setShop(null);
+    return { error };
+  }
+
+  const value: ShopContextValue = { shop, isLoading, saveShop, deleteShop, refresh: load };
 
   return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;
 }
