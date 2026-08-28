@@ -14,11 +14,17 @@ export interface ProductInput {
   photos: string[];
 }
 
+export interface StockUpdate {
+  id: string;
+  stock_quantity: number;
+}
+
 export interface ProductsContextValue {
   products: Product[];
   isLoading: boolean;
   createProduct: (input: ProductInput) => Promise<{ error: unknown }>;
   updateProduct: (id: string, input: ProductInput) => Promise<{ error: unknown }>;
+  updateStock: (updates: StockUpdate[]) => Promise<{ error: unknown }>;
   refresh: () => Promise<void>;
 }
 
@@ -106,11 +112,45 @@ export function ProductsProvider({ children }: ProductsProviderProps) {
     }
   }
 
+  // Stock-only writes skip updateProduct so a bulk save never rewrites unrelated columns or
+  // walks the photo upload path for rows whose images have not changed.
+  async function updateStock(updates: StockUpdate[]) {
+    if (updates.length === 0) {
+      return { error: null };
+    }
+
+    const results = await Promise.all(
+      updates.map(({ id, stock_quantity }) =>
+        supabase.from('products').update({ stock_quantity }).eq('id', id)
+      )
+    );
+
+    const failed = results.find((result) => result.error);
+
+    if (failed?.error) {
+      await load();
+      return { error: failed.error };
+    }
+
+    const byId = new Map(updates.map((update) => [update.id, update.stock_quantity]));
+
+    setProducts((current) =>
+      current.map((product) =>
+        byId.has(product.id)
+          ? { ...product, stock_quantity: byId.get(product.id)! }
+          : product
+      )
+    );
+
+    return { error: null };
+  }
+
   const value: ProductsContextValue = {
     products,
     isLoading,
     createProduct,
     updateProduct,
+    updateStock,
     refresh: load,
   };
 
