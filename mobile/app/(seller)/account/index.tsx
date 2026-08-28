@@ -12,7 +12,6 @@ import { Card } from '@/components/ui/Card';
 import { FormError } from '@/components/ui/FormError';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { SuccessBanner } from '@/components/ui/SuccessBanner';
-import { useProducts } from '@/hooks/useProducts';
 import { useProfile } from '@/hooks/useProfile';
 import { useShop } from '@/hooks/useShop';
 import { useAuth } from '@/lib/AuthProvider';
@@ -31,7 +30,6 @@ export default function SellerAccountScreen() {
   const { session } = useAuth();
   const { profile, refresh } = useProfile();
   const { shop, saveShop } = useShop();
-  const { products } = useProducts();
 
   const [resetSent, setResetSent] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
@@ -185,7 +183,6 @@ export default function SellerAccountScreen() {
         {shop ? (
           <StoreDetailsCard
             shop={shop}
-            productCount={products.length}
             onEdit={editStore}
             onTogglePickup={(value) => setFulfilment({ pickup_enabled: value })}
             onToggleDelivery={(value) => setFulfilment({ delivery_enabled: value })}
