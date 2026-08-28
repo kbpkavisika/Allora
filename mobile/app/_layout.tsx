@@ -108,7 +108,7 @@ function RootNavigator() {
             options={{ presentation: 'modal', headerShown: false }}
           />
           <Stack.Screen
-            name="seller/shop-registration"
+            name="seller/store-details"
             options={{ presentation: 'modal', headerShown: false }}
           />
           <Stack.Screen name="seller/store-setup" options={{ headerShown: false }} />

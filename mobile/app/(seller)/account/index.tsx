@@ -68,7 +68,7 @@ export default function SellerAccountScreen() {
             title="Shop settings"
             subtitle="Edit your shop name, description, and contact details"
             showChevron
-            onPress={() => router.push('/seller/shop-registration')}
+            onPress={() => router.push('/seller/store-details')}
             hint="Opens your shop details form"
           />
         </View>
