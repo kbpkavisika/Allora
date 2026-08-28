@@ -15,24 +15,25 @@ export interface Product {
 }
 
 export interface StockStatus {
-  label: string;
+  badgeLabel: string;
+  detailLabel: string;
   variant: BadgeVariant;
 }
 
-const LOW_STOCK_THRESHOLD = 10;
+export const LOW_STOCK_THRESHOLD = 10;
 
 export function getStockStatus(stockQuantity: string | number): StockStatus {
   const quantity = Number(stockQuantity);
 
   if (quantity <= 0) {
-    return { label: 'Sold out', variant: 'neutral' };
+    return { badgeLabel: 'Sold out', detailLabel: 'None left', variant: 'neutral' };
   }
 
   if (quantity <= LOW_STOCK_THRESHOLD) {
-    return { label: `Low stock · ${quantity} left`, variant: 'warning' };
+    return { badgeLabel: 'Low stock', detailLabel: `${quantity} left`, variant: 'warning' };
   }
 
-  return { label: `${quantity} in stock`, variant: 'success' };
+  return { badgeLabel: 'In stock', detailLabel: `${quantity} in stock`, variant: 'success' };
 }
 
 // Form fields are strings; the numeric and integer columns come back as numbers.

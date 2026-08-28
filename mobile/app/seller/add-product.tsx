@@ -444,7 +444,7 @@ function PublishedStep({ values }: { values: ProductDetailsValues }) {
             {values.name}
           </Text>
           <Text className="type-text-secondary text-secondary">{formatPrice(values.price)}</Text>
-          <Badge label={stock.label} variant={stock.variant} />
+          <Badge label={stock.badgeLabel} variant={stock.variant} />
         </View>
       </View>
     </View>

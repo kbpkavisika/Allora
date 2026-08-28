@@ -33,7 +33,7 @@ function ProductCard({ product }: { product: Product }) {
         <Text className="type-text-secondary text-secondary">
           {product.category} · {formatPrice(product.price)}
         </Text>
-        <Badge label={stock.label} variant={stock.variant} />
+        <Badge label={stock.badgeLabel} variant={stock.variant} />
 
         <Button
           variant="secondary"
