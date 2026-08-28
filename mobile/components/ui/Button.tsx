@@ -26,10 +26,14 @@ const CONTAINER: Record<ButtonVariant, string> = {
   link: 'bg-transparent',
 };
 
+// The active: classes here repeat the resting fill rather than changing it — a disabled Pressable
+// never enters a press state. They exist so a button that mounts inert still carries pseudo-class
+// styles: css-interop upgrades View to Pressable only on the initial render, and warns (throwing
+// while it serialises props) if pseudo-classes first appear when a button later becomes enabled.
 const CONTAINER_INERT: Record<ButtonVariant, string> = {
-  primary: 'bg-border',
-  secondary: 'bg-surface border-1.5 border-border',
-  social: 'bg-surface border-1 border-border',
+  primary: 'bg-border active:bg-border',
+  secondary: 'bg-surface border-1.5 border-border active:bg-surface',
+  social: 'bg-surface border-1 border-border active:bg-surface',
   link: 'bg-transparent',
 };
 
@@ -77,7 +81,10 @@ export function Button({
       ? 'min-h-control-field px-6'
       : SIZE[size];
   const width = fullWidth && !isLink ? 'w-full' : 'self-start';
-  const press = !inert && !reduceMotion && variant === 'primary' ? 'active:scale-[0.97]' : '';
+  // Not gated on `inert`: css-interop makes a component animated only on the initial render, and
+  // warns (throwing while it serialises props) if a transform first appears once a button that
+  // mounted disabled becomes enabled. A disabled Pressable never presses, so this stays invisible.
+  const press = !reduceMotion && variant === 'primary' ? 'active:scale-[0.97]' : '';
 
   return (
     <Pressable

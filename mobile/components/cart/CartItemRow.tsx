@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { Text, View } from 'react-native';
 
-import { QuantityStepper } from '@/components/cart/QuantityStepper';
+import { QuantityStepper } from '@/components/ui/QuantityStepper';
 import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
 import type { CartLineItem } from '@/lib/CartProvider';
@@ -20,9 +20,9 @@ export function CartItemRow({ item, onChangeQuantity, onRemove }: CartItemRowPro
     <View className="gap-3 rounded-12 border-1 border-border bg-surface p-3">
       <View className="flex-row gap-3">
         <View className="h-[72px] w-[72px] items-center justify-center overflow-hidden rounded-8 bg-surface-sunken">
-          {product.imageUri ? (
+          {product.photos[0] ? (
             <Image
-              source={{ uri: product.imageUri }}
+              source={{ uri: product.photos[0] }}
               style={{ width: '100%', height: '100%' }}
               contentFit="cover"
             />
