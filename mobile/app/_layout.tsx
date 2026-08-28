@@ -19,6 +19,8 @@ import 'react-native-reanimated';
 import { BrandSplash } from '@/components/BrandSplash';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/lib/AuthProvider';
+import { CartProvider } from '@/lib/CartProvider';
+import { OrdersProvider } from '@/lib/OrdersProvider';
 import { ProductsProvider } from '@/lib/ProductsProvider';
 import { ProfileProvider, useProfile } from '@/lib/ProfileProvider';
 import { ShopProvider, useShop } from '@/lib/ShopProvider';
@@ -40,7 +42,11 @@ export default function RootLayout() {
       <ProfileProvider>
         <ShopProvider>
           <ProductsProvider>
-            <RootNavigator />
+            <OrdersProvider>
+              <CartProvider>
+                <RootNavigator />
+              </CartProvider>
+            </OrdersProvider>
           </ProductsProvider>
         </ShopProvider>
       </ProfileProvider>
@@ -120,6 +126,11 @@ function RootNavigator() {
         </Stack.Protected>
 
         <Stack.Protected guard={showApp}>
+          <Stack.Screen name="product/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="orders/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="orders/[id]/return" options={{ headerShown: false }} />
+          <Stack.Screen name="payment/checkout" options={{ headerShown: false }} />
+          <Stack.Screen name="payment/result" options={{ headerShown: false }} />
           <Stack.Screen
             name="account/edit-profile"
             options={{ presentation: 'modal', headerShown: false }}

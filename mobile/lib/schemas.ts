@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { returnReasons } from '@/lib/orders';
+
 const email = z
   .string()
   .trim()
@@ -53,8 +55,18 @@ export const resetPasswordSchema = z
     path: ['newPassword'],
   });
 
+export const returnRequestSchema = z.object({
+  reason: z.enum(returnReasons, { error: 'Choose what went wrong.' }),
+  details: z
+    .string()
+    .trim()
+    .max(1000, { error: 'Keep the details under 1000 characters.' })
+    .optional(),
+});
+
 export type SignInValues = z.infer<typeof signInSchema>;
 export type SignUpValues = z.infer<typeof signUpSchema>;
 export type ProfileValues = z.infer<typeof profileSchema>;
 export type ShippingAddressValues = z.infer<typeof shippingAddressSchema>;
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
+export type ReturnRequestValues = z.infer<typeof returnRequestSchema>;
