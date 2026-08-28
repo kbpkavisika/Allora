@@ -1,31 +1,70 @@
 import type { BadgeVariant } from '@/components/ui/Badge';
 
-/**
- * Read contract for the seller Orders screen. The `orders` table itself is owned by the
- * buyer-side checkout work, so nothing here creates or writes it — these are the fields the
- * seller screen needs back once that table exists.
- */
-
 export const orderStatuses = ['new', 'processing', 'completed'] as const;
 
 export type OrderStatus = (typeof orderStatuses)[number];
 
-export interface SellerOrderItem {
-  product_id: string;
+export type PaymentMethod = 'payhere' | 'cod';
+export type PaymentStatus = 'pending' | 'paid' | 'failed';
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string | null;
   product_name: string;
-  quantity: number;
+  product_photo: string | null;
   unit_price: number;
+  quantity: number;
 }
 
-export interface SellerOrder {
+export interface Order {
   id: string;
-  shop_id: string;
   order_number: string;
-  buyer_name: string;
+  buyer_id: string;
+  shop_id: string | null;
   status: OrderStatus;
+  payment_method: PaymentMethod | null;
+  payment_status: PaymentStatus;
+  payment_reference: string | null;
+  subtotal: number;
   total: number;
+  ship_name: string | null;
+  ship_line1: string | null;
+  ship_line2: string | null;
+  ship_city: string | null;
+  ship_region: string | null;
+  ship_postal_code: string | null;
+  ship_country: string | null;
+  ship_note: string | null;
   placed_at: string;
-  items: SellerOrderItem[];
+  created_at: string;
+  updated_at: string;
+  items: OrderItem[];
+}
+
+// Kept as aliases so the seller screens that imported the old names keep compiling.
+export type SellerOrder = Order;
+export type SellerOrderItem = OrderItem;
+
+export const returnReasons = ['damaged', 'wrong_item', 'changed_mind', 'other'] as const;
+
+export type ReturnReason = (typeof returnReasons)[number];
+
+export const RETURN_REASONS: readonly { value: ReturnReason; label: string }[] = [
+  { value: 'damaged', label: 'Damaged item' },
+  { value: 'wrong_item', label: 'Wrong item' },
+  { value: 'changed_mind', label: 'Changed my mind' },
+  { value: 'other', label: 'Other' },
+];
+
+export interface OrderReturn {
+  id: string;
+  order_id: string;
+  buyer_id: string;
+  reason: ReturnReason;
+  details: string | null;
+  status: 'open' | 'resolved';
+  created_at: string;
 }
 
 interface StatusPresentation {
@@ -62,15 +101,35 @@ export function nextStatusLabel(status: OrderStatus): string | null {
   return NEXT_ACTION_LABEL[status] ?? null;
 }
 
-export function itemSummary(items: SellerOrderItem[]): string {
+interface TrackingStep {
+  current: number;
+  total: number;
+  label: string;
+}
+
+const TRACKING: Record<OrderStatus, TrackingStep> = {
+  new: { current: 1, total: 3, label: 'Order placed' },
+  processing: { current: 2, total: 3, label: 'Seller preparing your order' },
+  completed: { current: 3, total: 3, label: 'Completed' },
+};
+
+export function trackingStep(status: OrderStatus): TrackingStep {
+  return TRACKING[status];
+}
+
+export function itemSummary(items: OrderItem[]): string {
   const [first, ...rest] = items;
 
   if (!first) {
     return 'No items';
   }
 
-  const line = `${first.product_name} × ${first.quantity}`;
-  return rest.length > 0 ? `${line} and ${rest.length} more` : line;
+  const restCount = rest.reduce((sum, item) => sum + item.quantity, 0);
+  return restCount > 0 ? `${first.product_name} and ${restCount} more` : first.product_name;
+}
+
+export function orderItemCount(items: OrderItem[]): number {
+  return items.reduce((sum, item) => sum + item.quantity, 0);
 }
 
 export function formatPlacedAt(placedAt: string): string {
@@ -85,4 +144,10 @@ export function formatPlacedAt(placedAt: string): string {
   return isToday
     ? 'today'
     : placed.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+export function formatMoney(amount: number): string {
+  const [whole, fraction] = Number(amount).toFixed(2).split('.');
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `$${grouped}.${fraction}`;
 }

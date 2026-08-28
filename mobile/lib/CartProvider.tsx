@@ -1,84 +1,148 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
 
-import { mockSellerProducts, type SellerProduct } from '@/lib/mockProducts';
+import { useAuth } from '@/lib/AuthProvider';
+import { cartItemCount, cartSubtotal, type CartLine } from '@/lib/cart';
+import type { Product } from '@/lib/products';
+import { supabase } from '@/lib/supabase';
 
-export interface CartLineItem {
-  product: SellerProduct;
-  quantity: number;
-}
+export type { CartLine } from '@/lib/cart';
 
 export interface CartContextValue {
-  lineItems: CartLineItem[];
+  lines: CartLine[];
   itemCount: number;
   subtotal: number;
-  addItem: (productId: string, quantity?: number) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
-  removeItem: (productId: string) => void;
+  isLoading: boolean;
+  addItem: (productId: string, quantity?: number) => Promise<{ error: unknown }>;
+  updateQuantity: (productId: string, quantity: number) => Promise<{ error: unknown }>;
+  removeItem: (productId: string) => Promise<{ error: unknown }>;
+  clear: () => Promise<{ error: unknown }>;
+  refresh: () => Promise<void>;
 }
 
 export interface CartProviderProps {
   children: ReactNode;
 }
 
+interface CartItemRow {
+  quantity: number;
+  product: Product | null;
+}
+
 const CartContext = createContext<CartContextValue | null>(null);
 
-// Seeded so the cart is demoable before a buyer product-browse screen exists;
-// remove once add-to-cart is wired up from a real product detail screen.
-const INITIAL_QUANTITIES: Record<string, number> = { '1': 2, '3': 1 };
-
 export function CartProvider({ children }: CartProviderProps) {
-  const [quantities, setQuantities] = useState<Record<string, number>>(INITIAL_QUANTITIES);
+  const { session } = useAuth();
+  const userId = session?.user.id;
 
-  function addItem(productId: string, quantity = 1) {
-    const product = mockSellerProducts.find((item) => item.id === productId);
-    if (!product) {
+  const [lines, setLines] = useState<CartLine[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    if (!userId) {
+      setLines([]);
+      setIsLoading(false);
       return;
     }
-    setQuantities((current) => ({ ...current, [productId]: (current[productId] ?? 0) + quantity }));
-  }
 
-  function updateQuantity(productId: string, quantity: number) {
-    setQuantities((current) => {
-      if (quantity <= 0) {
-        const { [productId]: _removed, ...rest } = current;
-        return rest;
-      }
-      return { ...current, [productId]: quantity };
-    });
-  }
+    setIsLoading(true);
 
-  function removeItem(productId: string) {
-    setQuantities((current) => {
-      const { [productId]: _removed, ...rest } = current;
-      return rest;
-    });
-  }
+    const { data } = await supabase
+      .from('cart_items')
+      .select('quantity, product:products(*)')
+      .eq('user_id', userId)
+      .order('created_at');
 
-  const lineItems = useMemo<CartLineItem[]>(
-    () =>
-      Object.entries(quantities)
-        .map(([productId, quantity]) => {
-          const product = mockSellerProducts.find((item) => item.id === productId);
-          return product ? { product, quantity } : null;
-        })
-        .filter((item): item is CartLineItem => item !== null),
-    [quantities]
+    const rows = (data ?? []) as unknown as CartItemRow[];
+    setLines(
+      rows
+        .filter((row): row is CartItemRow & { product: Product } => row.product !== null)
+        .map((row) => ({ product: row.product, quantity: row.quantity }))
+    );
+    setIsLoading(false);
+  }, [userId]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const addItem = useCallback(
+    async (productId: string, quantity = 1) => {
+      if (!userId) return { error: new Error('Not signed in.') };
+
+      const existing = lines.find((line) => line.product.id === productId);
+      const nextQuantity = (existing?.quantity ?? 0) + quantity;
+
+      const { error } = await supabase
+        .from('cart_items')
+        .upsert(
+          { user_id: userId, product_id: productId, quantity: nextQuantity },
+          { onConflict: 'user_id,product_id' }
+        );
+
+      if (!error) await load();
+      return { error };
+    },
+    [userId, lines, load]
   );
 
-  const itemCount = lineItems.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = lineItems.reduce(
-    (sum, item) => sum + Number(item.product.price) * item.quantity,
-    0
+  const updateQuantity = useCallback(
+    async (productId: string, quantity: number) => {
+      if (!userId) return { error: new Error('Not signed in.') };
+
+      const { error } =
+        quantity <= 0
+          ? await supabase
+              .from('cart_items')
+              .delete()
+              .eq('user_id', userId)
+              .eq('product_id', productId)
+          : await supabase
+              .from('cart_items')
+              .update({ quantity })
+              .eq('user_id', userId)
+              .eq('product_id', productId);
+
+      if (!error) await load();
+      return { error };
+    },
+    [userId, load]
   );
 
-  const value: CartContextValue = {
-    lineItems,
-    itemCount,
-    subtotal,
-    addItem,
-    updateQuantity,
-    removeItem,
-  };
+  const removeItem = useCallback(
+    (productId: string) => updateQuantity(productId, 0),
+    [updateQuantity]
+  );
+
+  const clear = useCallback(async () => {
+    if (!userId) return { error: new Error('Not signed in.') };
+
+    const { error } = await supabase.from('cart_items').delete().eq('user_id', userId);
+    if (!error) setLines([]);
+    return { error };
+  }, [userId]);
+
+  const value = useMemo<CartContextValue>(
+    () => ({
+      lines,
+      itemCount: cartItemCount(lines),
+      subtotal: cartSubtotal(lines),
+      isLoading,
+      addItem,
+      updateQuantity,
+      removeItem,
+      clear,
+      refresh: load,
+    }),
+    [lines, isLoading, addItem, updateQuantity, removeItem, clear, load]
+  );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
