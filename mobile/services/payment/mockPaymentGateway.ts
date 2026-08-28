@@ -8,7 +8,7 @@ export interface MockPaymentGatewayOptions {
   delayMs?: number;
 }
 
-const DEFAULT_RESULT: MockResultState = 'success';
+const DEFAULT_RESULT: MockResultState = 'authentication_required';
 
 export class MockPaymentGateway implements PaymentGateway {
   private readonly result: MockResultState;

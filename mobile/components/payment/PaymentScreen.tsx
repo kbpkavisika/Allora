@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
-import { useState } from 'react';
-import { Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { AccessibilityInfo, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
@@ -20,6 +20,19 @@ export interface PaymentScreenProps {
 export function PaymentScreen({ request, gateway = new MockPaymentGateway() }: PaymentScreenProps) {
   const [state, setState] = useState<PaymentState>('idle');
   const [result, setResult] = useState<PaymentResultData | null>(null);
+
+  useEffect(() => {
+    const announcements: Partial<Record<PaymentState, string>> = {
+      processing: 'Payment is being processed.',
+      authentication_required: 'Payment authentication required. Enter the 6-digit verification code.',
+      pending: 'Payment is still being processed.',
+      success: 'Payment successful.',
+      failed: 'Payment failed.',
+      cancelled: 'Payment cancelled.',
+    };
+    const announcement = announcements[state];
+    if (announcement) AccessibilityInfo.announceForAccessibility(announcement);
+  }, [state]);
 
   async function handleConfirm() {
     setState('processing');
