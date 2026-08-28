@@ -27,7 +27,7 @@ export function ScrollTabs({
       showsHorizontalScrollIndicator={false}
       accessibilityRole="tablist"
       aria-label={label}
-      className={`max-h-control-lg grow-0 border-b-1 border-border bg-surface ${className}`}
+      className={`max-h-control-lg shrink-0 grow-0 border-b-1 border-border bg-surface ${className}`}
       contentContainerStyle={{ paddingHorizontal: 16, gap: 24 }}>
       {tabs.map((tab) => {
         const selected = tab.value === value;
@@ -39,7 +39,7 @@ export function ScrollTabs({
             accessibilityRole="tab"
             aria-selected={selected}
             aria-label={tab.count === undefined ? tab.label : `${tab.label}, ${tab.count}`}
-            className={`h-12 justify-center border-b-3 ${
+            className={`h-12 shrink-0 justify-center border-b-3 ${
               selected ? 'border-accent' : 'border-transparent'
             }`}>
             <Text

@@ -16,7 +16,7 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{ header: () => <Header /> }}
       tabBar={(props) => <BottomTabBar {...props} tabs={BUYER_TABS} />}>
-      <Tabs.Screen name="index" options={{ title: 'Shop' }} />
+      <Tabs.Screen name="index" options={{ title: 'Shop', headerShown: false }} />
       <Tabs.Screen name="cart/index" options={{ title: 'Cart' }} />
       <Tabs.Screen name="saved/index" options={{ title: 'Saved' }} />
       <Tabs.Screen name="orders/index" options={{ title: 'Orders' }} />

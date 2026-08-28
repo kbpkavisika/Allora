@@ -1,11 +1,19 @@
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  FlatList,
+  ScrollView,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Divider } from '@/components/ui/Divider';
 import { Icon } from '@/components/ui/Icon';
 import { Toast } from '@/components/ui/Toast';
 import { TopBar } from '@/components/ui/TopBar';
@@ -69,6 +77,7 @@ export default function ProductDetailScreen() {
 
   const stock = getStockStatus(product.stock_quantity);
   const soldOut = product.stock_quantity <= 0;
+  const hasDescription = product.description.trim().length > 0;
 
   async function handleAdd() {
     if (!product) return;
@@ -85,31 +94,42 @@ export default function ProductDetailScreen() {
       <ScrollView
         contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
         showsVerticalScrollIndicator={false}>
-        <View className="aspect-[4/3] w-full items-center justify-center bg-surface-sunken">
-          {product.photos[0] ? (
-            <Image
-              source={{ uri: product.photos[0] }}
-              style={{ width: '100%', height: '100%' }}
-              contentFit="cover"
-            />
-          ) : (
-            <Icon name="shop" size="lg" className="text-secondary" />
-          )}
-        </View>
+        <PhotoCarousel photos={product.photos} name={product.name} />
 
-        <View className="gap-4 p-4">
+        <View className="gap-5 p-4">
           <View className="gap-2">
             <Text role="heading" className="type-h1 text-primary" maxFontSizeMultiplier={1.5}>
               {product.name}
             </Text>
-            <Text className="type-text-lg text-primary">{formatMoney(product.price)}</Text>
+            <Text className="type-text-lg text-primary" maxFontSizeMultiplier={2}>
+              {formatMoney(product.price)}
+            </Text>
             <View className="flex-row items-center gap-2">
               <Badge label={stock.badgeLabel} variant={stock.variant} />
-              <Text className="type-text-secondary text-secondary">{stock.detailLabel}</Text>
+              <Text
+                className="type-text-secondary text-secondary"
+                maxFontSizeMultiplier={2}>
+                {stock.detailLabel}
+              </Text>
             </View>
           </View>
 
-          <Text className="type-text-primary text-primary">{product.description}</Text>
+          {hasDescription ? (
+            <>
+              <Divider />
+              <View className="gap-2">
+                <Text
+                  role="heading"
+                  className="type-h3 text-primary"
+                  maxFontSizeMultiplier={1.5}>
+                  Description
+                </Text>
+                <Text className="type-text-primary text-primary" maxFontSizeMultiplier={2}>
+                  {product.description}
+                </Text>
+              </View>
+            </>
+          ) : null}
         </View>
       </ScrollView>
 
@@ -135,6 +155,70 @@ export default function ProductDetailScreen() {
         }}
         onDismiss={() => setToast(null)}
       />
+    </View>
+  );
+}
+
+function PhotoCarousel({ photos, name }: { photos: string[]; name: string }) {
+  const { width } = useWindowDimensions();
+  const [index, setIndex] = useState(0);
+  // Explicit square viewport: a horizontal FlatList does not constrain its cross axis, so an
+  // aspect-ratio-only item collapses to no height.
+  const size = width;
+
+  if (photos.length === 0) {
+    return (
+      <View
+        style={{ width, height: size }}
+        className="items-center justify-center bg-surface-sunken">
+        <Icon name="shop" size="lg" className="text-secondary" />
+      </View>
+    );
+  }
+
+  return (
+    <View>
+      <FlatList
+        data={photos}
+        horizontal
+        pagingEnabled
+        style={{ height: size }}
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(uri, i) => `${i}-${uri}`}
+        onMomentumScrollEnd={(event) =>
+          setIndex(Math.round(event.nativeEvent.contentOffset.x / width))
+        }
+        renderItem={({ item, index: i }) => (
+          // contentFit "contain" so the whole photo is visible — seller uploads are not
+          // a fixed aspect ratio, and cropping was hiding parts of the product.
+          <View
+            style={{ width, height: size }}
+            className="items-center justify-center bg-surface-sunken">
+            <Image
+              source={{ uri: item }}
+              style={{ width: '100%', height: '100%' }}
+              contentFit="contain"
+              transition={150}
+              alt={`${name}, photo ${i + 1} of ${photos.length}`}
+            />
+          </View>
+        )}
+      />
+
+      {photos.length > 1 ? (
+        <View
+          className="flex-row items-center justify-center gap-2 py-3"
+          aria-label={`Photo ${index + 1} of ${photos.length}`}>
+          {photos.map((_, i) => (
+            <View
+              key={i}
+              className={`h-1 rounded-full ${
+                i === index ? 'w-[22px] bg-primary' : 'w-2 bg-inert'
+              }`}
+            />
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
