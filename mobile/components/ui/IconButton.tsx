@@ -19,6 +19,15 @@ const SURFACE: Record<NonNullable<IconButtonProps['variant']>, string> = {
   filled: 'bg-surface-sunken',
 };
 
+// Repeats the resting fill rather than changing it — a disabled Pressable never enters a press
+// state. See Button: an inert control still needs pseudo-class styles on the initial render, or
+// css-interop warns (and throws while serialising props) when they appear on becoming enabled.
+const SURFACE_INERT: Record<NonNullable<IconButtonProps['variant']>, string> = {
+  bare: 'bg-transparent active:bg-transparent',
+  outlined: 'border-1 border-border-strong bg-surface active:bg-surface',
+  filled: 'bg-surface-sunken active:bg-surface-sunken',
+};
+
 export function IconButton({
   icon,
   label,
@@ -29,7 +38,9 @@ export function IconButton({
   disabled = false,
   className = '',
 }: IconButtonProps) {
-  const surface = SURFACE[variant];
+  const surface = disabled
+    ? SURFACE_INERT[variant]
+    : `${SURFACE[variant]} active:bg-surface-sunken`;
 
   return (
     <Pressable
@@ -40,9 +51,7 @@ export function IconButton({
       aria-disabled={disabled}
       accessibilityHint={hint}
       hitSlop={diameter === 32 ? 6 : undefined}
-      className={`items-center justify-center rounded-full ${DIAMETER[diameter]} ${surface} ${
-        disabled ? '' : 'active:bg-surface-sunken'
-      } ${className}`}>
+      className={`items-center justify-center rounded-full ${DIAMETER[diameter]} ${surface} ${className}`}>
       {icon}
     </Pressable>
   );
