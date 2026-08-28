@@ -30,3 +30,4 @@ Routing is file-based. Auth state comes from `lib/AuthProvider.tsx`; Supabase ac
 3. **Always validate input** with React Hook Form + Zod. Schemas go in `lib/schemas.ts`.
 4. **Never hardcode colors or text variants.** Use the tokens/variants declared in `constants/theme.ts`. Hardcoding is strictly prohibited.
 5. **No comments.** Write self-describing code. A comment is allowed only when there is a genuine, non-obvious reason for it.
+6. **Never enable row level security.** This project does not turn on RLS on any table. New tables must disable it explicitly (see existing migrations for the pattern).

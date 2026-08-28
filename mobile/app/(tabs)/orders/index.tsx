@@ -1,52 +1,51 @@
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OrderListCard } from '@/components/orders/OrderListCard';
-import { mockOrders } from '@/lib/mockOrders';
+import { ScrollTabs, type ScrollTabItem } from '@/components/ui/ScrollTabs';
+import { useOrders } from '@/lib/OrdersProvider';
 
 type OrderFilter = 'active' | 'past';
 
-function FilterChip({
-  label,
-  selected,
-  onPress,
-}: {
-  label: string;
-  selected: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      role="radio"
-      aria-checked={selected}
-      aria-label={label}
-      className={`min-h-control-md items-center justify-center rounded-8 px-4 ${
-        selected ? 'border-1.5 border-primary bg-surface-sunken' : 'border-1 border-border-strong bg-surface'
-      }`}>
-      <Text className={`type-label ${selected ? 'text-primary' : 'text-secondary'}`}>{label}</Text>
-    </Pressable>
-  );
-}
+const isActive = (status: string) => status === 'new' || status === 'processing';
 
 export default function OrdersScreen() {
   const insets = useSafeAreaInsets();
+  const { orders, isLoading } = useOrders();
   const [filter, setFilter] = useState<OrderFilter>('active');
 
-  const activeCount = mockOrders.filter((order) => order.status !== 'delivered').length;
-  const pastCount = mockOrders.length - activeCount;
+  const activeCount = orders.filter((order) => isActive(order.status)).length;
+  const pastCount = orders.length - activeCount;
 
   const visibleOrders = useMemo(
     () =>
-      mockOrders.filter((order) =>
-        filter === 'active' ? order.status !== 'delivered' : order.status === 'delivered'
+      orders.filter((order) =>
+        filter === 'active' ? isActive(order.status) : !isActive(order.status)
       ),
-    [filter]
+    [orders, filter]
   );
+
+  const tabs: ScrollTabItem[] = [
+    { value: 'active', label: 'Active', count: activeCount },
+    { value: 'past', label: 'Past', count: pastCount },
+  ];
 
   return (
     <View className="flex-1 bg-surface">
+      <View className="px-4 pb-2 pt-4">
+        <Text role="heading" className="type-h1 text-primary" maxFontSizeMultiplier={1.5}>
+          Orders
+        </Text>
+      </View>
+
+      <ScrollTabs
+        tabs={tabs}
+        value={filter}
+        onChange={(next) => setFilter(next as OrderFilter)}
+        label="Filter orders"
+      />
+
       <FlatList
         data={visibleOrders}
         keyExtractor={(item) => item.id}
@@ -56,30 +55,15 @@ export default function OrdersScreen() {
           paddingBottom: insets.bottom + 32,
           gap: 12,
         }}
-        ListHeaderComponent={
-          <View className="mb-6 gap-4">
-            <Text role="heading" className="type-h1 text-primary" maxFontSizeMultiplier={1.5}>
-              Orders
-            </Text>
-            <View className="flex-row gap-2" role="radiogroup" aria-label="Filter orders">
-              <FilterChip
-                label={`Active (${activeCount})`}
-                selected={filter === 'active'}
-                onPress={() => setFilter('active')}
-              />
-              <FilterChip
-                label={`Past (${pastCount})`}
-                selected={filter === 'past'}
-                onPress={() => setFilter('past')}
-              />
-            </View>
-          </View>
-        }
         renderItem={({ item }) => <OrderListCard order={item} />}
         ListEmptyComponent={
-          <Text className="type-text-primary text-secondary">
-            {filter === 'active' ? 'No active orders right now.' : 'No past orders yet.'}
-          </Text>
+          isLoading ? (
+            <ActivityIndicator className="mt-16 text-secondary" />
+          ) : (
+            <Text className="type-text-primary mt-16 text-center text-secondary">
+              {filter === 'active' ? 'No active orders right now.' : 'No past orders yet.'}
+            </Text>
+          )
         }
       />
     </View>

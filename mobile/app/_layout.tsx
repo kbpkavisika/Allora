@@ -19,6 +19,11 @@ import 'react-native-reanimated';
 import { BrandSplash } from '@/components/BrandSplash';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/lib/AuthProvider';
+import { CartProvider } from '@/lib/CartProvider';
+import { OrdersProvider } from '@/lib/OrdersProvider';
+import { ProductsProvider } from '@/lib/ProductsProvider';
+import { ProfileProvider, useProfile } from '@/lib/ProfileProvider';
+import { ShopProvider, useShop } from '@/lib/ShopProvider';
 
 import '../global.css';
 
@@ -34,7 +39,17 @@ if (Constants.executionEnvironment !== ExecutionEnvironment.StoreClient) {
 export default function RootLayout() {
   return (
     <AuthProvider>
-      <RootNavigator />
+      <ProfileProvider>
+        <ShopProvider>
+          <ProductsProvider>
+            <OrdersProvider>
+              <CartProvider>
+                <RootNavigator />
+              </CartProvider>
+            </OrdersProvider>
+          </ProductsProvider>
+        </ShopProvider>
+      </ProfileProvider>
     </AuthProvider>
   );
 }
@@ -42,6 +57,8 @@ export default function RootLayout() {
 function RootNavigator() {
   const colorScheme = useColorScheme();
   const { session, isLoading } = useAuth();
+  const { profile, isLoading: isProfileLoading } = useProfile();
+  const { isLoading: isShopLoading } = useShop();
   const [fontsLoaded] = useFonts({
     Archivo_400Regular,
     Archivo_500Medium,
@@ -55,7 +72,13 @@ function RootNavigator() {
 
   const [minHoldElapsed, setMinHoldElapsed] = useState(false);
 
-  const ready = fontsLoaded && !isLoading;
+  const ready = fontsLoaded && !isLoading && !isProfileLoading && !isShopLoading;
+  // Defaults to "in the app" while the profile is still loading (masked by the splash below)
+  // so exactly one Stack.Protected guard is ever true — never zero, which expo-router can get
+  // stuck on if the current screen falls outside every protected branch at once.
+  const needsOnboarding = !!session && !isProfileLoading && (profile?.role ?? null) === null;
+  const showApp = !!session && !needsOnboarding;
+  const isSeller = profile?.role === 'seller';
 
   useEffect(() => {
     const timer = setTimeout(() => setMinHoldElapsed(true), SPLASH_MIN_MS);
@@ -76,8 +99,38 @@ function RootNavigator() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
-        <Stack.Protected guard={!!session}>
+        <Stack.Protected guard={showApp && !isSeller}>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        </Stack.Protected>
+
+        <Stack.Protected guard={showApp && isSeller}>
+          <Stack.Screen name="(seller)" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="seller/add-product"
+            options={{ presentation: 'modal', headerShown: false }}
+          />
+          <Stack.Screen
+            name="seller/edit-product"
+            options={{ presentation: 'modal', headerShown: false }}
+          />
+          <Stack.Screen
+            name="seller/store-details"
+            options={{ presentation: 'modal', headerShown: false }}
+          />
+          <Stack.Screen name="seller/store-setup" options={{ headerShown: false }} />
+          <Stack.Screen name="seller/orders/[id]" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="seller/quick-stock"
+            options={{ presentation: 'transparentModal', animation: 'fade', headerShown: false }}
+          />
+        </Stack.Protected>
+
+        <Stack.Protected guard={showApp}>
+          <Stack.Screen name="product/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="orders/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="orders/[id]/return" options={{ headerShown: false }} />
+          <Stack.Screen name="payment/checkout" options={{ headerShown: false }} />
+          <Stack.Screen name="payment/result" options={{ headerShown: false }} />
           <Stack.Screen
             name="account/edit-profile"
             options={{ presentation: 'modal', headerShown: false }}
@@ -87,9 +140,17 @@ function RootNavigator() {
             options={{ presentation: 'modal', headerShown: false }}
           />
           <Stack.Screen
+            name="account/accessibility"
+            options={{ presentation: 'modal', headerShown: false }}
+          />
+          <Stack.Screen
             name="account/reset-password"
             options={{ presentation: 'modal', headerShown: false }}
           />
+        </Stack.Protected>
+
+        <Stack.Protected guard={needsOnboarding}>
+          <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         </Stack.Protected>
 
         <Stack.Protected guard={!session}>

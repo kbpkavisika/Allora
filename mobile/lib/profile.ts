@@ -1,3 +1,5 @@
+export type UserRole = 'user' | 'seller';
+
 export interface Profile {
   id: string;
   full_name: string | null;
@@ -7,6 +9,12 @@ export interface Profile {
   preferred_carrier: string;
   leave_at_door_default: boolean;
   two_factor_enabled: boolean;
+  role: UserRole | null;
+  large_text: boolean;
+  high_contrast: boolean;
+  dictation_enabled: boolean;
+  screen_reader_support: boolean;
+  reduce_motion: boolean;
   created_at: string;
 }
 
@@ -26,6 +34,67 @@ export interface Address {
 }
 
 export const CARRIER_OPTIONS = ['Any', 'Standard', 'Express'] as const;
+
+export const PROVINCE_OPTIONS = [
+  'AB',
+  'BC',
+  'MB',
+  'NB',
+  'NL',
+  'NS',
+  'NT',
+  'NU',
+  'ON',
+  'PE',
+  'QC',
+  'SK',
+  'YT',
+] as const;
+
+export const COUNTRY_OPTIONS = ['Canada', 'United States'] as const;
+
+export const ACCESSIBILITY_FEATURES = [
+  {
+    key: 'large_text',
+    title: 'Large text',
+    description: 'Scales every label and price up one step.',
+  },
+  {
+    key: 'high_contrast',
+    title: 'High contrast',
+    description: 'Stronger borders and darker body text.',
+  },
+  {
+    key: 'dictation_enabled',
+    title: 'Dictation',
+    description: 'Speak into any field instead of typing.',
+  },
+  {
+    key: 'screen_reader_support',
+    title: 'Screen reader support',
+    description: 'Extra spoken labels and reading order cues.',
+  },
+  {
+    key: 'reduce_motion',
+    title: 'Reduce motion',
+    description: 'Removes sliding and fading transitions.',
+  },
+] as const satisfies readonly { key: keyof Profile; title: string; description: string }[];
+
+export function enabledAccessibilityFeatures(profile: Profile): string {
+  const on = ACCESSIBILITY_FEATURES.filter((feature) => profile[feature.key]).map(
+    (feature) => feature.title
+  );
+  return on.length > 0 ? on.join(', ') : 'None yet';
+}
+
+export function formatAddressLines(address: Address): string[] {
+  return [
+    [address.line1, address.line2].filter(Boolean).join(', '),
+    `${address.city}, ${address.region} ${address.postal_code}`,
+    address.country,
+  ];
+}
 
 export function initials(name: string | null, email: string | null | undefined): string {
   const trimmed = name?.trim();

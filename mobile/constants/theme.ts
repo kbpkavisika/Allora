@@ -4,7 +4,7 @@
  * hex values or font specs elsewhere — use these tokens instead.
  */
 
-import type { TextStyle } from 'react-native';
+import type { TextStyle, ViewStyle } from 'react-native';
 
 export type ColorScheme = 'light' | 'dark';
 
@@ -16,6 +16,9 @@ const palette = {
     disabled: '#9BA0A5',
     border: '#E4E6E8',
     'border-strong': '#8C9297',
+    // design.md uses #C9CDD1 for inert furniture §01 never names: the sheet grabber,
+    // inactive carousel dots, and disabled chip / sold-out cell text.
+    inert: '#C9CDD1',
     surface: '#FFFFFF',
     'surface-muted': '#F7F8F8',
     'surface-sunken': '#F1F2F3',
@@ -25,6 +28,7 @@ const palette = {
     info: '#2F6BD8',
     'info-track': '#B9CDF2',
     'info-tint': '#EDF2FC',
+    'info-tint-border': '#DDE6F8',
     success: '#197A4B',
     'success-tint': '#E8F3EC',
     warning: '#8A5300',
@@ -39,6 +43,7 @@ const palette = {
     disabled: '#5C6165',
     border: '#2A2B2D',
     'border-strong': '#72777C',
+    inert: '#4A4E52',
     surface: '#101112',
     'surface-muted': '#1C1D1E',
     'surface-sunken': '#252627',
@@ -48,6 +53,7 @@ const palette = {
     info: '#2F6BD8',
     'info-track': '#24406E',
     'info-tint': '#16233B',
+    'info-tint-border': '#223655',
     success: '#22A566',
     'success-tint': '#12261C',
     warning: '#C97F1D',
@@ -101,7 +107,39 @@ export const ControlSize = {
   sm: 36,
   tap: 44,
   glyph: 32,
+  field: 54,
 } as const;
+
+export const Elevation = {
+  e1: {
+    shadowColor: palette.light.primary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  e2: {
+    shadowColor: palette.light.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  e3: {
+    shadowColor: palette.light.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.1,
+    shadowRadius: 24,
+    elevation: 8,
+  },
+  e4: {
+    shadowColor: palette.light.primary,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.16,
+    shadowRadius: 40,
+    elevation: 16,
+  },
+} as const satisfies Record<string, ViewStyle>;
 
 export const Fonts = {
   archivo: {
@@ -122,10 +160,10 @@ type TypographySpec = Omit<TextStyle, 'color'> & { colorToken: ColorToken };
 
 export const typographySpecs = {
   splash: {
-    fontFamily: Fonts.archivo.black,
-    fontSize: 60,
-    lineHeight: 64,
-    letterSpacing: -0.03 * 60,
+    fontFamily: Fonts.archivo.extraBold,
+    fontSize: 56,
+    lineHeight: 56,
+    letterSpacing: -0.03 * 56,
     colorToken: 'primary',
   },
   display: {
@@ -161,6 +199,20 @@ export const typographySpecs = {
     lineHeight: 24,
     letterSpacing: -0.01 * 18,
     colorToken: 'primary',
+  },
+  // design.md §07: top bar titles are 17/600, a ramp §02 does not otherwise list.
+  title: {
+    fontFamily: Fonts.archivo.semiBold,
+    fontSize: 17,
+    lineHeight: 24,
+    colorToken: 'primary',
+  },
+  // design.md §07: inactive scroll tabs are 17/500 in `secondary`.
+  'title-muted': {
+    fontFamily: Fonts.archivo.medium,
+    fontSize: 17,
+    lineHeight: 24,
+    colorToken: 'secondary',
   },
   'text-lg': {
     fontFamily: Fonts.archivo.regular,

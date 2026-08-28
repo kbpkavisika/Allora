@@ -2,9 +2,12 @@ import { Pressable, Text, View } from 'react-native';
 
 import { Icon, type IconName } from '@/components/ui/Icon';
 
+export type ListRowValueVariant = 'text' | 'mono';
+
 export interface ListRowProps {
   label?: string;
   value?: string;
+  valueVariant?: ListRowValueVariant;
   icon?: IconName;
   title?: string;
   subtitle?: string;
@@ -15,9 +18,15 @@ export interface ListRowProps {
   className?: string;
 }
 
+const VALUE_TYPE: Record<ListRowValueVariant, string> = {
+  text: 'type-text-primary',
+  mono: 'type-mono',
+};
+
 export function ListRow({
   label,
   value,
+  valueVariant = 'text',
   icon,
   title,
   subtitle,
@@ -50,9 +59,11 @@ export function ListRow({
           </View>
         ) : (
           <>
-            <Text className="type-text-primary shrink-0 text-secondary">{label}</Text>
+            <Text className="type-label-lg shrink-0 text-secondary">{label}</Text>
             {value ? (
-              <Text className="type-text-primary flex-1 text-right text-primary" numberOfLines={1}>
+              <Text
+                className={`${VALUE_TYPE[valueVariant]} flex-1 text-right text-primary`}
+                numberOfLines={1}>
                 {value}
               </Text>
             ) : null}
