@@ -6,7 +6,7 @@ import type { Address } from '@/lib/profile';
 export type PaymentOutcomeStatus = 'completed' | 'failed' | 'cancelled';
 
 export interface PayHereCheckoutInput {
-  orderId: string;
+  orderId?: string;
   amountLkr: number;
   lines: CartLine[];
   customer: {
@@ -38,11 +38,12 @@ export async function startPayHereCheckout({
 }: PayHereCheckoutInput): Promise<PaymentOutcome> {
   const merchantId = process.env.EXPO_PUBLIC_PAYHERE_MERCHANT_ID;
   const notifyUrl = process.env.EXPO_PUBLIC_PAYHERE_NOTIFY_URL;
+  const resolvedOrderId = orderId ?? `CART-${Date.now()}`;
 
   if (!merchantId || !notifyUrl) {
     return {
       status: 'failed',
-      orderId,
+      orderId: resolvedOrderId,
       error: 'PayHere is not configured. Please try again later.',
     };
   }
@@ -53,7 +54,7 @@ export async function startPayHereCheckout({
         sandbox: true,
         merchant_id: merchantId,
         notify_url: notifyUrl,
-        order_id: orderId,
+        order_id: resolvedOrderId,
         items: buildItemsDescription(lines),
         amount: amountLkr.toFixed(2),
         currency: 'LKR',
@@ -89,23 +90,23 @@ export async function startPayHereCheckout({
         paymentObject,
         (paymentId: string) => {
           console.log('[PayHere] completed', { paymentIdPresent: Boolean(paymentId) });
-          resolve({ status: 'completed', orderId, paymentId });
+          resolve({ status: 'completed', orderId: resolvedOrderId, paymentId });
         },
         (error: unknown) => {
           console.error('[PayHere] error', error);
           resolve({
             status: 'failed',
-            orderId,
+            orderId: resolvedOrderId,
             error: typeof error === 'string' ? error : 'PayHere payment failed.',
           });
         },
         () => {
           console.log('[PayHere] dismissed');
-          resolve({ status: 'cancelled', orderId });
+          resolve({ status: 'cancelled', orderId: resolvedOrderId });
         }
       );
     } catch {
-      resolve({ status: 'failed', orderId, error: 'Could not start PayHere payment.' });
+      resolve({ status: 'failed', orderId: resolvedOrderId, error: 'Could not start PayHere payment.' });
     }
   });
 }
