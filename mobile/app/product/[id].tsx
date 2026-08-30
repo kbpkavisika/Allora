@@ -1,6 +1,7 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -11,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ReviewSummaryRow } from '@/components/reviews/ReviewSummaryRow';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Divider } from '@/components/ui/Divider';
@@ -20,6 +22,7 @@ import { TopBar } from '@/components/ui/TopBar';
 import { useCart } from '@/lib/CartProvider';
 import { formatMoney } from '@/lib/orders';
 import { getStockStatus, type Product } from '@/lib/products';
+import { fetchRatingSummary, summarizeReviews, type RatingSummary } from '@/lib/reviews';
 import { supabase } from '@/lib/supabase';
 
 export default function ProductDetailScreen() {
@@ -31,6 +34,7 @@ export default function ProductDetailScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [reviewSummary, setReviewSummary] = useState<RatingSummary>(() => summarizeReviews([]));
 
   useEffect(() => {
     if (!id) return;
@@ -44,6 +48,14 @@ export default function ProductDetailScreen() {
         setIsLoading(false);
       });
   }, [id]);
+
+  // Refreshed on focus so a review posted from the reviews screen shows up on the way back.
+  useFocusEffect(
+    useCallback(() => {
+      if (!id) return;
+      fetchRatingSummary(id).then(setReviewSummary);
+    }, [id])
+  );
 
   if (isLoading) {
     return (
@@ -130,6 +142,15 @@ export default function ProductDetailScreen() {
               </View>
             </>
           ) : null}
+
+          <Divider />
+
+          <ReviewSummaryRow
+            summary={reviewSummary}
+            onPress={() =>
+              router.push({ pathname: '/product/[id]/reviews', params: { id: product.id } })
+            }
+          />
         </View>
       </ScrollView>
 

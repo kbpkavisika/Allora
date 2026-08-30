@@ -127,6 +127,11 @@ function RootNavigator() {
 
         <Stack.Protected guard={showApp}>
           <Stack.Screen name="product/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="product/[id]/reviews" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="product/[id]/write-review"
+            options={{ presentation: 'modal', headerShown: false }}
+          />
           <Stack.Screen name="orders/[id]" options={{ headerShown: false }} />
           <Stack.Screen name="orders/[id]/return" options={{ headerShown: false }} />
           <Stack.Screen name="payment/checkout" options={{ headerShown: false }} />

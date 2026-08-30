@@ -64,9 +64,29 @@ export const returnRequestSchema = z.object({
     .optional(),
 });
 
+export const reviewSchema = z.object({
+  rating: z
+    .number()
+    .int()
+    .min(1, { error: 'Choose a star rating.' })
+    .max(5, { error: 'Choose a star rating.' }),
+  headline: z
+    .string()
+    .trim()
+    .min(3, { error: 'Give your review a short headline.' })
+    .max(80, { error: 'Keep the headline under 80 characters.' }),
+  body: z
+    .string()
+    .trim()
+    .min(10, { error: 'Tell us a little more about the product.' })
+    .max(1000, { error: 'Keep your review under 1000 characters.' }),
+  photos: z.array(z.string()).max(6, { error: 'Add up to 6 photos.' }),
+});
+
 export type SignInValues = z.infer<typeof signInSchema>;
 export type SignUpValues = z.infer<typeof signUpSchema>;
 export type ProfileValues = z.infer<typeof profileSchema>;
 export type ShippingAddressValues = z.infer<typeof shippingAddressSchema>;
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
 export type ReturnRequestValues = z.infer<typeof returnRequestSchema>;
+export type ReviewValues = z.infer<typeof reviewSchema>;
