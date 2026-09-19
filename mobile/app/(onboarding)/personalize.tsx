@@ -8,36 +8,10 @@ import { FormError } from '@/components/ui/FormError';
 import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { useProfile } from '@/hooks/useProfile';
+import { ACCESSIBILITY_FEATURES } from '@/lib/profile';
 
-const PREFERENCES = [
-  {
-    key: 'large_text',
-    title: 'Large text',
-    description: 'Scales every label and price up one step.',
-  },
-  {
-    key: 'high_contrast',
-    title: 'High contrast',
-    description: 'Stronger borders and darker body text.',
-  },
-  {
-    key: 'dictation_enabled',
-    title: 'Dictation',
-    description: 'Speak into any field instead of typing.',
-  },
-  {
-    key: 'screen_reader_support',
-    title: 'Screen reader support',
-    description: 'Extra spoken labels and reading order cues.',
-  },
-  {
-    key: 'reduce_motion',
-    title: 'Reduce motion',
-    description: 'Removes sliding and fading transitions.',
-  },
-] as const;
 
-type PreferenceKey = (typeof PREFERENCES)[number]['key'];
+type PreferenceKey = (typeof ACCESSIBILITY_FEATURES)[number]['key'];
 
 const ROLE_SELECT_ROUTE = '/(onboarding)/role-select' as const;
 
@@ -83,7 +57,7 @@ export default function PersonalizeScreen() {
       />
 
       <View className="gap-0.5">
-        {PREFERENCES.map((preference) => (
+        {ACCESSIBILITY_FEATURES.map((preference) => (
           <PreferenceRow
             key={preference.key}
             title={preference.title}
