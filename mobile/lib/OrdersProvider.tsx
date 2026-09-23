@@ -88,7 +88,7 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
 
     const query = supabase
       .from('orders')
-      .select('*, items:order_items(*)')
+      .select('*, items:order_items(*), delivery:deliveries(*)')
       .order('placed_at', { ascending: false });
 
     const { data } = isSeller
@@ -164,7 +164,7 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
           return { orders: created, error: itemsError };
         }
 
-        created.push({ ...(order as unknown as Order), items: [] });
+        created.push({ ...(order as unknown as Order), items: [], delivery: null });
       }
 
       await load();
