@@ -10,6 +10,7 @@ import {
 
 import { useAuth } from '@/lib/AuthProvider';
 import type { CartLine } from '@/lib/cart';
+import type { Delivery, DeliveryStatus } from '@/lib/deliveries';
 import {
   nextStatus,
   type Order,
@@ -30,6 +31,13 @@ export interface PlaceOrderInput {
   address: Address | null;
 }
 
+export interface DeliveryInput {
+  orderId: string;
+  status: DeliveryStatus;
+  courierName: string;
+  trackingNumber: string;
+}
+
 export interface ReturnInput {
   orderId: string;
   reason: ReturnReason;
@@ -42,6 +50,7 @@ export interface OrdersContextValue {
   getOrder: (id: string) => Order | undefined;
   placeOrder: (input: PlaceOrderInput) => Promise<{ orders: Order[]; error: unknown }>;
   advanceStatus: (orderId: string) => Promise<{ error: unknown }>;
+  updateDelivery: (input: DeliveryInput) => Promise<{ error: unknown }>;
   submitReturn: (input: ReturnInput) => Promise<{ error: unknown }>;
   refresh: () => Promise<void>;
 }
@@ -196,6 +205,35 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
     [orders]
   );
 
+  const updateDelivery = useCallback(
+    async ({ orderId, status, courierName, trackingNumber }: DeliveryInput) => {
+      const { data, error } = await supabase
+        .from('deliveries')
+        .update({
+          status,
+          courier_name: courierName,
+          tracking_number: trackingNumber,
+          delivered_at: status === 'delivered' ? new Date().toISOString() : null,
+        })
+        .eq('order_id', orderId)
+        .select()
+        .single();
+
+      if (!error && data) {
+        setOrders((current) =>
+          current.map((item) =>
+            item.id === orderId
+              ? { ...item, delivery: data as unknown as Delivery }
+              : item
+          )
+        );
+      }
+
+      return { error };
+    },
+    []
+  );
+
   const submitReturn = useCallback(
     async ({ orderId, reason, details }: ReturnInput) => {
       if (!userId) return { error: new Error('Not signed in.') };
@@ -219,10 +257,20 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
       getOrder,
       placeOrder,
       advanceStatus,
+      updateDelivery,
       submitReturn,
       refresh: load,
     }),
-    [orders, isLoading, getOrder, placeOrder, advanceStatus, submitReturn, load]
+    [
+      orders,
+      isLoading,
+      getOrder,
+      placeOrder,
+      advanceStatus,
+      updateDelivery,
+      submitReturn,
+      load,
+    ]
   );
 
   return <OrdersContext.Provider value={value}>{children}</OrdersContext.Provider>;

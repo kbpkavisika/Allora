@@ -1,9 +1,10 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Modal, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DeliverySummary } from '@/components/orders/DeliverySummary';
+import { DeliveryUpdateSheet } from '@/components/seller/DeliveryUpdateSheet';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { SectionHeader } from '@/components/ui/SectionHeader';
@@ -23,6 +24,7 @@ export default function SellerOrderDetailScreen() {
 
   const order = id ? getOrder(id) : undefined;
   const [isAdvancing, setIsAdvancing] = useState(false);
+  const [isDeliveryOpen, setIsDeliveryOpen] = useState(false);
 
   if (!order) {
     return (
@@ -105,7 +107,10 @@ export default function SellerOrderDetailScreen() {
           </View>
         </View>
 
-        <DeliverySummary delivery={order.delivery} />
+        <DeliverySummary
+          delivery={order.delivery}
+          onEdit={() => setIsDeliveryOpen(true)}
+        />
 
         {advanceLabel ? (
           <Button label={advanceLabel} loading={isAdvancing} onPress={advance} />
@@ -115,6 +120,18 @@ export default function SellerOrderDetailScreen() {
           </Text>
         )}
       </ScrollView>
+
+      <Modal
+        visible={isDeliveryOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsDeliveryOpen(false)}>
+        <DeliveryUpdateSheet
+          orderId={order.id}
+          delivery={order.delivery}
+          onDismiss={() => setIsDeliveryOpen(false)}
+        />
+      </Modal>
     </View>
   );
 }

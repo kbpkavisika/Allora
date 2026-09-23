@@ -32,6 +32,12 @@ export function deliveryStatusPresentation(status: DeliveryStatus): DeliveryPres
   return STATUS[status];
 }
 
+export const deliveryStatusLabels = deliveryStatuses.map((status) => STATUS[status].label);
+
+export function deliveryStatusFromLabel(label: string): DeliveryStatus {
+  return deliveryStatuses.find((status) => STATUS[status].label === label) ?? 'pending';
+}
+
 export function formatDeliveryDate(value: string): string {
   return new Date(value).toLocaleDateString('en-US', {
     day: 'numeric',

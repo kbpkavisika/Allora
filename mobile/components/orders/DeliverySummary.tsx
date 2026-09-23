@@ -1,6 +1,7 @@
 import { Text, View } from 'react-native';
 
 import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import {
   deliveryStatusPresentation,
@@ -10,9 +11,10 @@ import {
 
 export interface DeliverySummaryProps {
   delivery: Delivery | null;
+  onEdit?: () => void;
 }
 
-export function DeliverySummary({ delivery }: DeliverySummaryProps) {
+export function DeliverySummary({ delivery, onEdit }: DeliverySummaryProps) {
   const presentation = deliveryStatusPresentation(delivery?.status ?? 'pending');
 
   const rows = [
@@ -45,6 +47,10 @@ export function DeliverySummary({ delivery }: DeliverySummaryProps) {
         <Text className="type-text-secondary text-secondary">
           {caption ?? 'Delivery details will appear here once the order is dispatched.'}
         </Text>
+
+        {onEdit ? (
+          <Button variant="secondary" size="sm" label="Update delivery" onPress={onEdit} />
+        ) : null}
       </View>
     </View>
   );
