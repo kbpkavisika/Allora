@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 
 import { Icon } from '@/components/ui/Icon';
+import { deliveryCaption } from '@/lib/deliveries';
 import {
   formatPlacedAt,
   itemSummary,
@@ -18,8 +19,10 @@ export interface OrderListCardProps {
 export function OrderListCard({ order }: OrderListCardProps) {
   const status = statusPresentation(order.status);
   const cover = order.items[0]?.product_photo;
-  const caption =
-    order.status === 'new'
+  const delivery = deliveryCaption(order.delivery);
+  const caption = delivery
+    ? `${status.label} · ${delivery}`
+    : order.status === 'new'
       ? `${status.label} · Order placed ${formatPlacedAt(order.placed_at)}`
       : `${status.label} · ${trackingStep(order.status).label}`;
 

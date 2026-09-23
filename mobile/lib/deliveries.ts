@@ -38,6 +38,14 @@ export function deliveryStatusFromLabel(label: string): DeliveryStatus {
   return deliveryStatuses.find((status) => STATUS[status].label === label) ?? 'pending';
 }
 
+export function deliveryCaption(delivery: Delivery | null): string | null {
+  if (!delivery || delivery.status === 'pending') {
+    return null;
+  }
+
+  return STATUS[delivery.status].label;
+}
+
 export function formatDeliveryDate(value: string): string {
   return new Date(value).toLocaleDateString('en-US', {
     day: 'numeric',

@@ -2,6 +2,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
+import { deliveryCaption } from '@/lib/deliveries';
 import {
   formatPlacedAt,
   itemSummary,
@@ -25,6 +26,7 @@ export function SellerOrderCard({
 }: SellerOrderCardProps) {
   const status = statusPresentation(order.status);
   const advanceLabel = nextStatusLabel(order.status);
+  const delivery = deliveryCaption(order.delivery);
 
   return (
     <View className="gap-3 rounded-12 border-1 border-border bg-surface p-3">
@@ -55,7 +57,7 @@ export function SellerOrderCard({
           <View className="flex-row items-center gap-2">
             <View className={`h-2 w-2 rounded-full ${status.tone}`} />
             <Text className="type-text-secondary text-secondary" numberOfLines={1}>
-              {status.label} · {formatPlacedAt(order.placed_at)}
+              {status.label} · {delivery ?? formatPlacedAt(order.placed_at)}
             </Text>
           </View>
         </View>
