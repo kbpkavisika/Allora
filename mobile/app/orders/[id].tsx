@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { DeliverySummary } from '@/components/orders/DeliverySummary';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Callout } from '@/components/ui/Callout';
@@ -81,6 +82,8 @@ export default function OrderDetailScreen() {
             Step {step.current} of {step.total} · {step.label}
           </Text>
         </View>
+
+        <DeliverySummary delivery={order.delivery} />
 
         <View className="gap-4">
           <SectionHeader title="Items" />

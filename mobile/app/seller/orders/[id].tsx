@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { DeliverySummary } from '@/components/orders/DeliverySummary';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { SectionHeader } from '@/components/ui/SectionHeader';
@@ -103,6 +104,8 @@ export default function SellerOrderDetailScreen() {
             <Text className="type-label-lg text-primary">{formatMoney(itemsTotal)}</Text>
           </View>
         </View>
+
+        <DeliverySummary delivery={order.delivery} />
 
         {advanceLabel ? (
           <Button label={advanceLabel} loading={isAdvancing} onPress={advance} />
