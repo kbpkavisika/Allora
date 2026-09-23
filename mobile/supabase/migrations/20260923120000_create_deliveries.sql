@@ -5,7 +5,7 @@ create table public.deliveries (
   id uuid primary key default gen_random_uuid(),
   order_id uuid not null unique references public.orders (id) on delete cascade,
   status text not null default 'pending'
-    check (status in ('pending', 'in_transit', 'delivered', 'failed')),
+    check (status in ('pending', 'packed', 'shipped', 'delivered', 'failed')),
   courier_name text,
   tracking_number text,
   estimated_at timestamptz,
