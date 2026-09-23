@@ -85,22 +85,6 @@ export function statusPresentation(status: OrderStatus): StatusPresentation {
   return STATUS[status];
 }
 
-interface TrackingStep {
-  current: number;
-  total: number;
-  label: string;
-}
-
-const TRACKING: Record<OrderStatus, TrackingStep> = {
-  new: { current: 1, total: 3, label: 'Order placed' },
-  processing: { current: 2, total: 3, label: 'Seller preparing your order' },
-  completed: { current: 3, total: 3, label: 'Completed' },
-};
-
-export function trackingStep(status: OrderStatus): TrackingStep {
-  return TRACKING[status];
-}
-
 export function itemSummary(items: OrderItem[]): string {
   const [first, ...rest] = items;
 

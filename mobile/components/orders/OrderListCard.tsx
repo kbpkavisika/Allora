@@ -4,13 +4,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { Icon } from '@/components/ui/Icon';
 import { deliveryCaption } from '@/lib/deliveries';
-import {
-  formatPlacedAt,
-  itemSummary,
-  statusPresentation,
-  trackingStep,
-  type Order,
-} from '@/lib/orders';
+import { formatPlacedAt, itemSummary, statusPresentation, type Order } from '@/lib/orders';
 
 export interface OrderListCardProps {
   order: Order;
@@ -20,11 +14,9 @@ export function OrderListCard({ order }: OrderListCardProps) {
   const status = statusPresentation(order.status);
   const cover = order.items[0]?.product_photo;
   const delivery = deliveryCaption(order.delivery);
-  const caption = delivery
-    ? `${status.label} · ${delivery}`
-    : order.status === 'new'
-      ? `${status.label} · Order placed ${formatPlacedAt(order.placed_at)}`
-      : `${status.label} · ${trackingStep(order.status).label}`;
+  const caption = `${status.label} · ${
+    delivery ?? `Order placed ${formatPlacedAt(order.placed_at)}`
+  }`;
 
   return (
     <Pressable

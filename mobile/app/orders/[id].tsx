@@ -10,12 +10,8 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { StepProgress } from '@/components/ui/StepProgress';
 import { SuccessBanner } from '@/components/ui/SuccessBanner';
 import { TopBar } from '@/components/ui/TopBar';
-import {
-  formatMoney,
-  statusPresentation,
-  trackingStep,
-  type OrderItem,
-} from '@/lib/orders';
+import { deliveryTrackingStep } from '@/lib/deliveries';
+import { formatMoney, statusPresentation, type OrderItem } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 
 export default function OrderDetailScreen() {
@@ -47,7 +43,7 @@ export default function OrderDetailScreen() {
   }
 
   const presentation = statusPresentation(order.status);
-  const step = trackingStep(order.status);
+  const step = deliveryTrackingStep(order.delivery);
   const total = order.items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
 
   return (

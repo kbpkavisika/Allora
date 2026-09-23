@@ -65,6 +65,24 @@ export function deliveryStatusFromLabel(label: string): DeliveryStatus {
   return deliveryStatuses.find((status) => STATUS[status].label === label) ?? 'pending';
 }
 
+interface DeliveryTrackingStep {
+  current: number;
+  total: number;
+  label: string;
+}
+
+const TRACKING: Record<DeliveryStatus, DeliveryTrackingStep> = {
+  pending: { current: 1, total: 4, label: 'Order placed' },
+  packed: { current: 2, total: 4, label: 'Packed by the seller' },
+  shipped: { current: 3, total: 4, label: 'On the way to you' },
+  delivered: { current: 4, total: 4, label: 'Delivered' },
+  failed: { current: 3, total: 4, label: 'Delivery could not be completed' },
+};
+
+export function deliveryTrackingStep(delivery: Delivery | null): DeliveryTrackingStep {
+  return TRACKING[delivery?.status ?? 'pending'];
+}
+
 export function deliveryCaption(delivery: Delivery | null): string | null {
   if (!delivery || delivery.status === 'pending') {
     return null;
