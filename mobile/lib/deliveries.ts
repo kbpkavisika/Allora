@@ -41,6 +41,26 @@ export function deliveryStatusPresentation(status: DeliveryStatus): DeliveryPres
 
 export const deliveryStatusLabels = deliveryStatuses.map((status) => STATUS[status].label);
 
+const NEXT_STATUS: Partial<Record<DeliveryStatus, DeliveryStatus>> = {
+  pending: 'packed',
+  packed: 'shipped',
+  shipped: 'delivered',
+};
+
+const NEXT_ACTION_LABEL: Partial<Record<DeliveryStatus, string>> = {
+  pending: 'Mark as packed',
+  packed: 'Mark as shipped',
+  shipped: 'Mark as delivered',
+};
+
+export function nextDeliveryStatus(status: DeliveryStatus): DeliveryStatus | null {
+  return NEXT_STATUS[status] ?? null;
+}
+
+export function nextDeliveryStatusLabel(status: DeliveryStatus): string | null {
+  return NEXT_ACTION_LABEL[status] ?? null;
+}
+
 export function deliveryStatusFromLabel(label: string): DeliveryStatus {
   return deliveryStatuses.find((status) => STATUS[status].label === label) ?? 'pending';
 }

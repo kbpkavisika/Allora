@@ -10,7 +10,11 @@ import {
 
 import { useAuth } from '@/lib/AuthProvider';
 import type { CartLine } from '@/lib/cart';
-import type { Delivery, DeliveryStatus } from '@/lib/deliveries';
+import {
+  nextDeliveryStatus,
+  type Delivery,
+  type DeliveryStatus,
+} from '@/lib/deliveries';
 import {
   nextStatus,
   type Order,
@@ -51,6 +55,7 @@ export interface OrdersContextValue {
   placeOrder: (input: PlaceOrderInput) => Promise<{ orders: Order[]; error: unknown }>;
   advanceStatus: (orderId: string) => Promise<{ error: unknown }>;
   updateDelivery: (input: DeliveryInput) => Promise<{ error: unknown }>;
+  advanceDelivery: (orderId: string) => Promise<{ error: unknown }>;
   submitReturn: (input: ReturnInput) => Promise<{ error: unknown }>;
   refresh: () => Promise<void>;
 }
@@ -60,6 +65,10 @@ export interface OrdersProviderProps {
 }
 
 const OrdersContext = createContext<OrdersContextValue | null>(null);
+
+function withDelivery(orders: Order[], orderId: string, delivery: Delivery): Order[] {
+  return orders.map((order) => (order.id === orderId ? { ...order, delivery } : order));
+}
 
 function addressSnapshot(address: Address | null, name: string | null) {
   return {
@@ -220,18 +229,39 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
         .single();
 
       if (!error && data) {
-        setOrders((current) =>
-          current.map((item) =>
-            item.id === orderId
-              ? { ...item, delivery: data as unknown as Delivery }
-              : item
-          )
-        );
+        setOrders((current) => withDelivery(current, orderId, data as unknown as Delivery));
       }
 
       return { error };
     },
     []
+  );
+
+  const advanceDelivery = useCallback(
+    async (orderId: string) => {
+      const order = orders.find((item) => item.id === orderId);
+      if (!order) return { error: new Error('Order not found.') };
+
+      const next = nextDeliveryStatus(order.delivery?.status ?? 'pending');
+      if (!next) return { error: null };
+
+      const { data, error } = await supabase
+        .from('deliveries')
+        .update({
+          status: next,
+          delivered_at: next === 'delivered' ? new Date().toISOString() : null,
+        })
+        .eq('order_id', orderId)
+        .select()
+        .single();
+
+      if (!error && data) {
+        setOrders((current) => withDelivery(current, orderId, data as unknown as Delivery));
+      }
+
+      return { error };
+    },
+    [orders]
   );
 
   const submitReturn = useCallback(
@@ -258,6 +288,7 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
       placeOrder,
       advanceStatus,
       updateDelivery,
+      advanceDelivery,
       submitReturn,
       refresh: load,
     }),
@@ -268,6 +299,7 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
       placeOrder,
       advanceStatus,
       updateDelivery,
+      advanceDelivery,
       submitReturn,
       load,
     ]

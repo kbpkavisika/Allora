@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TopBar } from '@/components/ui/TopBar';
+import { nextDeliveryStatusLabel } from '@/lib/deliveries';
 import {
   formatMoney,
   formatPlacedAt,
@@ -20,10 +21,11 @@ import { useOrders } from '@/lib/OrdersProvider';
 export default function SellerOrderDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { getOrder, advanceStatus } = useOrders();
+  const { getOrder, advanceStatus, advanceDelivery } = useOrders();
 
   const order = id ? getOrder(id) : undefined;
   const [isAdvancing, setIsAdvancing] = useState(false);
+  const [isAdvancingDelivery, setIsAdvancingDelivery] = useState(false);
   const [isDeliveryOpen, setIsDeliveryOpen] = useState(false);
 
   if (!order) {
@@ -55,10 +57,18 @@ export default function SellerOrderDetailScreen() {
     0
   );
 
+  const deliveryAdvanceLabel = nextDeliveryStatusLabel(order.delivery?.status ?? 'pending');
+
   async function advance() {
     setIsAdvancing(true);
     await advanceStatus(order!.id);
     setIsAdvancing(false);
+  }
+
+  async function advanceTheDelivery() {
+    setIsAdvancingDelivery(true);
+    await advanceDelivery(order!.id);
+    setIsAdvancingDelivery(false);
   }
 
   return (
@@ -111,6 +121,14 @@ export default function SellerOrderDetailScreen() {
           delivery={order.delivery}
           onEdit={() => setIsDeliveryOpen(true)}
         />
+
+        {deliveryAdvanceLabel ? (
+          <Button
+            label={deliveryAdvanceLabel}
+            loading={isAdvancingDelivery}
+            onPress={advanceTheDelivery}
+          />
+        ) : null}
 
         {advanceLabel ? (
           <Button label={advanceLabel} loading={isAdvancing} onPress={advance} />

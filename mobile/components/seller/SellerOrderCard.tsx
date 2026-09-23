@@ -2,14 +2,8 @@ import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
-import { deliveryCaption } from '@/lib/deliveries';
-import {
-  formatPlacedAt,
-  itemSummary,
-  nextStatusLabel,
-  statusPresentation,
-  type Order,
-} from '@/lib/orders';
+import { deliveryCaption, nextDeliveryStatusLabel } from '@/lib/deliveries';
+import { formatPlacedAt, itemSummary, statusPresentation, type Order } from '@/lib/orders';
 
 export interface SellerOrderCardProps {
   order: Order;
@@ -25,7 +19,7 @@ export function SellerOrderCard({
   isAdvancing = false,
 }: SellerOrderCardProps) {
   const status = statusPresentation(order.status);
-  const advanceLabel = nextStatusLabel(order.status);
+  const advanceLabel = nextDeliveryStatusLabel(order.delivery?.status ?? 'pending');
   const delivery = deliveryCaption(order.delivery);
 
   return (
