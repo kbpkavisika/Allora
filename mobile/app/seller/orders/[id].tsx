@@ -10,22 +10,16 @@ import { Button } from '@/components/ui/Button';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TopBar } from '@/components/ui/TopBar';
 import { nextDeliveryStatusLabel } from '@/lib/deliveries';
-import {
-  formatMoney,
-  formatPlacedAt,
-  nextStatusLabel,
-  statusPresentation,
-} from '@/lib/orders';
+import { formatMoney, formatPlacedAt, statusPresentation } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 
 export default function SellerOrderDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { getOrder, advanceStatus, advanceDelivery } = useOrders();
+  const { getOrder, advanceDelivery } = useOrders();
 
   const order = id ? getOrder(id) : undefined;
   const [isAdvancing, setIsAdvancing] = useState(false);
-  const [isAdvancingDelivery, setIsAdvancingDelivery] = useState(false);
   const [isDeliveryOpen, setIsDeliveryOpen] = useState(false);
 
   if (!order) {
@@ -51,24 +45,17 @@ export default function SellerOrderDetailScreen() {
   }
 
   const presentation = statusPresentation(order.status);
-  const advanceLabel = nextStatusLabel(order.status);
   const itemsTotal = order.items.reduce(
     (sum, item) => sum + item.unit_price * item.quantity,
     0
   );
 
-  const deliveryAdvanceLabel = nextDeliveryStatusLabel(order.delivery?.status ?? 'pending');
+  const advanceLabel = nextDeliveryStatusLabel(order.delivery?.status ?? 'pending');
 
   async function advance() {
     setIsAdvancing(true);
-    await advanceStatus(order!.id);
-    setIsAdvancing(false);
-  }
-
-  async function advanceTheDelivery() {
-    setIsAdvancingDelivery(true);
     await advanceDelivery(order!.id);
-    setIsAdvancingDelivery(false);
+    setIsAdvancing(false);
   }
 
   return (
@@ -121,14 +108,6 @@ export default function SellerOrderDetailScreen() {
           delivery={order.delivery}
           onEdit={() => setIsDeliveryOpen(true)}
         />
-
-        {deliveryAdvanceLabel ? (
-          <Button
-            label={deliveryAdvanceLabel}
-            loading={isAdvancingDelivery}
-            onPress={advanceTheDelivery}
-          />
-        ) : null}
 
         {advanceLabel ? (
           <Button label={advanceLabel} loading={isAdvancing} onPress={advance} />

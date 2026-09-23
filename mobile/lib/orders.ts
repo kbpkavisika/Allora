@@ -85,24 +85,6 @@ export function statusPresentation(status: OrderStatus): StatusPresentation {
   return STATUS[status];
 }
 
-const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
-  new: 'processing',
-  processing: 'completed',
-};
-
-const NEXT_ACTION_LABEL: Partial<Record<OrderStatus, string>> = {
-  new: 'Mark as processing',
-  processing: 'Mark as completed',
-};
-
-export function nextStatus(status: OrderStatus): OrderStatus | null {
-  return NEXT_STATUS[status] ?? null;
-}
-
-export function nextStatusLabel(status: OrderStatus): string | null {
-  return NEXT_ACTION_LABEL[status] ?? null;
-}
-
 interface TrackingStep {
   current: number;
   total: number;

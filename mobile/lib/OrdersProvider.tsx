@@ -10,13 +10,8 @@ import {
 
 import { useAuth } from '@/lib/AuthProvider';
 import type { CartLine } from '@/lib/cart';
+import { nextDeliveryStatus, type DeliveryStatus } from '@/lib/deliveries';
 import {
-  nextDeliveryStatus,
-  type Delivery,
-  type DeliveryStatus,
-} from '@/lib/deliveries';
-import {
-  nextStatus,
   type Order,
   type PaymentMethod,
   type PaymentStatus,
@@ -53,7 +48,6 @@ export interface OrdersContextValue {
   isLoading: boolean;
   getOrder: (id: string) => Order | undefined;
   placeOrder: (input: PlaceOrderInput) => Promise<{ orders: Order[]; error: unknown }>;
-  advanceStatus: (orderId: string) => Promise<{ error: unknown }>;
   updateDelivery: (input: DeliveryInput) => Promise<{ error: unknown }>;
   advanceDelivery: (orderId: string) => Promise<{ error: unknown }>;
   submitReturn: (input: ReturnInput) => Promise<{ error: unknown }>;
@@ -65,10 +59,6 @@ export interface OrdersProviderProps {
 }
 
 const OrdersContext = createContext<OrdersContextValue | null>(null);
-
-function withDelivery(orders: Order[], orderId: string, delivery: Delivery): Order[] {
-  return orders.map((order) => (order.id === orderId ? { ...order, delivery } : order));
-}
 
 function addressSnapshot(address: Address | null, name: string | null) {
   return {
@@ -191,32 +181,9 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
     [userId, profile?.full_name, load]
   );
 
-  const advanceStatus = useCallback(
-    async (orderId: string) => {
-      const order = orders.find((item) => item.id === orderId);
-      if (!order) return { error: new Error('Order not found.') };
-
-      const next = nextStatus(order.status);
-      if (!next) return { error: null };
-
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: next })
-        .eq('id', orderId);
-
-      if (!error) {
-        setOrders((current) =>
-          current.map((item) => (item.id === orderId ? { ...item, status: next } : item))
-        );
-      }
-      return { error };
-    },
-    [orders]
-  );
-
   const updateDelivery = useCallback(
     async ({ orderId, status, courierName, trackingNumber }: DeliveryInput) => {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('deliveries')
         .update({
           status,
@@ -224,17 +191,13 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
           tracking_number: trackingNumber,
           delivered_at: status === 'delivered' ? new Date().toISOString() : null,
         })
-        .eq('order_id', orderId)
-        .select()
-        .single();
+        .eq('order_id', orderId);
 
-      if (!error && data) {
-        setOrders((current) => withDelivery(current, orderId, data as unknown as Delivery));
-      }
+      if (!error) await load();
 
       return { error };
     },
-    []
+    [load]
   );
 
   const advanceDelivery = useCallback(
@@ -245,23 +208,19 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
       const next = nextDeliveryStatus(order.delivery?.status ?? 'pending');
       if (!next) return { error: null };
 
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('deliveries')
         .update({
           status: next,
           delivered_at: next === 'delivered' ? new Date().toISOString() : null,
         })
-        .eq('order_id', orderId)
-        .select()
-        .single();
+        .eq('order_id', orderId);
 
-      if (!error && data) {
-        setOrders((current) => withDelivery(current, orderId, data as unknown as Delivery));
-      }
+      if (!error) await load();
 
       return { error };
     },
-    [orders]
+    [orders, load]
   );
 
   const submitReturn = useCallback(
@@ -286,7 +245,6 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
       isLoading,
       getOrder,
       placeOrder,
-      advanceStatus,
       updateDelivery,
       advanceDelivery,
       submitReturn,
@@ -297,7 +255,6 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
       isLoading,
       getOrder,
       placeOrder,
-      advanceStatus,
       updateDelivery,
       advanceDelivery,
       submitReturn,
