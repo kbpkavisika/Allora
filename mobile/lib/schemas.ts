@@ -36,12 +36,38 @@ export const profileSchema = z.object({
 });
 
 export const shippingAddressSchema = z.object({
-  line1: z.string().trim().min(1, { error: 'Enter your street address.' }),
-  line2: z.string().trim().optional(),
-  city: z.string().trim().min(1, { error: 'Enter your city.' }),
+  label: z
+    .string()
+    .trim()
+    .min(2, { error: 'Name this address.' })
+    .max(20, { error: 'Keep the name under 20 characters.' }),
+  line1: z
+    .string()
+    .trim()
+    .min(1, { error: 'Enter your street address.' })
+    .max(120, { error: 'Keep the street address under 120 characters.' }),
+  line2: z
+    .string()
+    .trim()
+    .max(60, { error: 'Keep the apartment or unit under 60 characters.' })
+    .optional(),
+  city: z
+    .string()
+    .trim()
+    .min(1, { error: 'Enter your city.' })
+    .max(80, { error: 'Keep the city under 80 characters.' }),
   region: z.string().trim().min(1, { error: 'Choose a province.' }),
-  postalCode: z.string().trim().min(3, { error: 'Enter a complete postal code.' }),
+  postalCode: z
+    .string()
+    .trim()
+    .min(3, { error: 'Enter a complete postal code.' })
+    .max(12, { error: 'Keep the postal code under 12 characters.' }),
   country: z.string().trim().min(1, { error: 'Choose a country.' }),
+  deliveryNote: z
+    .string()
+    .trim()
+    .max(200, { error: 'Keep the delivery note under 200 characters.' })
+    .optional(),
   leaveAtDoor: z.boolean(),
 });
 
