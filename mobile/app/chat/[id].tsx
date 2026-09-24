@@ -1,3 +1,4 @@
+import { useIsFocused } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -16,12 +17,18 @@ import {
   type MessageContextLineProps,
 } from '@/components/chat/MessageContextLine';
 import { Button } from '@/components/ui/Button';
+import { Divider } from '@/components/ui/Divider';
+import { MessageBubble } from '@/components/ui/MessageBubble';
 import { Toast } from '@/components/ui/Toast';
 import { TopBar } from '@/components/ui/TopBar';
 import { useAuth } from '@/lib/AuthProvider';
 import {
   fetchProductNames,
+  formatMessageDay,
+  formatMessageTime,
+  isSameDay,
   mergeMessages,
+  MESSAGE_PAGE_SIZE,
   NEW_CONVERSATION_ID,
   type Message,
 } from '@/lib/chat';
@@ -48,7 +55,8 @@ export default function ChatThreadScreen() {
   const { session } = useAuth();
   const { profile } = useProfile();
   const { getOrder } = useOrders();
-  const { getConversation, loadMessages, sendMessage, subscribeToMessages } = useChat();
+  const { getConversation, loadMessages, sendMessage, markRead, subscribeToMessages } = useChat();
+  const isFocused = useIsFocused();
 
   const userId = session?.user.id;
   const isNew = !id || id === NEW_CONVERSATION_ID;
@@ -57,6 +65,8 @@ export default function ChatThreadScreen() {
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(!isNew);
+  const [hasOlder, setHasOlder] = useState<boolean | null>(null);
+  const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [isMissing, setIsMissing] = useState(isNew && !shopId);
   const [shopName, setShopName] = useState<string | null>(null);
   const [productNames, setProductNames] = useState<Record<string, string>>({});
@@ -73,9 +83,29 @@ export default function ChatThreadScreen() {
       setIsMissing(true);
     } else {
       setMessages((current) => mergeMessages(current, latest));
+      setHasOlder((current) => current ?? latest.length === MESSAGE_PAGE_SIZE);
     }
     setIsLoading(false);
   }, [conversationId, loadMessages]);
+
+  const newestMessageId = messages[0]?.id;
+
+  useEffect(() => {
+    if (isFocused && conversationId && newestMessageId) markRead(conversationId);
+  }, [isFocused, conversationId, newestMessageId, markRead]);
+
+  async function loadOlder() {
+    const oldest = messages[messages.length - 1];
+    if (!conversationId || !oldest || !hasOlder || isLoadingOlder) return;
+
+    setIsLoadingOlder(true);
+    const { messages: older, error } = await loadMessages(conversationId, oldest.created_at);
+    if (!error) {
+      setMessages((current) => mergeMessages(current, older));
+      setHasOlder(older.length === MESSAGE_PAGE_SIZE);
+    }
+    setIsLoadingOlder(false);
+  }
 
   useEffect(() => {
     refreshMessages();
@@ -228,20 +258,29 @@ export default function ChatThreadScreen() {
             contentContainerStyle={{ padding: 16, gap: 12 }}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
-            renderItem={({ item }) => {
+            onEndReached={loadOlder}
+            onEndReachedThreshold={0.3}
+            ListFooterComponent={
+              isLoadingOlder ? <ActivityIndicator className="py-2 text-secondary" /> : null
+            }
+            renderItem={({ item, index }) => {
               const isMine = item.sender_id === userId;
               const line = contextLine({ productId: item.product_id, orderId: item.order_id });
+              const older = messages[index + 1];
+              const startsDay = !older || !isSameDay(older.created_at, item.created_at);
 
               return (
-                <View className={`max-w-[80%] gap-1 ${isMine ? 'self-end' : 'self-start'}`}>
-                  {line ? <MessageContextLine {...line} /> : null}
-                  <View
-                    className={`rounded-12 px-4 py-3 ${isMine ? 'bg-primary' : 'bg-surface-sunken'}`}>
-                    <Text
-                      className={`type-text-primary ${isMine ? 'text-surface' : 'text-primary'}`}>
-                      {item.body}
-                    </Text>
-                  </View>
+                <View className="gap-3">
+                  {startsDay ? (
+                    <Divider label={formatMessageDay(item.created_at)} className="my-3" />
+                  ) : null}
+                  <MessageBubble
+                    body={item.body}
+                    time={formatMessageTime(item.created_at)}
+                    isMine={isMine}
+                    senderLabel={isMine ? 'You' : title}
+                    header={line ? <MessageContextLine {...line} /> : null}
+                  />
                 </View>
               );
             }}
