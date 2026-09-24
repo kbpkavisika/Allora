@@ -1,6 +1,10 @@
+import { supabase } from '@/lib/supabase';
+
 export const MESSAGE_MAX_LENGTH = 2000;
 
 export const MESSAGE_PAGE_SIZE = 50;
+
+export const NEW_CONVERSATION_ID = 'new';
 
 export interface Message {
   id: string;
@@ -75,4 +79,19 @@ export function conversationPreview(conversation: ConversationSummary, userId: s
   return conversation.last_message_sender_id === userId
     ? `You: ${conversation.last_message_body}`
     : conversation.last_message_body;
+}
+
+export function mergeMessages(current: Message[], incoming: Message[]): Message[] {
+  const byId = new Map(current.map((message) => [message.id, message]));
+  incoming.forEach((message) => byId.set(message.id, message));
+
+  return [...byId.values()].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
+}
+
+export async function fetchProductNames(ids: string[]): Promise<Record<string, string>> {
+  if (ids.length === 0) return {};
+
+  const { data } = await supabase.from('products').select('id, name').in('id', ids);
+
+  return Object.fromEntries((data ?? []).map((product) => [product.id, product.name]));
 }

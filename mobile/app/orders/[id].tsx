@@ -10,6 +10,7 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { StepProgress } from '@/components/ui/StepProgress';
 import { SuccessBanner } from '@/components/ui/SuccessBanner';
 import { TopBar } from '@/components/ui/TopBar';
+import { useSellerChat } from '@/hooks/useSellerChat';
 import { deliveryTrackingStep } from '@/lib/deliveries';
 import { formatMoney, statusPresentation, type OrderItem } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
@@ -18,6 +19,7 @@ export default function OrderDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id, returned } = useLocalSearchParams<{ id?: string; returned?: string }>();
   const { getOrder, isLoading } = useOrders();
+  const { openSellerChat, isOpening } = useSellerChat();
 
   const order = id ? getOrder(id) : undefined;
 
@@ -124,7 +126,17 @@ export default function OrderDetailScreen() {
             />
           </View>
           <View className="flex-1">
-            <Button variant="secondary" size="sm" label="Contact seller" disabled />
+            <Button
+              variant="secondary"
+              size="sm"
+              label="Chat with seller"
+              loading={isOpening}
+              disabled={!order.shop_id}
+              hint="Opens a conversation with the seller about this order"
+              onPress={() =>
+                order.shop_id && openSellerChat({ shopId: order.shop_id, orderId: order.id })
+              }
+            />
           </View>
         </View>
       </ScrollView>

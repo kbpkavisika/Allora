@@ -73,6 +73,7 @@ type BaseProps = Omit<
   width?: InputFieldWidth;
   valueVariant?: InputFieldValueVariant;
   isMicVisible?: boolean;
+  isLabelHidden?: boolean;
   multiline?: boolean;
   className?: string;
   ref?: React.Ref<TextInput>;
@@ -155,6 +156,7 @@ export function InputField({
   isRequired = false,
   isSecure = false,
   isMicVisible = true,
+  isLabelHidden = false,
   width = 'full',
   valueVariant = 'text',
   multiline = false,
@@ -263,7 +265,7 @@ export function InputField({
 
   return (
     <View className={`${WIDTH[width]} ${className}`}>
-      {!isSearch ? (
+      {!isSearch && !isLabelHidden ? (
         <View className="mb-1 flex-row items-center gap-2">
           <Text className={`type-label-lg ${LABEL_TONE[state]}`} maxFontSizeMultiplier={2}>
             {label}
