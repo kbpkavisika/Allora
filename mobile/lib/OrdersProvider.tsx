@@ -10,8 +10,8 @@ import {
 
 import { useAuth } from '@/lib/AuthProvider';
 import type { CartLine } from '@/lib/cart';
+import { nextDeliveryStatus, type DeliveryStatus } from '@/lib/deliveries';
 import {
-  nextStatus,
   type Order,
   type PaymentMethod,
   type PaymentStatus,
@@ -30,6 +30,13 @@ export interface PlaceOrderInput {
   address: Address | null;
 }
 
+export interface DeliveryInput {
+  orderId: string;
+  status: DeliveryStatus;
+  courierName: string;
+  trackingNumber: string;
+}
+
 export interface ReturnInput {
   orderId: string;
   reason: ReturnReason;
@@ -41,7 +48,8 @@ export interface OrdersContextValue {
   isLoading: boolean;
   getOrder: (id: string) => Order | undefined;
   placeOrder: (input: PlaceOrderInput) => Promise<{ orders: Order[]; error: unknown }>;
-  advanceStatus: (orderId: string) => Promise<{ error: unknown }>;
+  updateDelivery: (input: DeliveryInput) => Promise<{ error: unknown }>;
+  advanceDelivery: (orderId: string) => Promise<{ error: unknown }>;
   submitReturn: (input: ReturnInput) => Promise<{ error: unknown }>;
   refresh: () => Promise<void>;
 }
@@ -88,7 +96,7 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
 
     const query = supabase
       .from('orders')
-      .select('*, items:order_items(*)')
+      .select('*, items:order_items(*), delivery:deliveries(*)')
       .order('placed_at', { ascending: false });
 
     const { data } = isSeller
@@ -164,7 +172,7 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
           return { orders: created, error: itemsError };
         }
 
-        created.push({ ...(order as unknown as Order), items: [] });
+        created.push({ ...(order as unknown as Order), items: [], delivery: null });
       }
 
       await load();
@@ -173,27 +181,46 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
     [userId, profile?.full_name, load]
   );
 
-  const advanceStatus = useCallback(
+  const updateDelivery = useCallback(
+    async ({ orderId, status, courierName, trackingNumber }: DeliveryInput) => {
+      const { error } = await supabase
+        .from('deliveries')
+        .update({
+          status,
+          courier_name: courierName,
+          tracking_number: trackingNumber,
+          delivered_at: status === 'delivered' ? new Date().toISOString() : null,
+        })
+        .eq('order_id', orderId);
+
+      if (!error) await load();
+
+      return { error };
+    },
+    [load]
+  );
+
+  const advanceDelivery = useCallback(
     async (orderId: string) => {
       const order = orders.find((item) => item.id === orderId);
       if (!order) return { error: new Error('Order not found.') };
 
-      const next = nextStatus(order.status);
+      const next = nextDeliveryStatus(order.delivery?.status ?? 'pending');
       if (!next) return { error: null };
 
       const { error } = await supabase
-        .from('orders')
-        .update({ status: next })
-        .eq('id', orderId);
+        .from('deliveries')
+        .update({
+          status: next,
+          delivered_at: next === 'delivered' ? new Date().toISOString() : null,
+        })
+        .eq('order_id', orderId);
 
-      if (!error) {
-        setOrders((current) =>
-          current.map((item) => (item.id === orderId ? { ...item, status: next } : item))
-        );
-      }
+      if (!error) await load();
+
       return { error };
     },
-    [orders]
+    [orders, load]
   );
 
   const submitReturn = useCallback(
@@ -218,11 +245,21 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
       isLoading,
       getOrder,
       placeOrder,
-      advanceStatus,
+      updateDelivery,
+      advanceDelivery,
       submitReturn,
       refresh: load,
     }),
-    [orders, isLoading, getOrder, placeOrder, advanceStatus, submitReturn, load]
+    [
+      orders,
+      isLoading,
+      getOrder,
+      placeOrder,
+      updateDelivery,
+      advanceDelivery,
+      submitReturn,
+      load,
+    ]
   );
 
   return <OrdersContext.Provider value={value}>{children}</OrdersContext.Provider>;

@@ -53,6 +53,8 @@ export const PROVINCE_OPTIONS = [
 
 export const COUNTRY_OPTIONS = ['Canada', 'United States'] as const;
 
+export const ADDRESS_LABELS = ['Home', 'Work', 'Other'] as const;
+
 export const ACCESSIBILITY_FEATURES = [
   {
     key: 'large_text',

@@ -173,6 +173,11 @@ export default function CheckoutScreen() {
                     {row}
                   </Text>
                 ))}
+                {address.delivery_note ? (
+                  <Text className="type-text-secondary mt-1 text-secondary">
+                    {address.delivery_note}
+                  </Text>
+                ) : null}
               </>
             ) : (
               <Text className="type-text-primary text-secondary">

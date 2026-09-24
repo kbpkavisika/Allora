@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { DeliverySummary } from '@/components/orders/DeliverySummary';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Callout } from '@/components/ui/Callout';
@@ -9,12 +10,8 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { StepProgress } from '@/components/ui/StepProgress';
 import { SuccessBanner } from '@/components/ui/SuccessBanner';
 import { TopBar } from '@/components/ui/TopBar';
-import {
-  formatMoney,
-  statusPresentation,
-  trackingStep,
-  type OrderItem,
-} from '@/lib/orders';
+import { deliveryTrackingStep } from '@/lib/deliveries';
+import { formatMoney, statusPresentation, type OrderItem } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 
 export default function OrderDetailScreen() {
@@ -46,7 +43,7 @@ export default function OrderDetailScreen() {
   }
 
   const presentation = statusPresentation(order.status);
-  const step = trackingStep(order.status);
+  const step = deliveryTrackingStep(order.delivery);
   const total = order.items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
 
   return (
@@ -81,6 +78,8 @@ export default function OrderDetailScreen() {
             Step {step.current} of {step.total} · {step.label}
           </Text>
         </View>
+
+        <DeliverySummary delivery={order.delivery} />
 
         <View className="gap-4">
           <SectionHeader title="Items" />

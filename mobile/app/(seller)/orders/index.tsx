@@ -24,7 +24,7 @@ const EMPTY_MESSAGE: Record<OrderStatus, string> = {
 
 export default function SellerOrdersScreen() {
   const insets = useSafeAreaInsets();
-  const { orders, isLoading, advanceStatus } = useOrders();
+  const { orders, isLoading, advanceDelivery } = useOrders();
 
   const [tab, setTab] = useState<OrderStatus>('new');
   const [advancingId, setAdvancingId] = useState<string | null>(null);
@@ -46,7 +46,7 @@ export default function SellerOrdersScreen() {
 
   async function advance(orderId: string) {
     setAdvancingId(orderId);
-    await advanceStatus(orderId);
+    await advanceDelivery(orderId);
     setAdvancingId(null);
   }
 

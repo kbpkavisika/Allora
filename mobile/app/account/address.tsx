@@ -7,6 +7,7 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Checkbox } from '@/components/ui/Checkbox';
+import { ChipSelect } from '@/components/ui/ChipSelect';
 import { FormError } from '@/components/ui/FormError';
 import { InputField } from '@/components/ui/InputField';
 import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
@@ -14,7 +15,7 @@ import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { Select } from '@/components/ui/Select';
 import { useProfile } from '@/hooks/useProfile';
-import { COUNTRY_OPTIONS, PROVINCE_OPTIONS } from '@/lib/profile';
+import { ADDRESS_LABELS, COUNTRY_OPTIONS, PROVINCE_OPTIONS } from '@/lib/profile';
 import { shippingAddressSchema, type ShippingAddressValues } from '@/lib/schemas';
 
 const noop = () => {};
@@ -35,12 +36,14 @@ export default function ShippingAddressScreen() {
 
   const values = useMemo<ShippingAddressValues>(
     () => ({
+      label: existing?.label ?? 'Home',
       line1: existing?.line1 ?? '',
       line2: existing?.line2 ?? '',
       city: existing?.city ?? '',
       region: existing?.region ?? '',
       postalCode: existing?.postal_code ?? '',
       country: existing?.country ?? 'Canada',
+      deliveryNote: existing?.delivery_note ?? '',
       leaveAtDoor: profile?.leave_at_door_default ?? false,
     }),
     [existing, profile]
@@ -63,14 +66,14 @@ export default function ShippingAddressScreen() {
 
     const { error: addressError } = await saveAddress(
       {
-        label: existing?.label ?? 'Home',
+        label: formValues.label,
         line1: formValues.line1,
         line2: formValues.line2 || null,
         city: formValues.city,
         region: formValues.region,
         postal_code: formValues.postalCode,
         country: formValues.country,
-        delivery_note: existing?.delivery_note ?? null,
+        delivery_note: formValues.deliveryNote?.trim() ? formValues.deliveryNote.trim() : null,
         is_default: existing?.is_default ?? true,
       },
       existing?.id
@@ -102,6 +105,21 @@ export default function ShippingAddressScreen() {
       <ScreenHeader title="Shipping address" className="mb-5" />
 
       <View className="gap-4">
+        <Controller
+          control={control}
+          name="label"
+          render={({ field }) => (
+            <ChipSelect
+              label="Address name"
+              required
+              options={ADDRESS_LABELS}
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.label?.message}
+            />
+          )}
+        />
+
         <Controller
           control={control}
           name="line1"
@@ -212,6 +230,23 @@ export default function ShippingAddressScreen() {
               onChange={field.onChange}
               placeholder="Canada"
               error={errors.country?.message}
+            />
+          )}
+        />
+
+        <Controller
+          control={control}
+          name="deliveryNote"
+          render={({ field }) => (
+            <InputField
+              label="Delivery note"
+              placeholder="Gate code, landmark, or where to leave it"
+              value={field.value ?? ''}
+              onChangeText={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.deliveryNote?.message}
+              helperText="Shared with the courier on every order."
+              multiline
             />
           )}
         />

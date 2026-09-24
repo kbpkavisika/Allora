@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { deliveryStatuses } from '@/lib/deliveries';
 import { shopCategories } from '@/lib/shop';
 
 export const productCategories = [
@@ -98,3 +99,27 @@ export const storeSetupStepFields: readonly (readonly (keyof StoreSetupValues)[]
   ['city', 'phone', 'pickupEnabled', 'deliveryEnabled'],
   ['photoUri'],
 ];
+
+const deliveryStatusString = z
+  .string()
+  .min(1, { error: 'Choose a delivery status.' })
+  .refine((value) => (deliveryStatuses as readonly string[]).includes(value), {
+    error: 'Choose a valid delivery status.',
+  });
+
+export const deliveryUpdateSchema = z.object({
+  courierName: z
+    .string()
+    .trim()
+    .min(2, { error: 'Enter the courier name.' })
+    .max(60, { error: 'Keep the courier name under 60 characters.' }),
+  trackingNumber: z
+    .string()
+    .trim()
+    .min(3, { error: 'Enter the tracking number.' })
+    .max(40, { error: 'Keep the tracking number under 40 characters.' })
+    .regex(/^[A-Za-z0-9-]+$/, { error: 'Use only letters, numbers and dashes.' }),
+  status: deliveryStatusString,
+});
+
+export type DeliveryUpdateValues = z.infer<typeof deliveryUpdateSchema>;

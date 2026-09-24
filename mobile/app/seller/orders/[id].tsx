@@ -1,27 +1,26 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Modal, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { DeliverySummary } from '@/components/orders/DeliverySummary';
+import { DeliveryUpdateSheet } from '@/components/seller/DeliveryUpdateSheet';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TopBar } from '@/components/ui/TopBar';
-import {
-  formatMoney,
-  formatPlacedAt,
-  nextStatusLabel,
-  statusPresentation,
-} from '@/lib/orders';
+import { nextDeliveryStatusLabel } from '@/lib/deliveries';
+import { formatMoney, formatPlacedAt, statusPresentation } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 
 export default function SellerOrderDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { getOrder, advanceStatus } = useOrders();
+  const { getOrder, advanceDelivery } = useOrders();
 
   const order = id ? getOrder(id) : undefined;
   const [isAdvancing, setIsAdvancing] = useState(false);
+  const [isDeliveryOpen, setIsDeliveryOpen] = useState(false);
 
   if (!order) {
     return (
@@ -46,15 +45,16 @@ export default function SellerOrderDetailScreen() {
   }
 
   const presentation = statusPresentation(order.status);
-  const advanceLabel = nextStatusLabel(order.status);
   const itemsTotal = order.items.reduce(
     (sum, item) => sum + item.unit_price * item.quantity,
     0
   );
 
+  const advanceLabel = nextDeliveryStatusLabel(order.delivery?.status ?? 'pending');
+
   async function advance() {
     setIsAdvancing(true);
-    await advanceStatus(order!.id);
+    await advanceDelivery(order!.id);
     setIsAdvancing(false);
   }
 
@@ -104,6 +104,11 @@ export default function SellerOrderDetailScreen() {
           </View>
         </View>
 
+        <DeliverySummary
+          delivery={order.delivery}
+          onEdit={() => setIsDeliveryOpen(true)}
+        />
+
         {advanceLabel ? (
           <Button label={advanceLabel} loading={isAdvancing} onPress={advance} />
         ) : (
@@ -112,6 +117,18 @@ export default function SellerOrderDetailScreen() {
           </Text>
         )}
       </ScrollView>
+
+      <Modal
+        visible={isDeliveryOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsDeliveryOpen(false)}>
+        <DeliveryUpdateSheet
+          orderId={order.id}
+          delivery={order.delivery}
+          onDismiss={() => setIsDeliveryOpen(false)}
+        />
+      </Modal>
     </View>
   );
 }
