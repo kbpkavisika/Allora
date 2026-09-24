@@ -8,17 +8,25 @@ import { Button } from '@/components/ui/Button';
 import { FormError } from '@/components/ui/FormError';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TopBar } from '@/components/ui/TopBar';
+import { useAuth } from '@/lib/AuthProvider';
 import { useCart } from '@/lib/CartProvider';
 import { formatMoney, type PaymentMethod } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
+import {
+  initializePayHerePayment,
+  isPayHereInitializationUnavailable,
+} from '@/lib/payments/initializePayment';
+import { buildPaymentReceiptPayload } from '@/lib/payments/paymentReceipt';
 import { formatAddressLines } from '@/lib/profile';
 import { useProfile } from '@/lib/ProfileProvider';
 import { startPayHereCheckout } from '@/lib/payments/payHere';
+import { sendPaymentReceipt } from '@/lib/payments/sendPaymentReceipt';
 
 export default function CheckoutScreen() {
   const insets = useSafeAreaInsets();
   const { lines, subtotal, clear } = useCart();
-  const { addresses } = useProfile();
+  const { addresses, profile } = useProfile();
+  const { session } = useAuth();
   const { placeOrder } = useOrders();
 
   const address = useMemo(
@@ -46,13 +54,52 @@ export default function CheckoutScreen() {
     setIsSubmitting(true);
 
     if (method === 'payhere') {
+      const fullName = profile?.full_name?.trim() ?? '';
+      const [firstName, ...lastNameParts] = fullName.split(/\s+/).filter(Boolean);
+      const temporaryFallbackOrderId = `CART-${Date.now()}`;
+      let resolvedOrderId = temporaryFallbackOrderId;
+
+      try {
+        const initialization = await initializePayHerePayment(total);
+        resolvedOrderId = initialization.payHereOrderId;
+        console.info('[Checkout] PayHere initialization succeeded', {
+          paymentId: initialization.paymentId,
+          payHereOrderId: initialization.payHereOrderId,
+        });
+      } catch (initializationError) {
+        if (isPayHereInitializationUnavailable(initializationError)) {
+          console.warn(
+            '[Checkout] Temporary PayHere initializer fallback: function unavailable; using local order ID generation.'
+          );
+        } else {
+          setIsSubmitting(false);
+          setError(
+            initializationError instanceof Error
+              ? initializationError.message
+              : 'Could not initialize PayHere payment.'
+          );
+          return;
+        }
+      }
+
       const outcome = await startPayHereCheckout({
-        orderId: `CART-${Date.now()}`,
+        orderId: resolvedOrderId,
         amountLkr: total,
+        lines,
+        customer: {
+          firstName: firstName || 'Customer',
+          lastName: lastNameParts.join(' ') || firstName || 'Customer',
+          email: session?.user.email ?? '',
+          phone: profile?.phone ?? '',
+        },
+        address,
       });
 
-      if (outcome.status !== 'success') {
+      if (outcome.status !== 'completed' || !outcome.paymentId) {
         setIsSubmitting(false);
+        if (outcome.status === 'failed' && outcome.error) {
+          setError(outcome.error);
+        }
         goToResult({ variant: 'failure', total: String(total) });
         return;
       }
@@ -60,25 +107,59 @@ export default function CheckoutScreen() {
       const { orders, error: placeError } = await placeOrder({
         lines,
         paymentMethod: 'payhere',
-        paymentStatus: 'paid',
-        paymentReference: outcome.reference,
+        paymentStatus: 'pending',
+        paymentReference: outcome.paymentId,
         address,
       });
 
-      setIsSubmitting(false);
-
       if (placeError) {
+        setIsSubmitting(false);
         setError('Payment went through but the order did not save. Contact support.');
         return;
       }
 
+      const buyerEmail = session?.user.email ?? '';
+      const buyerName = profile?.full_name?.trim() || 'Customer';
+
+      if (buyerEmail) {
+        const receiptPayload = buildPaymentReceiptPayload({
+          buyerEmail,
+          buyerName,
+          paymentId: outcome.paymentId,
+          payHereOrderId: resolvedOrderId,
+          amount: total,
+          currency: 'LKR',
+          paymentMethod: 'payhere',
+          paymentDate: new Date().toISOString(),
+          orders: orders.map((order) => ({
+            id: order.id,
+            order_number: order.order_number,
+            total: order.total,
+          })),
+          items: lines.map((line) => ({
+            productName: line.product.name,
+            quantity: line.quantity,
+            unitPrice: line.product.price,
+            lineTotal: line.product.price * line.quantity,
+          })),
+        });
+
+        const receiptSent = await sendPaymentReceipt(receiptPayload);
+        if (!receiptSent) {
+          console.warn('[Checkout] Receipt email was not sent successfully, but the payment remains successful.');
+        }
+      } else {
+        console.warn('[Checkout] Payment succeeded, but no authenticated email was available for the receipt.');
+      }
+
+      setIsSubmitting(false);
       await clear();
       goToResult({
         variant: 'success',
         orderId: orders[0]?.id ?? '',
         count: String(orders.length),
         total: String(total),
-        reference: outcome.reference,
+        reference: outcome.paymentId,
       });
       return;
     }

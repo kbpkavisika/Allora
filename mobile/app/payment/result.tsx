@@ -87,7 +87,7 @@ export default function PaymentResultScreen() {
             </Text>
             <Text className="type-text-lg text-center text-secondary">
               {variant === 'success'
-                ? 'Your order is confirmed. A receipt has been sent to your email.'
+                ? 'Your order is confirmed. The payment was successful.'
                 : variant === 'cod'
                   ? `Pay ${formatMoney(total)} in cash when your order arrives.`
                   : "The payment wasn't completed, so your order was not placed."}
