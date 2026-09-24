@@ -272,3 +272,34 @@ export function getTypography(token: TypographyToken, scheme: ColorScheme): Text
   const { colorToken, ...style } = typographySpecs[token];
   return { ...style, color: Colors[scheme][colorToken] };
 }
+
+const FIXED_SIZE_TOKENS: readonly TypographyToken[] = ['splash', 'display', 'wordmark'];
+
+type TypeStep = { fontSize: number; lineHeight: number };
+
+const typeSteps: TypeStep[] = Object.values(typographySpecs as Record<string, TypographySpec>)
+  .flatMap(({ fontSize, lineHeight }) =>
+    typeof fontSize === 'number' && typeof lineHeight === 'number' ? [{ fontSize, lineHeight }] : []
+  )
+  .sort((a, b) => a.fontSize - b.fontSize);
+
+export function largeTextStep(token: TypographyToken): TypeStep | null {
+  if (FIXED_SIZE_TOKENS.includes(token)) return null;
+  const { fontSize } = typographySpecs[token];
+  return typeSteps.find((step) => step.fontSize > fontSize) ?? null;
+}
+
+export function typographyVars(largeText: boolean): Record<string, number> {
+  if (!largeText) return {};
+  return Object.fromEntries(
+    (Object.keys(typographySpecs) as TypographyToken[]).flatMap((token) => {
+      const step = largeTextStep(token);
+      return step
+        ? [
+            [`--type-${token}-size`, step.fontSize],
+            [`--type-${token}-leading`, step.lineHeight],
+          ]
+        : [];
+    })
+  );
+}
