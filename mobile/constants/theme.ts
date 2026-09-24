@@ -303,3 +303,34 @@ export function typographyVars(largeText: boolean): Record<string, number> {
     })
   );
 }
+
+export const HIGH_CONTRAST_COLORS = {
+  border: 'border-strong',
+  secondary: 'primary-hover',
+} as const satisfies Partial<Record<ColorToken, ColorToken>>;
+
+export function resolveColor(
+  token: ColorToken,
+  scheme: ColorScheme,
+  highContrast: boolean
+): string {
+  const resolved =
+    highContrast && token in HIGH_CONTRAST_COLORS
+      ? HIGH_CONTRAST_COLORS[token as keyof typeof HIGH_CONTRAST_COLORS]
+      : token;
+  return Colors[scheme][resolved];
+}
+
+function toRgbChannels(hex: string): string {
+  return [1, 3, 5].map((index) => parseInt(hex.slice(index, index + 2), 16)).join(' ');
+}
+
+export function colorVars(scheme: ColorScheme, highContrast: boolean): Record<string, string> {
+  if (!highContrast) return {};
+  return Object.fromEntries(
+    (Object.keys(HIGH_CONTRAST_COLORS) as ColorToken[]).map((token) => [
+      `--color-${token}`,
+      toRgbChannels(resolveColor(token, scheme, true)),
+    ])
+  );
+}

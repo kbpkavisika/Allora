@@ -19,7 +19,7 @@ import { View } from 'react-native';
 import 'react-native-reanimated';
 
 import { BrandSplash } from '@/components/BrandSplash';
-import { typographyVars } from '@/constants/theme';
+import { colorVars, typographyVars } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/lib/AuthProvider';
 import { CartProvider } from '@/lib/CartProvider';
@@ -101,7 +101,12 @@ function RootNavigator() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <View className="flex-1" style={vars(typographyVars(!!profile?.large_text))}>
+      <View
+        className="flex-1"
+        style={vars({
+          ...typographyVars(!!profile?.large_text),
+          ...colorVars(colorScheme === 'dark' ? 'dark' : 'light', !!profile?.high_contrast),
+        })}>
         <Stack>
           <Stack.Protected guard={showApp && !isSeller}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
