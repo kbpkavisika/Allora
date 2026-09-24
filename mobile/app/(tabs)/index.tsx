@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/Button';
+import { CountBadge } from '@/components/ui/CountBadge';
 import { FilterChip } from '@/components/ui/FilterChip';
 import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
@@ -233,18 +234,7 @@ function ShopTopBar() {
             hint="Opens your cart"
             onPress={() => router.push('/(tabs)/cart')}
           />
-          {itemCount > 0 ? (
-            <View
-              pointerEvents="none"
-              className="absolute right-0 top-0 h-4 items-center justify-center rounded-full bg-accent px-1">
-              <Text
-                className="type-mono text-surface"
-                style={{ fontSize: 10, lineHeight: 12 }}
-                maxFontSizeMultiplier={1.3}>
-                {itemCount > 9 ? '9+' : itemCount}
-              </Text>
-            </View>
-          ) : null}
+          <CountBadge count={itemCount} size="sm" className="absolute right-0 top-0" />
         </View>
       </View>
     </View>

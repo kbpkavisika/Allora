@@ -9,9 +9,11 @@ import { ProfileHeader } from '@/components/account/ProfileHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { CountBadge } from '@/components/ui/CountBadge';
 import { FormError } from '@/components/ui/FormError';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { SuccessBanner } from '@/components/ui/SuccessBanner';
+import { useChat } from '@/hooks/useChat';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/lib/AuthProvider';
 import { getAuthErrorMessage } from '@/lib/authErrors';
@@ -25,6 +27,7 @@ export default function AccountScreen() {
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
   const { profile, addresses, refresh } = useProfile();
+  const { unreadCount } = useChat();
   const [resetSent, setResetSent] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
   const [isSendingReset, setIsSendingReset] = useState(false);
@@ -94,6 +97,18 @@ export default function AccountScreen() {
       className="flex-1 bg-surface"
       contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32, gap: 32 }}>
       <ProfileHeader name={profile.full_name} email={email} />
+
+      <Card className="px-4">
+        <ListRow
+          icon="chat"
+          title="Messages"
+          subtitle={unreadCount > 0 ? `${unreadCount} unread` : 'Your chats with sellers'}
+          trailing={<CountBadge count={unreadCount} />}
+          showChevron
+          onPress={() => router.push('/chat')}
+          hint="Opens your conversations with sellers"
+        />
+      </Card>
 
       <View className="gap-3">
         <SectionHeader title="Personal info" />
