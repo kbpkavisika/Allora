@@ -272,3 +272,65 @@ export function getTypography(token: TypographyToken, scheme: ColorScheme): Text
   const { colorToken, ...style } = typographySpecs[token];
   return { ...style, color: Colors[scheme][colorToken] };
 }
+
+const FIXED_SIZE_TOKENS: readonly TypographyToken[] = ['splash', 'display', 'wordmark'];
+
+type TypeStep = { fontSize: number; lineHeight: number };
+
+const typeSteps: TypeStep[] = Object.values(typographySpecs as Record<string, TypographySpec>)
+  .flatMap(({ fontSize, lineHeight }) =>
+    typeof fontSize === 'number' && typeof lineHeight === 'number' ? [{ fontSize, lineHeight }] : []
+  )
+  .sort((a, b) => a.fontSize - b.fontSize);
+
+export function largeTextStep(token: TypographyToken): TypeStep | null {
+  if (FIXED_SIZE_TOKENS.includes(token)) return null;
+  const { fontSize } = typographySpecs[token];
+  return typeSteps.find((step) => step.fontSize > fontSize) ?? null;
+}
+
+export function typographyVars(largeText: boolean): Record<string, number> {
+  if (!largeText) return {};
+  return Object.fromEntries(
+    (Object.keys(typographySpecs) as TypographyToken[]).flatMap((token) => {
+      const step = largeTextStep(token);
+      return step
+        ? [
+            [`--type-${token}-size`, step.fontSize],
+            [`--type-${token}-leading`, step.lineHeight],
+          ]
+        : [];
+    })
+  );
+}
+
+export const HIGH_CONTRAST_COLORS = {
+  border: 'border-strong',
+  secondary: 'primary-hover',
+} as const satisfies Partial<Record<ColorToken, ColorToken>>;
+
+export function resolveColor(
+  token: ColorToken,
+  scheme: ColorScheme,
+  highContrast: boolean
+): string {
+  const resolved =
+    highContrast && token in HIGH_CONTRAST_COLORS
+      ? HIGH_CONTRAST_COLORS[token as keyof typeof HIGH_CONTRAST_COLORS]
+      : token;
+  return Colors[scheme][resolved];
+}
+
+function toRgbChannels(hex: string): string {
+  return [1, 3, 5].map((index) => parseInt(hex.slice(index, index + 2), 16)).join(' ');
+}
+
+export function colorVars(scheme: ColorScheme, highContrast: boolean): Record<string, string> {
+  if (!highContrast) return {};
+  return Object.fromEntries(
+    (Object.keys(HIGH_CONTRAST_COLORS) as ColorToken[]).map((token) => [
+      `--color-${token}`,
+      toRgbChannels(resolveColor(token, scheme, true)),
+    ])
+  );
+}
