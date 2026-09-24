@@ -1,5 +1,7 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { Text, View } from 'react-native';
 
 import { PreferenceRow } from '@/components/onboarding/PreferenceRow';
@@ -8,62 +10,36 @@ import { FormError } from '@/components/ui/FormError';
 import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { useProfile } from '@/hooks/useProfile';
-
-const PREFERENCES = [
-  {
-    key: 'large_text',
-    title: 'Large text',
-    description: 'Scales every label and price up one step.',
-  },
-  {
-    key: 'high_contrast',
-    title: 'High contrast',
-    description: 'Stronger borders and darker body text.',
-  },
-  {
-    key: 'dictation_enabled',
-    title: 'Dictation',
-    description: 'Speak into any field instead of typing.',
-  },
-  {
-    key: 'screen_reader_support',
-    title: 'Screen reader support',
-    description: 'Extra spoken labels and reading order cues.',
-  },
-  {
-    key: 'reduce_motion',
-    title: 'Reduce motion',
-    description: 'Removes sliding and fading transitions.',
-  },
-] as const;
-
-type PreferenceKey = (typeof PREFERENCES)[number]['key'];
+import { ACCESSIBILITY_FEATURES } from '@/lib/profile';
+import {
+  accessibilityPreferencesSchema,
+  type AccessibilityPreferencesValues,
+} from '@/lib/schemas';
 
 const ROLE_SELECT_ROUTE = '/(onboarding)/role-select' as const;
 
 export default function PersonalizeScreen() {
   const { updateProfile } = useProfile();
-  const [preferences, setPreferences] = useState<Record<PreferenceKey, boolean>>({
-    large_text: false,
-    high_contrast: false,
-    dictation_enabled: false,
-    screen_reader_support: false,
-    reduce_motion: false,
+  const {
+    control,
+    handleSubmit,
+    formState: { isSubmitting },
+  } = useForm<AccessibilityPreferencesValues>({
+    resolver: zodResolver(accessibilityPreferencesSchema),
+    defaultValues: {
+      large_text: false,
+      high_contrast: false,
+      dictation_enabled: false,
+      screen_reader_support: false,
+      reduce_motion: false,
+    },
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  function toggle(key: PreferenceKey) {
-    setPreferences((current) => ({ ...current, [key]: !current[key] }));
-  }
-
-  async function saveAndContinue() {
+  async function onSubmit(preferences: AccessibilityPreferencesValues) {
     setFormError(null);
-    setIsSubmitting(true);
 
     const { error } = await updateProfile(preferences);
-
-    setIsSubmitting(false);
 
     if (error) {
       setFormError('Something went wrong saving your preferences. Please try again.');
@@ -83,13 +59,19 @@ export default function PersonalizeScreen() {
       />
 
       <View className="gap-0.5">
-        {PREFERENCES.map((preference) => (
-          <PreferenceRow
+        {ACCESSIBILITY_FEATURES.map((preference) => (
+          <Controller
             key={preference.key}
-            title={preference.title}
-            description={preference.description}
-            checked={preferences[preference.key]}
-            onChange={() => toggle(preference.key)}
+            control={control}
+            name={preference.key}
+            render={({ field: { value, onChange } }) => (
+              <PreferenceRow
+                title={preference.title}
+                description={preference.description}
+                checked={value}
+                onChange={onChange}
+              />
+            )}
           />
         ))}
       </View>
@@ -100,7 +82,7 @@ export default function PersonalizeScreen() {
         You can change these later in the settings.
       </Text>
 
-      <Button label="Continue" loading={isSubmitting} onPress={saveAndContinue} className="mt-4" />
+      <Button label="Continue" loading={isSubmitting} onPress={handleSubmit(onSubmit)} className="mt-4" />
 
       <Button
         variant="link"

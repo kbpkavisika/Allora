@@ -82,6 +82,9 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   async function updateProfile(patch: ProfileUpdateInput) {
     if (!userId) return { error: new Error('Not signed in.') };
 
+    const previous = profile;
+    setProfile((current) => (current ? { ...current, ...patch } : current));
+
     const { data, error } = await supabase
       .from('profiles')
       .update(patch)
@@ -89,7 +92,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
       .select()
       .single();
 
-    if (!error) setProfile(data);
+    setProfile(error ? previous : data);
     return { error };
   }
 

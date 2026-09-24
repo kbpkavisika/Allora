@@ -109,6 +109,14 @@ export const reviewSchema = z.object({
   photos: z.array(z.string()).max(6, { error: 'Add up to 6 photos.' }),
 });
 
+export const accessibilityPreferencesSchema = z.object({
+  large_text: z.boolean(),
+  high_contrast: z.boolean(),
+  dictation_enabled: z.boolean(),
+  screen_reader_support: z.boolean(),
+  reduce_motion: z.boolean(),
+});
+
 export type SignInValues = z.infer<typeof signInSchema>;
 export type SignUpValues = z.infer<typeof signUpSchema>;
 export type ProfileValues = z.infer<typeof profileSchema>;
@@ -116,3 +124,4 @@ export type ShippingAddressValues = z.infer<typeof shippingAddressSchema>;
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
 export type ReturnRequestValues = z.infer<typeof returnRequestSchema>;
 export type ReviewValues = z.infer<typeof reviewSchema>;
+export type AccessibilityPreferencesValues = z.infer<typeof accessibilityPreferencesSchema>;
