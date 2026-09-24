@@ -11,7 +11,8 @@ import {
 
 import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
-import { typographySpecs } from '@/constants/theme';
+import { largeTextStep, typographySpecs } from '@/constants/theme';
+import { useProfile } from '@/hooks/useProfile';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
 export type InputFieldVariant = 'field' | 'search';
@@ -20,15 +21,17 @@ export type InputFieldValueVariant = 'text' | 'mono';
 
 type InputState = 'rest' | 'focus' | 'error' | 'disabled';
 
-function toValueTextStyle(token: 'text-primary' | 'mono') {
-  const spec = typographySpecs[token];
-  return { fontFamily: spec.fontFamily, fontSize: spec.fontSize, includeFontPadding: false } as const;
-}
+const VALUE_TOKEN = {
+  text: 'text-primary',
+  mono: 'mono',
+} as const satisfies Record<InputFieldValueVariant, keyof typeof typographySpecs>;
 
-const VALUE_TEXT_STYLE: Record<InputFieldValueVariant, ReturnType<typeof toValueTextStyle>> = {
-  text: toValueTextStyle('text-primary'),
-  mono: toValueTextStyle('mono'),
-};
+function toValueTextStyle(variant: InputFieldValueVariant, largeText: boolean) {
+  const token = VALUE_TOKEN[variant];
+  const spec = typographySpecs[token];
+  const fontSize = (largeText ? largeTextStep(token)?.fontSize : undefined) ?? spec.fontSize;
+  return { fontFamily: spec.fontFamily, fontSize, includeFontPadding: false } as const;
+}
 
 const TONE = {
   primary: 'text-primary',
@@ -180,6 +183,7 @@ export function InputField({
   const isActive = isFocused || (isSearch && value.length > 0);
   const state = resolveState(isDisabled, hasError, isActive);
 
+  const { profile } = useProfile();
   const caretColor = useThemeColor({}, 'info');
   const placeholderColor = useThemeColor({}, isDisabled ? 'disabled' : 'secondary');
 
@@ -289,7 +293,10 @@ export function InputField({
         <TextInput
           ref={ref}
           className={`flex-1 self-stretch p-0 ${VALUE_TONE[state]}`}
-          style={[VALUE_TEXT_STYLE[valueVariant], multiline ? { minHeight: 96 } : null]}
+          style={[
+            toValueTextStyle(valueVariant, !!profile?.large_text),
+            multiline ? { minHeight: 96 } : null,
+          ]}
           multiline={multiline}
           textAlignVertical={multiline ? 'top' : 'center'}
           value={value}

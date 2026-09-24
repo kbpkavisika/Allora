@@ -10,13 +10,16 @@ import { IBMPlexMono_400Regular, IBMPlexMono_500Medium } from '@expo-google-font
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { useFonts } from 'expo-font';
+import { vars } from 'nativewind';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { View } from 'react-native';
 import 'react-native-reanimated';
 
 import { BrandSplash } from '@/components/BrandSplash';
+import { colorVars, typographyVars } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/lib/AuthProvider';
 import { CartProvider } from '@/lib/CartProvider';
@@ -101,76 +104,83 @@ function RootNavigator() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Protected guard={showApp && !isSeller}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        </Stack.Protected>
+      <View
+        className="flex-1"
+        style={vars({
+          ...typographyVars(!!profile?.large_text),
+          ...colorVars(colorScheme === 'dark' ? 'dark' : 'light', !!profile?.high_contrast),
+        })}>
+        <Stack>
+          <Stack.Protected guard={showApp && !isSeller}>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          </Stack.Protected>
 
-        <Stack.Protected guard={showApp && isSeller}>
-          <Stack.Screen name="(seller)" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="seller/add-product"
-            options={{ presentation: 'modal', headerShown: false }}
-          />
-          <Stack.Screen
-            name="seller/edit-product"
-            options={{ presentation: 'modal', headerShown: false }}
-          />
-          <Stack.Screen
-            name="seller/store-details"
-            options={{ presentation: 'modal', headerShown: false }}
-          />
-          <Stack.Screen name="seller/store-setup" options={{ headerShown: false }} />
-          <Stack.Screen name="seller/orders/[id]" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="seller/quick-stock"
-            options={{ presentation: 'transparentModal', animation: 'fade', headerShown: false }}
-          />
-        </Stack.Protected>
+          <Stack.Protected guard={showApp && isSeller}>
+            <Stack.Screen name="(seller)" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="seller/add-product"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen
+              name="seller/edit-product"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen
+              name="seller/store-details"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen name="seller/store-setup" options={{ headerShown: false }} />
+            <Stack.Screen name="seller/orders/[id]" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="seller/quick-stock"
+              options={{ presentation: 'transparentModal', animation: 'fade', headerShown: false }}
+            />
+          </Stack.Protected>
 
-        <Stack.Protected guard={showApp}>
-          <Stack.Screen name="product/[id]" options={{ headerShown: false }} />
-          <Stack.Screen name="product/[id]/reviews" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="product/[id]/write-review"
-            options={{ presentation: 'modal', headerShown: false }}
-          />
-          <Stack.Screen name="orders/[id]" options={{ headerShown: false }} />
-          <Stack.Screen name="chat/index" options={{ headerShown: false }} />
-          <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
-          <Stack.Screen name="orders/[id]/return" options={{ headerShown: false }} />
-          <Stack.Screen name="payment/checkout" options={{ headerShown: false }} />
-          <Stack.Screen name="payment/result" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="account/edit-profile"
-            options={{ presentation: 'modal', headerShown: false }}
-          />
-          <Stack.Screen
-            name="account/address"
-            options={{ presentation: 'modal', headerShown: false }}
-          />
-          <Stack.Screen
-            name="account/accessibility"
-            options={{ presentation: 'modal', headerShown: false }}
-          />
-          <Stack.Screen
-            name="account/reset-password"
-            options={{ presentation: 'modal', headerShown: false }}
-          />
-        </Stack.Protected>
+          <Stack.Protected guard={showApp}>
+            <Stack.Screen name="product/[id]" options={{ headerShown: false }} />
+            <Stack.Screen name="product/[id]/reviews" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="product/[id]/write-review"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen name="orders/[id]" options={{ headerShown: false }} />
+            <Stack.Screen name="chat/index" options={{ headerShown: false }} />
+            <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
+            <Stack.Screen name="orders/[id]/return" options={{ headerShown: false }} />
+            <Stack.Screen name="payment/checkout" options={{ headerShown: false }} />
+            <Stack.Screen name="payment/result" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="account/edit-profile"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen
+              name="account/address"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen
+              name="account/accessibility"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen
+              name="account/reset-password"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+          </Stack.Protected>
 
-        <Stack.Protected guard={needsOnboarding}>
-          <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-        </Stack.Protected>
+          <Stack.Protected guard={needsOnboarding}>
+            <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
+          </Stack.Protected>
 
-        <Stack.Protected guard={!session}>
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        </Stack.Protected>
+          <Stack.Protected guard={!session}>
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          </Stack.Protected>
 
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      {(!ready || !minHoldElapsed) && <BrandSplash />}
-      <StatusBar style="auto" />
+          <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        </Stack>
+        {(!ready || !minHoldElapsed) && <BrandSplash />}
+        <StatusBar style="auto" />
+      </View>
     </ThemeProvider>
   );
 }
