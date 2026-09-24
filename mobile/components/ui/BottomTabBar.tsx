@@ -4,6 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { CountBadge } from '@/components/ui/CountBadge';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { BorderWidth, Fonts } from '@/constants/theme';
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -15,9 +16,15 @@ export interface TabDefinition {
 
 export interface BottomTabBarComponentProps extends BottomTabBarProps {
   tabs: Record<string, TabDefinition>;
+  badges?: Record<string, number>;
 }
 
-export function BottomTabBar({ state, navigation, tabs }: BottomTabBarComponentProps) {
+export function BottomTabBar({
+  state,
+  navigation,
+  tabs,
+  badges = {},
+}: BottomTabBarComponentProps) {
   const insets = useSafeAreaInsets();
   const surface = useThemeColor({}, 'surface');
   const border = useThemeColor({}, 'border');
@@ -37,13 +44,14 @@ export function BottomTabBar({ state, navigation, tabs }: BottomTabBarComponentP
         const { label, icon } = tab;
         const focused = state.index === index;
         const color = focused ? activeColor : inactiveColor;
+        const badge = badges[route.name] ?? 0;
 
         return (
           <PlatformPressable
             key={route.key}
             accessibilityRole="tab"
             accessibilityState={{ selected: focused }}
-            accessibilityLabel={label}
+            accessibilityLabel={badge > 0 ? `${label}, ${badge} unread` : label}
             style={styles.tab}
             onPress={() => navigation.navigate(route.name)}
             onPressIn={() => {
@@ -51,7 +59,10 @@ export function BottomTabBar({ state, navigation, tabs }: BottomTabBarComponentP
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               }
             }}>
-            <Icon name={icon} size="lg" style={{ color }} />
+            <View>
+              <Icon name={icon} size="lg" style={{ color }} />
+              <CountBadge count={badge} className="absolute -right-[5px] -top-[3px]" />
+            </View>
             <Text
               style={[
                 styles.label,
