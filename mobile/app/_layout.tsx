@@ -20,6 +20,7 @@ import { BrandSplash } from '@/components/BrandSplash';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { AuthProvider, useAuth } from '@/lib/AuthProvider';
 import { CartProvider } from '@/lib/CartProvider';
+import { ChatProvider } from '@/lib/ChatProvider';
 import { OrdersProvider } from '@/lib/OrdersProvider';
 import { ProductsProvider } from '@/lib/ProductsProvider';
 import { ProfileProvider, useProfile } from '@/lib/ProfileProvider';
@@ -44,7 +45,9 @@ export default function RootLayout() {
           <ProductsProvider>
             <OrdersProvider>
               <CartProvider>
-                <RootNavigator />
+                <ChatProvider>
+                  <RootNavigator />
+                </ChatProvider>
               </CartProvider>
             </OrdersProvider>
           </ProductsProvider>
