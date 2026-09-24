@@ -264,6 +264,13 @@ export const typographySpecs = {
     lineHeight: 18,
     colorToken: 'primary',
   },
+  // design.md §06: the count badge numeral is IBM Plex Mono 10px, a ramp §02 does not list.
+  count: {
+    fontFamily: Fonts.ibmPlexMono.regular,
+    fontSize: 10,
+    lineHeight: 12,
+    colorToken: 'surface',
+  },
 } satisfies Record<string, TypographySpec>;
 
 export type TypographyToken = keyof typeof typographySpecs;
