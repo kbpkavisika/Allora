@@ -32,17 +32,21 @@ const controlHeight = {
   glyph: px(ControlSize.glyph),
 };
 
-const typography = plugin(function ({ addComponents }) {
+const typography = plugin(function ({ addBase, addComponents }) {
+  const variables = {};
   const components = {};
   for (const [token, spec] of Object.entries(typographySpecs)) {
+    variables[`--type-${token}-size`] = `${spec.fontSize}px`;
+    if (spec.lineHeight) variables[`--type-${token}-leading`] = `${spec.lineHeight}px`;
     components[`.type-${token}`] = {
       fontFamily: spec.fontFamily,
-      fontSize: `${spec.fontSize}px`,
-      lineHeight: spec.lineHeight ? `${spec.lineHeight}px` : 'normal',
+      fontSize: `var(--type-${token}-size)`,
+      lineHeight: spec.lineHeight ? `var(--type-${token}-leading)` : 'normal',
       letterSpacing: `${spec.letterSpacing ?? 0}px`,
       ...(spec.textTransform ? { textTransform: spec.textTransform } : null),
     };
   }
+  addBase({ ':root': variables });
   addComponents(components);
 });
 
