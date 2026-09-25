@@ -21,6 +21,7 @@ import 'react-native-reanimated';
 import { BrandSplash } from '@/components/BrandSplash';
 import { colorVars, typographyVars } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { AuthProvider, useAuth } from '@/lib/AuthProvider';
 import { CartProvider } from '@/lib/CartProvider';
 import { ChatProvider } from '@/lib/ChatProvider';
@@ -85,6 +86,8 @@ function RootNavigator() {
   const needsOnboarding = !!session && !isProfileLoading && (profile?.role ?? null) === null;
   const showApp = !!session && !needsOnboarding;
   const isSeller = profile?.role === 'seller';
+
+  usePushNotifications(session?.user.id, ready && showApp);
 
   useEffect(() => {
     const timer = setTimeout(() => setMinHoldElapsed(true), SPLASH_MIN_MS);
