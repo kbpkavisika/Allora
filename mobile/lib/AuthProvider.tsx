@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
+import { unregisterPushToken } from '@/lib/notifications';
 import { supabase } from '@/lib/supabase';
 
 export interface AuthContextValue {
@@ -47,4 +48,9 @@ export function useAuth(): AuthContextValue {
     throw new Error('useAuth must be used inside <AuthProvider>.');
   }
   return authState;
+}
+
+export async function signOut() {
+  await unregisterPushToken();
+  return supabase.auth.signOut();
 }

@@ -16,7 +16,7 @@ import { Select } from '@/components/ui/Select';
 import { StepProgress } from '@/components/ui/StepProgress';
 import { ToggleRow } from '@/components/ui/ToggleRow';
 import { useShop } from '@/hooks/useShop';
-import { supabase } from '@/lib/supabase';
+import { signOut } from '@/lib/AuthProvider';
 import { shopCategories } from '@/lib/shop';
 import { storeSetupSchema, storeSetupStepFields, type StoreSetupValues } from '@/lib/sellerSchemas';
 
@@ -115,7 +115,7 @@ export default function StoreSetupScreen() {
   function confirmSignOut() {
     Alert.alert('Sign out', 'You will need to sign in again to finish setting up your shop.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => supabase.auth.signOut() },
+      { text: 'Sign out', style: 'destructive', onPress: () => signOut() },
     ]);
   }
 

@@ -25,6 +25,7 @@ export interface ConversationSummary {
   last_message_sender_id: string | null;
   last_message_at: string | null;
   unread_count: number;
+  muted: boolean;
 }
 
 export interface MessageEvent {

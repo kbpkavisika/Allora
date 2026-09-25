@@ -18,6 +18,8 @@ import {
 } from '@/components/chat/MessageContextLine';
 import { Button } from '@/components/ui/Button';
 import { Divider } from '@/components/ui/Divider';
+import { Icon } from '@/components/ui/Icon';
+import { IconButton } from '@/components/ui/IconButton';
 import { MessageBubble } from '@/components/ui/MessageBubble';
 import { Toast } from '@/components/ui/Toast';
 import { TopBar } from '@/components/ui/TopBar';
@@ -33,6 +35,7 @@ import {
   type Message,
 } from '@/lib/chat';
 import { useChat } from '@/lib/ChatProvider';
+import { setActiveConversation } from '@/lib/notifications';
 import { useOrders } from '@/lib/OrdersProvider';
 import { useProfile } from '@/lib/ProfileProvider';
 import { supabase } from '@/lib/supabase';
@@ -55,7 +58,8 @@ export default function ChatThreadScreen() {
   const { session } = useAuth();
   const { profile } = useProfile();
   const { getOrder } = useOrders();
-  const { getConversation, loadMessages, sendMessage, markRead, subscribeToMessages } = useChat();
+  const { getConversation, loadMessages, sendMessage, markRead, setMuted, subscribeToMessages } =
+    useChat();
   const isFocused = useIsFocused();
 
   const userId = session?.user.id;
@@ -93,6 +97,13 @@ export default function ChatThreadScreen() {
   useEffect(() => {
     if (isFocused && conversationId && newestMessageId) markRead(conversationId);
   }, [isFocused, conversationId, newestMessageId, markRead]);
+
+  useEffect(() => {
+    if (!isFocused || !conversationId) return;
+
+    setActiveConversation(conversationId);
+    return () => setActiveConversation(null);
+  }, [isFocused, conversationId]);
 
   async function loadOlder() {
     const oldest = messages[messages.length - 1];
@@ -185,6 +196,19 @@ export default function ChatThreadScreen() {
     return null;
   }
 
+  async function toggleMuted() {
+    if (!conversation) return;
+
+    const muted = !conversation.muted;
+    const { error } = await setMuted(conversation.id, muted);
+
+    if (error) {
+      setToast('Could not update notifications. Try again.');
+    } else {
+      setToast(muted ? 'Notifications muted for this chat.' : 'Notifications on for this chat.');
+    }
+  }
+
   async function handleSend(body: string) {
     const { message, error } = await sendMessage({
       body,
@@ -232,7 +256,25 @@ export default function ChatThreadScreen() {
 
   return (
     <View className="flex-1 bg-surface">
-      <TopBar title={title} />
+      <TopBar
+        title={title}
+        trailing={
+          conversation ? (
+            <IconButton
+              icon={
+                <Icon name={conversation.muted ? 'mute' : 'notify'} className="text-primary" />
+              }
+              label={conversation.muted ? 'Unmute chat' : 'Mute chat'}
+              hint={
+                conversation.muted
+                  ? 'Turns notifications for this chat back on'
+                  : 'Stops notifications for this chat'
+              }
+              onPress={toggleMuted}
+            />
+          ) : null
+        }
+      />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}

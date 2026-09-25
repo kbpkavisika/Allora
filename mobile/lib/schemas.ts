@@ -128,6 +128,10 @@ export const accessibilityPreferencesSchema = z.object({
   reduce_motion: z.boolean(),
 });
 
+export const notificationPreferencesSchema = z.object({
+  message_notifications: z.boolean(),
+});
+
 export type SignInValues = z.infer<typeof signInSchema>;
 export type SignUpValues = z.infer<typeof signUpSchema>;
 export type ProfileValues = z.infer<typeof profileSchema>;
@@ -137,3 +141,4 @@ export type ReturnRequestValues = z.infer<typeof returnRequestSchema>;
 export type ReviewValues = z.infer<typeof reviewSchema>;
 export type MessageValues = z.infer<typeof messageSchema>;
 export type AccessibilityPreferencesValues = z.infer<typeof accessibilityPreferencesSchema>;
+export type NotificationPreferencesValues = z.infer<typeof notificationPreferencesSchema>;
