@@ -40,6 +40,7 @@ export interface ChatContextValue {
   ) => Promise<{ messages: Message[]; error: unknown }>;
   sendMessage: (input: SendMessageInput) => Promise<{ message: Message | null; error: unknown }>;
   markRead: (conversationId: string) => Promise<{ error: unknown }>;
+  setMuted: (conversationId: string, muted: boolean) => Promise<{ error: unknown }>;
   subscribeToMessages: (listener: MessageListener) => () => void;
   refresh: () => Promise<void>;
 }
@@ -143,6 +144,25 @@ export function ChatProvider({ children }: ChatProviderProps) {
     return { error };
   }, []);
 
+  const setMuted = useCallback(async (conversationId: string, muted: boolean) => {
+    const applyMuted = (next: boolean) =>
+      setConversations((current) =>
+        current.map((conversation) =>
+          conversation.id === conversationId ? { ...conversation, muted: next } : conversation
+        )
+      );
+
+    applyMuted(muted);
+
+    const { error } = await supabase.rpc('set_conversation_muted', {
+      p_conversation_id: conversationId,
+      p_muted: muted,
+    });
+
+    if (error) applyMuted(!muted);
+    return { error };
+  }, []);
+
   const subscribeToMessages = useCallback((listener: MessageListener) => {
     listeners.current.add(listener);
     return () => {
@@ -165,6 +185,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       loadMessages,
       sendMessage,
       markRead,
+      setMuted,
       subscribeToMessages,
       refresh: load,
     }),
@@ -177,6 +198,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       loadMessages,
       sendMessage,
       markRead,
+      setMuted,
       subscribeToMessages,
       load,
     ]
