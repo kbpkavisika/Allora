@@ -15,6 +15,7 @@ export interface Profile {
   dictation_enabled: boolean;
   screen_reader_support: boolean;
   reduce_motion: boolean;
+  message_notifications: boolean;
   created_at: string;
 }
 
