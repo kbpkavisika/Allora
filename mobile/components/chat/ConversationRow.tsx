@@ -2,6 +2,7 @@ import { Pressable, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/ui/Avatar';
 import { CountBadge } from '@/components/ui/CountBadge';
+import { Icon } from '@/components/ui/Icon';
 import { conversationPreview, formatConversationTime, type ConversationSummary } from '@/lib/chat';
 
 export interface ConversationRowProps {
@@ -19,6 +20,7 @@ export function ConversationRow({ conversation, userId, onPress }: ConversationR
 
   const accessibleName = [
     conversation.counterpart_name,
+    conversation.muted ? 'muted' : null,
     isUnread ? `${conversation.unread_count} unread` : null,
     preview,
     time,
@@ -43,6 +45,7 @@ export function ConversationRow({ conversation, userId, onPress }: ConversationR
             maxFontSizeMultiplier={1.5}>
             {conversation.counterpart_name}
           </Text>
+          {conversation.muted ? <Icon name="mute" size="sm" className="text-secondary" /> : null}
           {time ? (
             <Text
               className={`type-text-secondary ${isUnread ? 'text-primary' : 'text-secondary'}`}
