@@ -3,7 +3,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 
-import { sendOtpSms } from '../_shared/paymentOtpSms.ts';
+import { SmsDeliveryError, formatOtpSmsMessage, sendOtpSms } from '../_shared/paymentOtpSms.ts';
 
 const OTP_EXPIRY_SECONDS = 300;
 const MINIMUM_RESEND_INTERVAL_SECONDS = 30;
@@ -63,12 +63,6 @@ function maskPhone(phone: string): string {
   return `${prefix}${'*'.repeat(Math.max(0, visiblePhone.length - prefix.length - suffix.length))}${suffix}`;
 }
 
-function buildSmsMessage(code: string): string {
-  const appHash = Deno.env.get('PAYMENT_OTP_APP_HASH')?.trim();
-  const hashLine = appHash ? `\n${appHash}` : '';
-  return `Your Allora payment verification code is ${code}${hashLine}`;
-}
-
 serve(async (req) => {
   try {
     if (req.method !== 'POST') return errorResponse(405, 'Method not allowed');
@@ -82,10 +76,6 @@ serve(async (req) => {
 
     if (!supabaseUrl || !supabaseSecret || !otpSecret) {
       return errorResponse(500, 'Payment OTP service is not configured.');
-    }
-
-    if (!Deno.env.get('PAYMENT_OTP_SMS_URL')) {
-      return errorResponse(503, 'Payment OTP SMS provider is not configured.');
     }
 
     const supabase = createClient(supabaseUrl, supabaseSecret, {
@@ -162,14 +152,35 @@ serve(async (req) => {
 
     if (insertError || !otp) return errorResponse(500, 'Could not create payment verification.');
 
+    const simSubscriptionConfigured = Boolean(Deno.env.get('TEXTBEE_SIM_SUBSCRIPTION_ID')?.trim());
+
     try {
-      await sendOtpSms({ phone, code, message: buildSmsMessage(code) });
-    } catch {
+      await sendOtpSms({
+        phone,
+        code,
+        message: formatOtpSmsMessage(code),
+      });
+    } catch (deliveryError) {
       await supabase
         .from('payment_otps')
         .update({ used: true, used_at: new Date().toISOString() })
         .eq('id', otp.id);
-      return errorResponse(503, 'Payment OTP SMS provider is not configured or unavailable.');
+
+      const httpStatus = deliveryError instanceof SmsDeliveryError ? deliveryError.httpStatus : undefined;
+      const errorCategory = deliveryError instanceof SmsDeliveryError ? deliveryError.category : 'unknown';
+
+      console.error(
+        JSON.stringify({
+          provider: 'textbee',
+          httpStatus,
+          errorCategory,
+          buyerIdPresent: Boolean(user.id),
+          phonePresent: Boolean(phone),
+          simSubscriptionConfigured,
+        }),
+      );
+
+      return errorResponse(503, 'Unable to send verification code.');
     }
 
     return new Response(
