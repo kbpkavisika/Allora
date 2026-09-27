@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   Platform,
@@ -41,6 +41,7 @@ const TONE = {
 } as const;
 
 const SEARCH_FALLBACK_LABEL = 'Search Allora';
+const DICTATION_HINT = 'Tap the microphone on your keyboard to start speaking';
 
 type BaseProps = Omit<
   TextInputProps,
@@ -70,7 +71,6 @@ type BaseProps = Omit<
   onBlur?: TextInputProps['onBlur'];
   onSubmitEditing?: TextInputProps['onSubmitEditing'];
   onKeyPress?: TextInputProps['onKeyPress'];
-  onMicPress?: () => void;
   onRevealToggle?: (isNextRevealed: boolean) => void;
 
   width?: InputFieldWidth;
@@ -165,7 +165,6 @@ export function InputField({
   onBlur,
   onSubmitEditing,
   onKeyPress,
-  onMicPress,
   onClear,
   onRevealToggle,
   className = '',
@@ -174,6 +173,8 @@ export function InputField({
 }: Readonly<InputFieldProps>) {
   const [isFocused, setIsFocused] = useState(false);
   const [isRevealedInternal, setIsRevealedInternal] = useState(false);
+  const [isDictationHintShown, setIsDictationHintShown] = useState(false);
+  const inputRef = useRef<TextInput | null>(null);
 
   const hasError = Boolean(error);
   const isSearch = variant === 'search';
@@ -200,6 +201,18 @@ export function InputField({
       AccessibilityInfo.announceForAccessibility(`${resolvedLabel}: ${error}`);
     }
   }, [error, resolvedLabel]);
+
+  function setRefs(node: TextInput | null) {
+    inputRef.current = node;
+    if (typeof ref === 'function') ref(node);
+    else if (ref) ref.current = node;
+  }
+
+  function handleMicPress() {
+    inputRef.current?.focus();
+    setIsDictationHintShown(true);
+    AccessibilityInfo.announceForAccessibility(DICTATION_HINT);
+  }
 
   function handleRevealToggle() {
     const isNextRevealed = !isPasswordRevealed;
@@ -245,22 +258,21 @@ export function InputField({
       );
     }
 
-    if (!isMicVisible) {
+    if (!isMicVisible || !profile?.dictation_enabled) {
       return null;
     }
-
-    const isMicInert = isDisabled || !onMicPress;
 
     return (
       <IconButton
         diameter={32}
         variant="filled"
         icon={
-          <Icon name="dictate" size="md" className={isMicInert ? TONE.disabled : TONE.primary} />
+          <Icon name="dictate" size="md" className={isDisabled ? TONE.disabled : TONE.primary} />
         }
         label={`Dictate ${resolvedLabel.toLowerCase()}`}
-        disabled={isMicInert}
-        onPress={onMicPress}
+        hint="Opens the keyboard so you can dictate"
+        disabled={isDisabled}
+        onPress={handleMicPress}
       />
     );
   }
@@ -289,7 +301,7 @@ export function InputField({
         {isSearch ? <Icon name="search" size="md" className={TONE.secondary} /> : null}
 
         <TextInput
-          ref={ref}
+          ref={setRefs}
           className={`flex-1 self-stretch p-0 ${VALUE_TONE[state]}`}
           style={[
             toValueTextStyle(valueVariant, !!profile?.large_text),
@@ -305,6 +317,7 @@ export function InputField({
           }}
           onBlur={(e) => {
             setIsFocused(false);
+            setIsDictationHintShown(false);
             onBlur?.(e);
           }}
           onSubmitEditing={onSubmitEditing}
@@ -333,11 +346,11 @@ export function InputField({
           maxFontSizeMultiplier={2}>
           {error}
         </Text>
-      ) : helperText ? (
+      ) : isDictationHintShown || helperText ? (
         <Text
           className={`type-text-secondary mt-1 ${isDisabled ? TONE.disabled : TONE.secondary}`}
           maxFontSizeMultiplier={2}>
-          {helperText}
+          {isDictationHintShown ? DICTATION_HINT : helperText}
         </Text>
       ) : null}
     </View>
