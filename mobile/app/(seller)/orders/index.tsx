@@ -7,6 +7,7 @@ import { SellerOrderCard } from '@/components/seller/SellerOrderCard';
 import { Icon } from '@/components/ui/Icon';
 import { ScrollTabs, type ScrollTabItem } from '@/components/ui/ScrollTabs';
 import { TopBar } from '@/components/ui/TopBar';
+import { useListPosition } from '@/hooks/useListPosition';
 import { orderStatuses, type OrderStatus } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 
@@ -25,6 +26,7 @@ const EMPTY_MESSAGE: Record<OrderStatus, string> = {
 export default function SellerOrdersScreen() {
   const insets = useSafeAreaInsets();
   const { orders, isLoading, advanceDelivery } = useOrders();
+  const positionOf = useListPosition();
 
   const [tab, setTab] = useState<OrderStatus>('new');
   const [advancingId, setAdvancingId] = useState<string | null>(null);
@@ -70,9 +72,10 @@ export default function SellerOrdersScreen() {
           paddingBottom: insets.bottom + 32,
           gap: 12,
         }}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <SellerOrderCard
             order={item}
+            position={positionOf(index, visibleOrders.length)}
             isAdvancing={advancingId === item.id}
             onPress={() =>
               router.push({ pathname: '/seller/orders/[id]', params: { id: item.id } })

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
+import { useScreenTitleFocus } from '@/hooks/useScreenTitleFocus';
 
 export interface TopBarProps {
   title: string;
@@ -15,6 +16,7 @@ export interface TopBarProps {
 export function TopBar({ title, subtitle, showBack = true, trailing }: TopBarProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const titleRef = useScreenTitleFocus();
 
   return (
     <View className="bg-surface" style={{ paddingTop: insets.top }}>
@@ -32,6 +34,7 @@ export function TopBar({ title, subtitle, showBack = true, trailing }: TopBarPro
 
         <View className="flex-1 items-center justify-center">
           <Text
+            ref={titleRef}
             role="heading"
             className="type-title text-primary"
             numberOfLines={1}

@@ -10,6 +10,7 @@ export interface SellerOrderCardProps {
   onPress: () => void;
   onAdvance: () => void;
   isAdvancing?: boolean;
+  position?: string;
 }
 
 export function SellerOrderCard({
@@ -17,6 +18,7 @@ export function SellerOrderCard({
   onPress,
   onAdvance,
   isAdvancing = false,
+  position,
 }: SellerOrderCardProps) {
   const status = statusPresentation(order.status);
   const advanceLabel = nextDeliveryStatusLabel(order.delivery?.status ?? 'pending');
@@ -27,7 +29,7 @@ export function SellerOrderCard({
       <Pressable
         onPress={onPress}
         role="button"
-        aria-label={`Order ${order.order_number}, ${order.ship_name ?? 'Buyer'}, ${status.label}`}
+        aria-label={`Order ${order.order_number}, ${order.ship_name ?? 'Buyer'}, ${status.label}${position ? `, ${position}` : ''}`}
         accessibilityHint="Opens the order details"
         className="flex-row items-center gap-3 active:bg-surface-muted">
         <View className="h-14 w-14 items-center justify-center rounded-8 bg-surface-sunken">

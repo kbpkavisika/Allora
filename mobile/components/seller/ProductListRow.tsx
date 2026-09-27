@@ -8,9 +8,10 @@ import { formatPrice, getStockStatus, type Product } from '@/lib/products';
 export interface ProductListRowProps {
   product: Product;
   onPress: () => void;
+  position?: string;
 }
 
-export function ProductListRow({ product, onPress }: ProductListRowProps) {
+export function ProductListRow({ product, onPress, position }: ProductListRowProps) {
   const stock = getStockStatus(product.stock_quantity);
   const cover = product.photos[0];
 
@@ -18,7 +19,7 @@ export function ProductListRow({ product, onPress }: ProductListRowProps) {
     <Pressable
       onPress={onPress}
       role="button"
-      aria-label={`${product.name}, ${formatPrice(product.price)}, ${stock.detailLabel}`}
+      aria-label={`${product.name}, ${formatPrice(product.price)}, ${stock.detailLabel}${position ? `, ${position}` : ''}`}
       accessibilityHint="Opens the product to edit it"
       className="min-h-tap flex-row items-center gap-3 py-3 active:bg-surface-muted">
       <View className="h-14 w-14 items-center justify-center overflow-hidden rounded-8 bg-surface-sunken">

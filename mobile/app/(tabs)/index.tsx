@@ -20,6 +20,7 @@ import { InputField } from '@/components/ui/InputField';
 import { OptionList } from '@/components/ui/OptionList';
 import { ProductTile, ProductTileSkeleton } from '@/components/ui/ProductTile';
 import { ScrollTabs, type ScrollTabItem } from '@/components/ui/ScrollTabs';
+import { useListPosition } from '@/hooks/useListPosition';
 import { BROWSE_PAGE_SIZE, fetchProducts, productSorts, type ProductSort } from '@/lib/browse';
 import { useCart } from '@/lib/CartProvider';
 import type { Product } from '@/lib/products';
@@ -45,6 +46,7 @@ interface Query {
 export default function ShopScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const positionOf = useListPosition();
   const tileWidth = (width - TILE_GAP) / 2;
 
   const [searchText, setSearchText] = useState('');
@@ -157,10 +159,11 @@ export default function ShopScreen() {
         }
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <View style={{ width: tileWidth }}>
             <ProductTile
               product={item}
+              position={positionOf(index, products.length)}
               onPress={() =>
                 router.push({ pathname: '/product/[id]', params: { id: item.id } })
               }
