@@ -2,6 +2,7 @@ import { Redirect, Tabs } from 'expo-router';
 
 import { BottomTabBar, type TabDefinition } from '@/components/ui/BottomTabBar';
 import { Header } from '@/components/ui/Header';
+import { useChat } from '@/hooks/useChat';
 import { useShop } from '@/hooks/useShop';
 
 const SELLER_TABS: Record<string, TabDefinition> = {
@@ -13,6 +14,7 @@ const SELLER_TABS: Record<string, TabDefinition> = {
 
 export default function SellerTabLayout() {
   const { shop, isLoading } = useShop();
+  const { unreadCount } = useChat();
 
   if (!isLoading && !shop) {
     return <Redirect href="/seller/store-setup" />;
@@ -21,7 +23,9 @@ export default function SellerTabLayout() {
   return (
     <Tabs
       screenOptions={{ header: () => <Header /> }}
-      tabBar={(props) => <BottomTabBar {...props} tabs={SELLER_TABS} />}>
+      tabBar={(props) => (
+        <BottomTabBar {...props} tabs={SELLER_TABS} badges={{ 'chat/index': unreadCount }} />
+      )}>
       <Tabs.Screen name="index" options={{ title: 'Shop', headerShown: false }} />
       <Tabs.Screen name="orders/index" options={{ title: 'Orders', headerShown: false }} />
       <Tabs.Screen name="chat/index" options={{ title: 'Chat' }} />

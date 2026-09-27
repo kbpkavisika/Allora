@@ -5,15 +5,18 @@ import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ListRow } from '@/components/account/ListRow';
+import { NotificationSettingsCard } from '@/components/account/NotificationSettingsCard';
 import { ProfileHeader } from '@/components/account/ProfileHeader';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { CountBadge } from '@/components/ui/CountBadge';
 import { FormError } from '@/components/ui/FormError';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { SuccessBanner } from '@/components/ui/SuccessBanner';
+import { useChat } from '@/hooks/useChat';
 import { useProfile } from '@/hooks/useProfile';
-import { useAuth } from '@/lib/AuthProvider';
+import { signOut, useAuth } from '@/lib/AuthProvider';
 import { getAuthErrorMessage } from '@/lib/authErrors';
 import { enabledAccessibilityFeatures, formatAddressLines } from '@/lib/profile';
 import { supabase } from '@/lib/supabase';
@@ -25,6 +28,7 @@ export default function AccountScreen() {
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
   const { profile, addresses, refresh } = useProfile();
+  const { unreadCount } = useChat();
   const [resetSent, setResetSent] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
   const [isSendingReset, setIsSendingReset] = useState(false);
@@ -67,7 +71,7 @@ export default function AccountScreen() {
   function confirmSignOut() {
     Alert.alert('Sign out', 'Signing out keeps your saved items on this device.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => supabase.auth.signOut() },
+      { text: 'Sign out', style: 'destructive', onPress: () => signOut() },
     ]);
   }
 
@@ -82,7 +86,7 @@ export default function AccountScreen() {
           style: 'destructive',
           onPress: async () => {
             await supabase.from('profiles').delete().eq('id', userId);
-            await supabase.auth.signOut();
+            await signOut();
           },
         },
       ]
@@ -94,6 +98,18 @@ export default function AccountScreen() {
       className="flex-1 bg-surface"
       contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32, gap: 32 }}>
       <ProfileHeader name={profile.full_name} email={email} />
+
+      <Card className="px-4">
+        <ListRow
+          icon="chat"
+          title="Messages"
+          subtitle={unreadCount > 0 ? `${unreadCount} unread` : 'Your chats with sellers'}
+          trailing={<CountBadge count={unreadCount} />}
+          showChevron
+          onPress={() => router.push('/chat')}
+          hint="Opens your conversations with sellers"
+        />
+      </Card>
 
       <View className="gap-3">
         <SectionHeader title="Personal info" />
@@ -160,6 +176,8 @@ export default function AccountScreen() {
           </View>
         </Card>
       </View>
+
+      <NotificationSettingsCard />
 
       <View className="gap-3">
         <SectionHeader title="Accessibility" />

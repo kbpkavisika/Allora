@@ -21,8 +21,10 @@ import 'react-native-reanimated';
 import { BrandSplash } from '@/components/BrandSplash';
 import { colorVars, typographyVars } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { AuthProvider, useAuth } from '@/lib/AuthProvider';
 import { CartProvider } from '@/lib/CartProvider';
+import { ChatProvider } from '@/lib/ChatProvider';
 import { OrdersProvider } from '@/lib/OrdersProvider';
 import { ProductsProvider } from '@/lib/ProductsProvider';
 import { ProfileProvider, useProfile } from '@/lib/ProfileProvider';
@@ -47,7 +49,9 @@ export default function RootLayout() {
           <ProductsProvider>
             <OrdersProvider>
               <CartProvider>
-                <RootNavigator />
+                <ChatProvider>
+                  <RootNavigator />
+                </ChatProvider>
               </CartProvider>
             </OrdersProvider>
           </ProductsProvider>
@@ -82,6 +86,8 @@ function RootNavigator() {
   const needsOnboarding = !!session && !isProfileLoading && (profile?.role ?? null) === null;
   const showApp = !!session && !needsOnboarding;
   const isSeller = profile?.role === 'seller';
+
+  usePushNotifications(session?.user.id, ready && showApp);
 
   useEffect(() => {
     const timer = setTimeout(() => setMinHoldElapsed(true), SPLASH_MIN_MS);
@@ -142,6 +148,8 @@ function RootNavigator() {
               options={{ presentation: 'modal', headerShown: false }}
             />
             <Stack.Screen name="orders/[id]" options={{ headerShown: false }} />
+            <Stack.Screen name="chat/index" options={{ headerShown: false }} />
+            <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="orders/[id]/return" options={{ headerShown: false }} />
             <Stack.Screen name="payment/checkout" options={{ headerShown: false }} />
             <Stack.Screen name="payment/result" options={{ headerShown: false }} />

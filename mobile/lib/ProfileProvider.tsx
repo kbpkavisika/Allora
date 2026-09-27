@@ -17,6 +17,7 @@ export interface ProfileUpdateInput {
   dictation_enabled?: boolean;
   screen_reader_support?: boolean;
   reduce_motion?: boolean;
+  message_notifications?: boolean;
 }
 
 export interface AddressInput {

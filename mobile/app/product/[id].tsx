@@ -19,16 +19,20 @@ import { Divider } from '@/components/ui/Divider';
 import { Icon } from '@/components/ui/Icon';
 import { Toast } from '@/components/ui/Toast';
 import { TopBar } from '@/components/ui/TopBar';
+import { useSellerChat } from '@/hooks/useSellerChat';
 import { useCart } from '@/lib/CartProvider';
 import { formatMoney } from '@/lib/orders';
 import { getStockStatus, type Product } from '@/lib/products';
 import { fetchRatingSummary, summarizeReviews, type RatingSummary } from '@/lib/reviews';
+import { useShop } from '@/lib/ShopProvider';
 import { supabase } from '@/lib/supabase';
 
 export default function ProductDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { addItem } = useCart();
+  const { shop } = useShop();
+  const { openSellerChat, isOpening } = useSellerChat();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -90,6 +94,7 @@ export default function ProductDetailScreen() {
   const stock = getStockStatus(product.stock_quantity);
   const soldOut = product.stock_quantity <= 0;
   const hasDescription = product.description.trim().length > 0;
+  const isOwnProduct = shop?.id === product.shop_id;
 
   async function handleAdd() {
     if (!product) return;
@@ -151,6 +156,19 @@ export default function ProductDetailScreen() {
               router.push({ pathname: '/product/[id]/reviews', params: { id: product.id } })
             }
           />
+
+          {!isOwnProduct ? (
+            <>
+              <Divider />
+              <Button
+                variant="secondary"
+                label="Chat with seller"
+                loading={isOpening}
+                onPress={() => openSellerChat({ shopId: product.shop_id, productId: product.id })}
+                hint="Opens a conversation with the seller about this product"
+              />
+            </>
+          ) : null}
         </View>
       </ScrollView>
 

@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ListRow } from '@/components/account/ListRow';
+import { NotificationSettingsCard } from '@/components/account/NotificationSettingsCard';
 import { ProfileHeader } from '@/components/account/ProfileHeader';
 import { StoreDetailsCard } from '@/components/seller/StoreDetailsCard';
 import { Button } from '@/components/ui/Button';
@@ -14,7 +15,7 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { SuccessBanner } from '@/components/ui/SuccessBanner';
 import { useProfile } from '@/hooks/useProfile';
 import { useShop } from '@/hooks/useShop';
-import { useAuth } from '@/lib/AuthProvider';
+import { signOut, useAuth } from '@/lib/AuthProvider';
 import { getAuthErrorMessage } from '@/lib/authErrors';
 import { enabledAccessibilityFeatures, memberSince } from '@/lib/profile';
 import { supabase } from '@/lib/supabase';
@@ -102,7 +103,7 @@ export default function SellerAccountScreen() {
   function confirmSignOut() {
     Alert.alert('Sign out', 'Signing out keeps your shop and listings.', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => supabase.auth.signOut() },
+      { text: 'Sign out', style: 'destructive', onPress: () => signOut() },
     ]);
   }
 
@@ -117,7 +118,7 @@ export default function SellerAccountScreen() {
           style: 'destructive',
           onPress: async () => {
             await supabase.from('profiles').delete().eq('id', userId);
-            await supabase.auth.signOut();
+            await signOut();
           },
         },
       ]
@@ -163,6 +164,8 @@ export default function SellerAccountScreen() {
           />
         </Card>
       </View>
+
+      <NotificationSettingsCard />
 
       <View className="gap-3">
         <SectionHeader title="Accessibility" />

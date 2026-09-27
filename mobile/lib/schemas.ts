@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { MESSAGE_MAX_LENGTH } from '@/lib/chat';
 import { returnReasons } from '@/lib/orders';
 
 const email = z
@@ -109,12 +110,26 @@ export const reviewSchema = z.object({
   photos: z.array(z.string()).max(6, { error: 'Add up to 6 photos.' }),
 });
 
+export const messageSchema = z.object({
+  body: z
+    .string()
+    .trim()
+    .min(1, { error: 'Write a message first.' })
+    .max(MESSAGE_MAX_LENGTH, {
+      error: `Keep your message under ${MESSAGE_MAX_LENGTH} characters.`,
+    }),
+});
+
 export const accessibilityPreferencesSchema = z.object({
   large_text: z.boolean(),
   high_contrast: z.boolean(),
   dictation_enabled: z.boolean(),
   screen_reader_support: z.boolean(),
   reduce_motion: z.boolean(),
+});
+
+export const notificationPreferencesSchema = z.object({
+  message_notifications: z.boolean(),
 });
 
 export type SignInValues = z.infer<typeof signInSchema>;
@@ -124,4 +139,6 @@ export type ShippingAddressValues = z.infer<typeof shippingAddressSchema>;
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
 export type ReturnRequestValues = z.infer<typeof returnRequestSchema>;
 export type ReviewValues = z.infer<typeof reviewSchema>;
+export type MessageValues = z.infer<typeof messageSchema>;
 export type AccessibilityPreferencesValues = z.infer<typeof accessibilityPreferencesSchema>;
+export type NotificationPreferencesValues = z.infer<typeof notificationPreferencesSchema>;
