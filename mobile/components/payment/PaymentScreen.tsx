@@ -43,7 +43,7 @@ export function PaymentScreen({ request, gateway = new MockPaymentGateway() }: P
     setState(paymentResult.state);
   }
 
-  function handleOtpSubmitted() {
+  function handleOtpVerified() {
     setState('pending');
     setResult({
       state: 'pending',
@@ -87,7 +87,7 @@ export function PaymentScreen({ request, gateway = new MockPaymentGateway() }: P
         ) : null}
 
         {state === 'authentication_required' ? (
-          <PaymentAuthentication onSubmitOtp={handleOtpSubmitted} />
+          <PaymentAuthentication onVerified={handleOtpVerified} onCancel={() => setState('idle')} />
         ) : null}
 
         {result && state !== 'authentication_required' && state !== 'processing' ? (
