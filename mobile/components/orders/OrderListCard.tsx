@@ -8,9 +8,10 @@ import { formatPlacedAt, itemSummary, statusPresentation, type Order } from '@/l
 
 export interface OrderListCardProps {
   order: Order;
+  position?: string;
 }
 
-export function OrderListCard({ order }: OrderListCardProps) {
+export function OrderListCard({ order, position }: OrderListCardProps) {
   const status = statusPresentation(order.status);
   const cover = order.items[0]?.product_photo;
   const delivery = deliveryCaption(order.delivery);
@@ -22,7 +23,7 @@ export function OrderListCard({ order }: OrderListCardProps) {
     <Pressable
       onPress={() => router.push({ pathname: '/orders/[id]', params: { id: order.id } })}
       role="button"
-      aria-label={`Order ${order.order_number}, ${status.label}`}
+      aria-label={`Order ${order.order_number}, ${status.label}${position ? `, ${position}` : ''}`}
       accessibilityHint="Opens the order"
       className="flex-row items-center gap-3 rounded-12 border-1 border-border bg-surface p-3 active:bg-surface-muted">
       <View className="h-14 w-14 items-center justify-center overflow-hidden rounded-8 bg-surface-sunken">

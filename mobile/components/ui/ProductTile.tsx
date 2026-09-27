@@ -9,9 +9,10 @@ import { getStockStatus, type Product } from '@/lib/products';
 export interface ProductTileProps {
   product: Product;
   onPress: () => void;
+  position?: string;
 }
 
-export function ProductTile({ product, onPress }: ProductTileProps) {
+export function ProductTile({ product, onPress, position }: ProductTileProps) {
   const stock = getStockStatus(product.stock_quantity);
   const price = formatMoney(product.price);
   // In-stock is the default: only surface a badge when availability is a buying signal.
@@ -21,7 +22,7 @@ export function ProductTile({ product, onPress }: ProductTileProps) {
     <Pressable
       onPress={onPress}
       role="button"
-      aria-label={`${product.name}, ${price}, ${stock.detailLabel}`}
+      aria-label={`${product.name}, ${price}, ${stock.detailLabel}${position ? `, ${position}` : ''}`}
       accessibilityHint="Opens the product"
       className="w-full active:opacity-90">
       <View className="aspect-[3/4] w-full items-center justify-center overflow-hidden rounded-12 bg-surface-sunken">

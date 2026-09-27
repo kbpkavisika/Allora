@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OrderListCard } from '@/components/orders/OrderListCard';
 import { ScrollTabs, type ScrollTabItem } from '@/components/ui/ScrollTabs';
+import { useListPosition } from '@/hooks/useListPosition';
 import { useOrders } from '@/lib/OrdersProvider';
 
 type OrderFilter = 'active' | 'past';
@@ -13,6 +14,7 @@ const isActive = (status: string) => status === 'new' || status === 'processing'
 export default function OrdersScreen() {
   const insets = useSafeAreaInsets();
   const { orders, isLoading } = useOrders();
+  const positionOf = useListPosition();
   const [filter, setFilter] = useState<OrderFilter>('active');
 
   const activeCount = orders.filter((order) => isActive(order.status)).length;
@@ -55,7 +57,9 @@ export default function OrdersScreen() {
           paddingBottom: insets.bottom + 32,
           gap: 12,
         }}
-        renderItem={({ item }) => <OrderListCard order={item} />}
+        renderItem={({ item, index }) => (
+          <OrderListCard order={item} position={positionOf(index, visibleOrders.length)} />
+        )}
         ListEmptyComponent={
           isLoading ? (
             <ActivityIndicator className="mt-16 text-secondary" />

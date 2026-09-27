@@ -3,6 +3,7 @@ import { Text, View } from 'react-native';
 
 import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
+import { useScreenTitleFocus } from '@/hooks/useScreenTitleFocus';
 
 export interface ScreenHeaderProps {
   title: string;
@@ -18,6 +19,7 @@ export function ScreenHeader({
   className = '',
 }: ScreenHeaderProps) {
   const router = useRouter();
+  const titleRef = useScreenTitleFocus();
 
   return (
     <View className={`gap-6 ${className}`}>
@@ -32,7 +34,7 @@ export function ScreenHeader({
         />
       ) : null}
       <View className="gap-2">
-        <Text role="heading" className="type-h1 text-primary" maxFontSizeMultiplier={1.5}>
+        <Text ref={titleRef} role="heading" className="type-h1 text-primary" maxFontSizeMultiplier={1.5}>
           {title}
         </Text>
         {subtitle ? (

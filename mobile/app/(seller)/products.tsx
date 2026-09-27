@@ -8,6 +8,7 @@ import { FilterChip, IconFilterChip } from '@/components/ui/FilterChip';
 import { InputField } from '@/components/ui/InputField';
 import { OptionList } from '@/components/ui/OptionList';
 import { TopBar } from '@/components/ui/TopBar';
+import { useListPosition } from '@/hooks/useListPosition';
 import { useProducts } from '@/hooks/useProducts';
 import { LOW_STOCK_THRESHOLD, type Product } from '@/lib/products';
 
@@ -32,6 +33,7 @@ const COMPARE: Record<SortOption, (a: Product, b: Product) => number> = {
 export default function SellerProductsScreen() {
   const insets = useSafeAreaInsets();
   const { products, isLoading } = useProducts();
+  const positionOf = useListPosition();
 
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortOption>('Newest');
@@ -118,9 +120,10 @@ export default function SellerProductsScreen() {
             ) : null}
           </View>
         }
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <ProductListRow
             product={item}
+            position={positionOf(index, visibleProducts.length)}
             onPress={() =>
               router.push({ pathname: '/seller/edit-product', params: { id: item.id } })
             }
