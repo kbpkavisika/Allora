@@ -33,7 +33,8 @@ export type IconName =
   | 'star'
   | 'close'
   | 'notify'
-  | 'mute';
+  | 'mute'
+  | 'speak';
 export type IconSize = 'sm' | 'md' | 'lg';
 export type BrandName = 'apple' | 'google';
 export type SolidIconName = 'star';
@@ -65,6 +66,7 @@ const GLYPH: Record<IconName, React.ComponentProps<typeof Feather>['name']> = {
   close: 'x',
   notify: 'bell',
   mute: 'bell-off',
+  speak: 'volume-2',
 };
 
 const SOLID_GLYPH: Record<SolidIconName, React.ComponentProps<typeof FontAwesome6>['name']> = {
