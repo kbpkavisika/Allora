@@ -1,7 +1,8 @@
 import { useIsFocused } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
@@ -38,6 +39,7 @@ import { useChat } from '@/lib/ChatProvider';
 import { setActiveConversation } from '@/lib/notifications';
 import { useOrders } from '@/lib/OrdersProvider';
 import { useProfile } from '@/lib/ProfileProvider';
+import { messageSpeech, speak, stopSpeaking } from '@/lib/speech';
 import { supabase } from '@/lib/supabase';
 
 interface MessageContext {
@@ -78,6 +80,8 @@ export default function ChatThreadScreen() {
     productId || orderId ? { productId, orderId } : null
   );
   const [toast, setToast] = useState<string | null>(null);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const heardMessageId = useRef<string | null | undefined>(undefined);
 
   const refreshMessages = useCallback(async () => {
     if (!conversationId) return;
@@ -166,12 +170,70 @@ export default function ChatThreadScreen() {
 
   const title = conversation?.counterpart_name ?? shopName ?? 'Chat';
 
+  const readAloud = useCallback(
+    (message: Message) => {
+      setSpeakingId(message.id);
+      speak(messageSpeech(title, message.body), {
+        onFinish: () => setSpeakingId((current) => (current === message.id ? null : current)),
+      });
+    },
+    [title]
+  );
+
+  function toggleReadAloud(message: Message) {
+    if (speakingId === message.id) {
+      stopSpeaking();
+    } else {
+      readAloud(message);
+    }
+  }
+
+  useEffect(() => {
+    if (!isFocused) return;
+    return () => {
+      stopSpeaking();
+    };
+  }, [isFocused]);
+
+  const readIncomingAloud = !!profile?.read_messages_aloud;
+  const announceIncoming = !!profile?.screen_reader_support;
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const newest = messages[0];
+    if (heardMessageId.current === undefined) {
+      heardMessageId.current = newest?.id ?? null;
+      return;
+    }
+    if (!newest || newest.id === heardMessageId.current) return;
+    heardMessageId.current = newest.id;
+
+    if (newest.sender_id === userId || !isFocused) return;
+
+    if (readIncomingAloud) {
+      readAloud(newest);
+    } else if (announceIncoming) {
+      AccessibilityInfo.announceForAccessibility(messageSpeech(title, newest.body));
+    }
+  }, [
+    messages,
+    isLoading,
+    isFocused,
+    userId,
+    title,
+    readIncomingAloud,
+    announceIncoming,
+    readAloud,
+  ]);
+
   function contextLine({ productId: product, orderId: order }: MessageContext): ContextLine | null {
     if (order) {
       const orderNumber = getOrder(order)?.order_number;
       return {
         icon: 'orders',
         label: orderNumber ? `About order ${orderNumber}` : 'About an order',
+        hint: orderNumber ? 'Opens the order' : undefined,
         onPress: orderNumber
           ? () =>
               router.push({
@@ -187,6 +249,7 @@ export default function ChatThreadScreen() {
       return {
         icon: 'shop',
         label: productName ? `About ${productName}` : 'About a product',
+        hint: productName ? 'Opens the product' : undefined,
         onPress: productName
           ? () => router.push({ pathname: '/product/[id]', params: { id: product } })
           : undefined,
@@ -225,6 +288,7 @@ export default function ChatThreadScreen() {
 
     setPendingContext(null);
     setMessages((current) => mergeMessages(current, [message]));
+    AccessibilityInfo.announceForAccessibility('Message sent');
 
     if (!conversationId) {
       router.setParams({ id: message.conversation_id });
@@ -281,7 +345,7 @@ export default function ChatThreadScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {isLoading ? (
           <View className="flex-1 items-center justify-center">
-            <ActivityIndicator className="text-secondary" />
+            <ActivityIndicator aria-label="Loading messages" className="text-secondary" />
           </View>
         ) : messages.length === 0 ? (
           <View className="flex-1 items-center justify-center gap-3 px-8">
@@ -303,7 +367,12 @@ export default function ChatThreadScreen() {
             onEndReached={loadOlder}
             onEndReachedThreshold={0.3}
             ListFooterComponent={
-              isLoadingOlder ? <ActivityIndicator className="py-2 text-secondary" /> : null
+              isLoadingOlder ? (
+                <ActivityIndicator
+                  aria-label="Loading older messages"
+                  className="py-2 text-secondary"
+                />
+              ) : null
             }
             renderItem={({ item, index }) => {
               const isMine = item.sender_id === userId;
@@ -322,6 +391,8 @@ export default function ChatThreadScreen() {
                     isMine={isMine}
                     senderLabel={isMine ? 'You' : title}
                     header={line ? <MessageContextLine {...line} /> : null}
+                    isSpeaking={speakingId === item.id}
+                    onReadAloud={isMine ? undefined : () => toggleReadAloud(item)}
                   />
                 </View>
               );
