@@ -1,14 +1,27 @@
 import { Text, View } from 'react-native';
 
+import { Icon } from '@/components/ui/Icon';
+import { IconButton } from '@/components/ui/IconButton';
+
 export interface MessageBubbleProps {
   body: string;
   time: string;
   isMine: boolean;
   senderLabel: string;
   header?: React.ReactNode;
+  isSpeaking?: boolean;
+  onReadAloud?: () => void;
 }
 
-export function MessageBubble({ body, time, isMine, senderLabel, header }: MessageBubbleProps) {
+export function MessageBubble({
+  body,
+  time,
+  isMine,
+  senderLabel,
+  header,
+  isSpeaking = false,
+  onReadAloud,
+}: MessageBubbleProps) {
   return (
     <View className={`max-w-[80%] gap-1 ${isMine ? 'items-end self-end' : 'items-start self-start'}`}>
       {header}
@@ -22,12 +35,23 @@ export function MessageBubble({ body, time, isMine, senderLabel, header }: Messa
           {body}
         </Text>
       </View>
-      <Text
-        aria-hidden
-        className="type-text-secondary text-secondary"
-        maxFontSizeMultiplier={1.5}>
-        {time}
-      </Text>
+      <View className="flex-row items-center gap-1">
+        <Text
+          aria-hidden
+          className="type-text-secondary text-secondary"
+          maxFontSizeMultiplier={1.5}>
+          {time}
+        </Text>
+        {onReadAloud ? (
+          <IconButton
+            diameter={32}
+            icon={<Icon name={isSpeaking ? 'stop' : 'speak'} size="sm" className="text-secondary" />}
+            label={isSpeaking ? 'Stop reading' : `Read message from ${senderLabel} aloud`}
+            hint={isSpeaking ? 'Stops reading this message' : 'Speaks this message out loud'}
+            onPress={onReadAloud}
+          />
+        ) : null}
+      </View>
     </View>
   );
 }

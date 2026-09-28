@@ -6,6 +6,7 @@ import { IconButton } from '@/components/ui/IconButton';
 export interface MessageContextLineProps {
   label: string;
   icon: IconName;
+  hint?: string;
   onPress?: () => void;
   onRemove?: () => void;
   className?: string;
@@ -14,6 +15,7 @@ export interface MessageContextLineProps {
 export function MessageContextLine({
   label,
   icon,
+  hint,
   onPress,
   onRemove,
   className = '',
@@ -21,7 +23,10 @@ export function MessageContextLine({
   const body = (
     <View className="flex-row items-center gap-1">
       <Icon name={icon} size="sm" className="text-secondary" />
-      <Text className="type-text-secondary shrink text-secondary" numberOfLines={1}>
+      <Text
+        className="type-text-secondary shrink text-secondary"
+        numberOfLines={1}
+        maxFontSizeMultiplier={2}>
         {label}
       </Text>
     </View>
@@ -34,6 +39,7 @@ export function MessageContextLine({
           onPress={onPress}
           role="link"
           aria-label={label}
+          accessibilityHint={hint}
           hitSlop={8}
           className="shrink rounded-4 active:bg-surface-muted">
           {body}
