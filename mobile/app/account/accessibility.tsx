@@ -28,6 +28,7 @@ export default function EditAccessibilityScreen() {
             dictation_enabled: profile.dictation_enabled,
             screen_reader_support: profile.screen_reader_support,
             reduce_motion: profile.reduce_motion,
+            read_messages_aloud: profile.read_messages_aloud,
           }
         : undefined,
     [profile]

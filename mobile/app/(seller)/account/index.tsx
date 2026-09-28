@@ -21,7 +21,7 @@ import { enabledAccessibilityFeatures, memberSince } from '@/lib/profile';
 import { supabase } from '@/lib/supabase';
 
 const ACCESSIBILITY_SUMMARY =
-  'Large text, high contrast, dictation, screen reader support and reduce motion.';
+  'Large text, high contrast, dictation, screen reader support, reduce motion and reading messages aloud.';
 
 const LAST_FULFILMENT_ERROR =
   'Keep pickup or delivery on so buyers can still receive orders.';

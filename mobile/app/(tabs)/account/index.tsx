@@ -22,7 +22,7 @@ import { enabledAccessibilityFeatures, formatAddressLines } from '@/lib/profile'
 import { supabase } from '@/lib/supabase';
 
 const ACCESSIBILITY_SUMMARY =
-  'Large text, high contrast, dictation, screen reader support and reduce motion.';
+  'Large text, high contrast, dictation, screen reader support, reduce motion and reading messages aloud.';
 
 export default function AccountScreen() {
   const insets = useSafeAreaInsets();

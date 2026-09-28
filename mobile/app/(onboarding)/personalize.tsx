@@ -32,6 +32,7 @@ export default function PersonalizeScreen() {
       dictation_enabled: false,
       screen_reader_support: false,
       reduce_motion: false,
+      read_messages_aloud: false,
     },
   });
   const [formError, setFormError] = useState<string | null>(null);
