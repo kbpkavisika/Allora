@@ -10,4 +10,5 @@ alter table public.profiles
   add column high_contrast boolean not null default false,
   add column dictation_enabled boolean not null default false,
   add column screen_reader_support boolean not null default false,
-  add column reduce_motion boolean not null default false;
+  add column reduce_motion boolean not null default false,
+  add column read_messages_aloud boolean not null default false;
