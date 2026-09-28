@@ -8,10 +8,16 @@ import { conversationPreview, formatConversationTime, type ConversationSummary }
 export interface ConversationRowProps {
   conversation: ConversationSummary;
   userId: string;
+  position?: string;
   onPress: () => void;
 }
 
-export function ConversationRow({ conversation, userId, onPress }: ConversationRowProps) {
+export function ConversationRow({
+  conversation,
+  userId,
+  position,
+  onPress,
+}: ConversationRowProps) {
   const isUnread = conversation.unread_count > 0;
   const preview = conversationPreview(conversation, userId);
   const time = conversation.last_message_at
@@ -24,6 +30,7 @@ export function ConversationRow({ conversation, userId, onPress }: ConversationR
     isUnread ? `${conversation.unread_count} unread` : null,
     preview,
     time,
+    position,
   ]
     .filter(Boolean)
     .join(', ');

@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ConversationRow } from '@/components/chat/ConversationRow';
 import { Icon } from '@/components/ui/Icon';
+import { useListPosition } from '@/hooks/useListPosition';
 import { useAuth } from '@/lib/AuthProvider';
 import { useChat } from '@/lib/ChatProvider';
 
@@ -18,6 +19,7 @@ export function ConversationList({ emptyMessage }: ConversationListProps) {
   const { session } = useAuth();
   const { conversations, isLoading, refresh } = useChat();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const positionOf = useListPosition();
 
   const userId = session?.user.id ?? '';
 
@@ -36,7 +38,7 @@ export function ConversationList({ emptyMessage }: ConversationListProps) {
   if (isLoading && conversations.length === 0) {
     return (
       <View className="flex-1 items-center justify-center bg-surface">
-        <ActivityIndicator className="text-secondary" />
+        <ActivityIndicator aria-label="Loading conversations" className="text-secondary" />
       </View>
     );
   }
@@ -50,10 +52,11 @@ export function ConversationList({ emptyMessage }: ConversationListProps) {
       refreshing={isRefreshing}
       onRefresh={pullToRefresh}
       ItemSeparatorComponent={() => <View className="ml-4 h-px bg-border" aria-hidden />}
-      renderItem={({ item }) => (
+      renderItem={({ item, index }) => (
         <ConversationRow
           conversation={item}
           userId={userId}
+          position={positionOf(index, conversations.length)}
           onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.id } })}
         />
       )}
