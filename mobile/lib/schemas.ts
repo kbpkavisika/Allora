@@ -126,6 +126,7 @@ export const accessibilityPreferencesSchema = z.object({
   dictation_enabled: z.boolean(),
   screen_reader_support: z.boolean(),
   reduce_motion: z.boolean(),
+  read_messages_aloud: z.boolean(),
 });
 
 export const notificationPreferencesSchema = z.object({

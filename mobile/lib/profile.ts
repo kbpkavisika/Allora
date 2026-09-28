@@ -15,6 +15,7 @@ export interface Profile {
   dictation_enabled: boolean;
   screen_reader_support: boolean;
   reduce_motion: boolean;
+  read_messages_aloud: boolean;
   message_notifications: boolean;
   created_at: string;
 }
@@ -81,6 +82,11 @@ export const ACCESSIBILITY_FEATURES = [
     key: 'reduce_motion',
     title: 'Reduce motion',
     description: 'Removes sliding and fading transitions.',
+  },
+  {
+    key: 'read_messages_aloud',
+    title: 'Read messages aloud',
+    description: 'Speaks new chat messages as they arrive.',
   },
 ] as const satisfies readonly { key: keyof Profile; title: string; description: string }[];
 
