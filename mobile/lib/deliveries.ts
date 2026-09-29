@@ -24,6 +24,44 @@ export interface Delivery {
   updated_at: string;
 }
 
+export const deliveryIssueKinds = [
+  'not_arrived',
+  'arrived_damaged',
+  'wrong_address',
+  'missing_items',
+  'other',
+] as const;
+
+export type DeliveryIssueKind = (typeof deliveryIssueKinds)[number];
+
+export const DELIVERY_ISSUE_KINDS: readonly { value: DeliveryIssueKind; label: string }[] = [
+  { value: 'not_arrived', label: 'Never arrived' },
+  { value: 'arrived_damaged', label: 'Arrived damaged' },
+  { value: 'wrong_address', label: 'Wrong address' },
+  { value: 'missing_items', label: 'Items missing' },
+  { value: 'other', label: 'Something else' },
+];
+
+export interface DeliveryIssue {
+  id: string;
+  order_id: string;
+  buyer_id: string;
+  kind: DeliveryIssueKind;
+  details: string | null;
+  status: 'open' | 'resolved';
+  resolved_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function deliveryIssueLabel(kind: DeliveryIssueKind): string {
+  return DELIVERY_ISSUE_KINDS.find((issue) => issue.value === kind)?.label ?? 'Something else';
+}
+
+export function openDeliveryIssue(issues: DeliveryIssue[] | undefined): DeliveryIssue | null {
+  return issues?.find((issue) => issue.status === 'open') ?? null;
+}
+
 interface DeliveryPresentation {
   label: string;
   variant: BadgeVariant;

@@ -1,5 +1,5 @@
 import type { BadgeVariant } from '@/components/ui/Badge';
-import type { Delivery } from '@/lib/deliveries';
+import type { Delivery, DeliveryIssue } from '@/lib/deliveries';
 
 export const orderStatuses = ['new', 'processing', 'completed'] as const;
 
@@ -42,6 +42,7 @@ export interface Order {
   updated_at: string;
   items: OrderItem[];
   delivery: Delivery | null;
+  issues: DeliveryIssue[];
 }
 
 // Kept as aliases so the seller screens that imported the old names keep compiling.

@@ -10,7 +10,11 @@ import {
 
 import { useAuth } from '@/lib/AuthProvider';
 import type { CartLine } from '@/lib/cart';
-import { nextDeliveryStatus, type DeliveryStatus } from '@/lib/deliveries';
+import {
+  nextDeliveryStatus,
+  type DeliveryIssueKind,
+  type DeliveryStatus,
+} from '@/lib/deliveries';
 import {
   type Order,
   type PaymentMethod,
@@ -38,6 +42,12 @@ export interface DeliveryInput {
   estimatedAt: string | null;
 }
 
+export interface DeliveryIssueInput {
+  orderId: string;
+  kind: DeliveryIssueKind;
+  details?: string;
+}
+
 export interface ReturnInput {
   orderId: string;
   reason: ReturnReason;
@@ -51,6 +61,8 @@ export interface OrdersContextValue {
   placeOrder: (input: PlaceOrderInput) => Promise<{ orders: Order[]; error: unknown }>;
   updateDelivery: (input: DeliveryInput) => Promise<{ error: unknown }>;
   advanceDelivery: (orderId: string) => Promise<{ error: unknown }>;
+  reportDeliveryIssue: (input: DeliveryIssueInput) => Promise<{ error: unknown }>;
+  resolveDeliveryIssue: (issueId: string) => Promise<{ error: unknown }>;
   submitReturn: (input: ReturnInput) => Promise<{ error: unknown }>;
   refresh: () => Promise<void>;
 }
@@ -97,7 +109,7 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
 
     const query = supabase
       .from('orders')
-      .select('*, items:order_items(*), delivery:deliveries(*)')
+      .select('*, items:order_items(*), delivery:deliveries(*), issues:delivery_issues(*)')
       .order('placed_at', { ascending: false });
 
     const { data } = isSeller
@@ -173,7 +185,7 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
           return { orders: created, error: itemsError };
         }
 
-        created.push({ ...(order as unknown as Order), items: [], delivery: null });
+        created.push({ ...(order as unknown as Order), items: [], delivery: null, issues: [] });
       }
 
       await load();
@@ -221,6 +233,38 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
     [orders, load]
   );
 
+  const reportDeliveryIssue = useCallback(
+    async ({ orderId, kind, details }: DeliveryIssueInput) => {
+      if (!userId) return { error: new Error('Not signed in.') };
+
+      const { error } = await supabase.from('delivery_issues').insert({
+        order_id: orderId,
+        buyer_id: userId,
+        kind,
+        details: details?.trim() ? details.trim() : null,
+      });
+
+      if (!error) await load();
+
+      return { error };
+    },
+    [userId, load]
+  );
+
+  const resolveDeliveryIssue = useCallback(
+    async (issueId: string) => {
+      const { error } = await supabase
+        .from('delivery_issues')
+        .update({ status: 'resolved', resolved_at: new Date().toISOString() })
+        .eq('id', issueId);
+
+      if (!error) await load();
+
+      return { error };
+    },
+    [load]
+  );
+
   const submitReturn = useCallback(
     async ({ orderId, reason, details }: ReturnInput) => {
       if (!userId) return { error: new Error('Not signed in.') };
@@ -245,6 +289,8 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
       placeOrder,
       updateDelivery,
       advanceDelivery,
+      reportDeliveryIssue,
+      resolveDeliveryIssue,
       submitReturn,
       refresh: load,
     }),
@@ -255,6 +301,8 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
       placeOrder,
       updateDelivery,
       advanceDelivery,
+      reportDeliveryIssue,
+      resolveDeliveryIssue,
       submitReturn,
       load,
     ]

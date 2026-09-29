@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { MESSAGE_MAX_LENGTH } from '@/lib/chat';
+import { deliveryIssueKinds } from '@/lib/deliveries';
 import { returnReasons } from '@/lib/orders';
 
 const email = z
@@ -91,6 +92,15 @@ export const returnRequestSchema = z.object({
     .optional(),
 });
 
+export const deliveryIssueSchema = z.object({
+  kind: z.enum(deliveryIssueKinds, { error: 'Choose what went wrong.' }),
+  details: z
+    .string()
+    .trim()
+    .max(500, { error: 'Keep the details under 500 characters.' })
+    .optional(),
+});
+
 export const reviewSchema = z.object({
   rating: z
     .number()
@@ -138,6 +148,7 @@ export type ProfileValues = z.infer<typeof profileSchema>;
 export type ShippingAddressValues = z.infer<typeof shippingAddressSchema>;
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
 export type ReturnRequestValues = z.infer<typeof returnRequestSchema>;
+export type DeliveryIssueValues = z.infer<typeof deliveryIssueSchema>;
 export type ReviewValues = z.infer<typeof reviewSchema>;
 export type MessageValues = z.infer<typeof messageSchema>;
 export type AccessibilityPreferencesValues = z.infer<typeof accessibilityPreferencesSchema>;
