@@ -2,19 +2,24 @@ import { Text, View } from 'react-native';
 
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Callout } from '@/components/ui/Callout';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import {
+  deliveryIssueLabel,
   deliveryStatusPresentation,
   formatDeliveryDate,
   type Delivery,
+  type DeliveryIssue,
 } from '@/lib/deliveries';
 
 export interface DeliverySummaryProps {
   delivery: Delivery | null;
+  issue?: DeliveryIssue | null;
   onEdit?: () => void;
+  onReport?: () => void;
 }
 
-export function DeliverySummary({ delivery, onEdit }: DeliverySummaryProps) {
+export function DeliverySummary({ delivery, issue, onEdit, onReport }: DeliverySummaryProps) {
   const presentation = deliveryStatusPresentation(delivery?.status ?? 'pending');
 
   const stamp = (value: string | null | undefined) =>
@@ -55,8 +60,25 @@ export function DeliverySummary({ delivery, onEdit }: DeliverySummaryProps) {
           </Text>
         ) : null}
 
+        {issue ? (
+          <Callout
+            tone="warning"
+            message={`Reported: ${deliveryIssueLabel(issue.kind)}. The seller is looking into it.`}
+          />
+        ) : null}
+
         {onEdit ? (
           <Button variant="secondary" size="sm" label="Update delivery" onPress={onEdit} />
+        ) : null}
+
+        {onReport && !issue ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            label="Report a problem"
+            onPress={onReport}
+            hint="Tells the seller something went wrong with this delivery"
+          />
         ) : null}
       </View>
     </View>

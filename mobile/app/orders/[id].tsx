@@ -14,13 +14,21 @@ import { SuccessBanner } from '@/components/ui/SuccessBanner';
 import { Toast } from '@/components/ui/Toast';
 import { TopBar } from '@/components/ui/TopBar';
 import { useSellerChat } from '@/hooks/useSellerChat';
-import { deliveryAlertMessage, deliveryTrackingStep } from '@/lib/deliveries';
+import {
+  deliveryAlertMessage,
+  deliveryTrackingStep,
+  openDeliveryIssue,
+} from '@/lib/deliveries';
 import { formatMoney, statusPresentation, type OrderItem } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 
 export default function OrderDetailScreen() {
   const insets = useSafeAreaInsets();
-  const { id, returned } = useLocalSearchParams<{ id?: string; returned?: string }>();
+  const { id, returned, reported } = useLocalSearchParams<{
+    id?: string;
+    returned?: string;
+    reported?: string;
+  }>();
   const { getOrder, isLoading, refresh } = useOrders();
   const { openSellerChat, isOpening } = useSellerChat();
 
@@ -82,6 +90,10 @@ export default function OrderDetailScreen() {
           <SuccessBanner message="Return request sent. The seller will be in touch." />
         ) : null}
 
+        {reported ? (
+          <SuccessBanner message="Problem reported. The seller will look into it." />
+        ) : null}
+
         <View className="gap-2">
           <Badge label={presentation.label} variant={presentation.variant} />
           <Text role="heading" className="type-h2 text-primary">
@@ -104,7 +116,13 @@ export default function OrderDetailScreen() {
           </Text>
         </View>
 
-        <DeliverySummary delivery={order.delivery} />
+        <DeliverySummary
+          delivery={order.delivery}
+          issue={openDeliveryIssue(order.issues)}
+          onReport={() =>
+            router.push({ pathname: '/orders/[id]/delivery-issue', params: { id: order.id } })
+          }
+        />
 
         <View className="gap-4">
           <SectionHeader title="Items" />
