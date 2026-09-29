@@ -1,6 +1,6 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,9 +11,10 @@ import { Callout } from '@/components/ui/Callout';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { StepProgress } from '@/components/ui/StepProgress';
 import { SuccessBanner } from '@/components/ui/SuccessBanner';
+import { Toast } from '@/components/ui/Toast';
 import { TopBar } from '@/components/ui/TopBar';
 import { useSellerChat } from '@/hooks/useSellerChat';
-import { deliveryTrackingStep } from '@/lib/deliveries';
+import { deliveryAlertMessage, deliveryTrackingStep } from '@/lib/deliveries';
 import { formatMoney, statusPresentation, type OrderItem } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 
@@ -30,6 +31,20 @@ export default function OrderDetailScreen() {
   );
 
   const order = id ? getOrder(id) : undefined;
+  const deliveryStatus = order?.delivery?.status;
+
+  const [statusAlert, setStatusAlert] = useState<string | null>(null);
+  const lastStatus = useRef<typeof deliveryStatus>(undefined);
+
+  useEffect(() => {
+    if (!deliveryStatus) return;
+
+    if (lastStatus.current && lastStatus.current !== deliveryStatus) {
+      setStatusAlert(deliveryAlertMessage(deliveryStatus));
+    }
+
+    lastStatus.current = deliveryStatus;
+  }, [deliveryStatus]);
 
   if (!order) {
     return (
@@ -120,7 +135,7 @@ export default function OrderDetailScreen() {
           </View>
         </View>
 
-        <Callout message="You'll get a visual and vibration alert on every status change." />
+        <Callout message="You'll get a visual and vibration alert whenever this order's status changes while you're here." />
 
         <View className="flex-row gap-3">
           <View className="flex-1">
@@ -148,6 +163,8 @@ export default function OrderDetailScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <Toast message={statusAlert} onDismiss={() => setStatusAlert(null)} />
     </View>
   );
 }

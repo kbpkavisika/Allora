@@ -41,6 +41,18 @@ export function deliveryStatusPresentation(status: DeliveryStatus): DeliveryPres
   return STATUS[status];
 }
 
+const STATUS_ALERT: Record<DeliveryStatus, string> = {
+  pending: 'Your order is waiting to be dispatched.',
+  packed: 'Your order has been packed.',
+  shipped: 'Your order is on the way.',
+  delivered: 'Your order has been delivered.',
+  failed: 'Your delivery could not be completed.',
+};
+
+export function deliveryAlertMessage(status: DeliveryStatus): string {
+  return STATUS_ALERT[status];
+}
+
 export const deliveryStatusLabels = deliveryStatuses.map((status) => STATUS[status].label);
 
 const ETA_WINDOWS: readonly { label: string; days: number | null }[] = [
