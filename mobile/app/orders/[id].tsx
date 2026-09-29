@@ -1,4 +1,6 @@
+import { useFocusEffect } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useCallback } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -18,8 +20,14 @@ import { useOrders } from '@/lib/OrdersProvider';
 export default function OrderDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id, returned } = useLocalSearchParams<{ id?: string; returned?: string }>();
-  const { getOrder, isLoading } = useOrders();
+  const { getOrder, isLoading, refresh } = useOrders();
   const { openSellerChat, isOpening } = useSellerChat();
+
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
 
   const order = id ? getOrder(id) : undefined;
 

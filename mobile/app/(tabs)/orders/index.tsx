@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -13,9 +14,22 @@ const isActive = (status: string) => status === 'new' || status === 'processing'
 
 export default function OrdersScreen() {
   const insets = useSafeAreaInsets();
-  const { orders, isLoading } = useOrders();
+  const { orders, isLoading, refresh } = useOrders();
   const positionOf = useListPosition();
   const [filter, setFilter] = useState<OrderFilter>('active');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
+
+  async function pullToRefresh() {
+    setIsRefreshing(true);
+    await refresh();
+    setIsRefreshing(false);
+  }
 
   const activeCount = orders.filter((order) => isActive(order.status)).length;
   const pastCount = orders.length - activeCount;
@@ -57,6 +71,8 @@ export default function OrdersScreen() {
           paddingBottom: insets.bottom + 32,
           gap: 12,
         }}
+        refreshing={isRefreshing}
+        onRefresh={pullToRefresh}
         renderItem={({ item, index }) => (
           <OrderListCard order={item} position={positionOf(index, visibleOrders.length)} />
         )}
