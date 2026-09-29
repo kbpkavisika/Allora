@@ -35,6 +35,7 @@ export interface DeliveryInput {
   status: DeliveryStatus;
   courierName: string;
   trackingNumber: string;
+  estimatedAt: string | null;
 }
 
 export interface ReturnInput {
@@ -182,13 +183,14 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
   );
 
   const updateDelivery = useCallback(
-    async ({ orderId, status, courierName, trackingNumber }: DeliveryInput) => {
+    async ({ orderId, status, courierName, trackingNumber, estimatedAt }: DeliveryInput) => {
       const { error } = await supabase
         .from('deliveries')
         .update({
           status,
           courier_name: courierName,
           tracking_number: trackingNumber,
+          estimated_at: estimatedAt,
           delivered_at: status === 'delivered' ? new Date().toISOString() : null,
         })
         .eq('order_id', orderId);

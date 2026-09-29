@@ -41,6 +41,39 @@ export function deliveryStatusPresentation(status: DeliveryStatus): DeliveryPres
 
 export const deliveryStatusLabels = deliveryStatuses.map((status) => STATUS[status].label);
 
+const ETA_WINDOWS: readonly { label: string; days: number | null }[] = [
+  { label: 'No estimate', days: null },
+  { label: '1-2 days', days: 2 },
+  { label: '3-5 days', days: 5 },
+  { label: 'About a week', days: 7 },
+];
+
+export const etaWindowLabels = ETA_WINDOWS.map((window) => window.label);
+
+export function etaFromWindow(label: string): string | null {
+  const days = ETA_WINDOWS.find((window) => window.label === label)?.days ?? null;
+  if (days === null) {
+    return null;
+  }
+
+  const estimate = new Date();
+  estimate.setDate(estimate.getDate() + days);
+  return estimate.toISOString();
+}
+
+export function etaWindowFromDate(estimatedAt: string | null): string {
+  if (!estimatedAt) {
+    return ETA_WINDOWS[0].label;
+  }
+
+  const daysAway = Math.ceil(
+    (new Date(estimatedAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+  );
+
+  const match = ETA_WINDOWS.find((window) => window.days !== null && window.days >= daysAway);
+  return (match ?? ETA_WINDOWS[ETA_WINDOWS.length - 1]).label;
+}
+
 const NEXT_STATUS: Partial<Record<DeliveryStatus, DeliveryStatus>> = {
   pending: 'packed',
   packed: 'shipped',

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { deliveryStatuses } from '@/lib/deliveries';
+import { deliveryStatuses, etaWindowLabels } from '@/lib/deliveries';
 import { shopCategories } from '@/lib/shop';
 
 export const productCategories = [
@@ -120,6 +120,12 @@ export const deliveryUpdateSchema = z.object({
     .max(40, { error: 'Keep the tracking number under 40 characters.' })
     .regex(/^[A-Za-z0-9-]+$/, { error: 'Use only letters, numbers and dashes.' }),
   status: deliveryStatusString,
+  etaWindow: z
+    .string()
+    .min(1, { error: 'Choose an arrival window.' })
+    .refine((value) => etaWindowLabels.includes(value), {
+      error: 'Choose a valid arrival window.',
+    }),
 });
 
 export type DeliveryUpdateValues = z.infer<typeof deliveryUpdateSchema>;

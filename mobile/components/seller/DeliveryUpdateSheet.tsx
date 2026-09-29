@@ -12,6 +12,9 @@ import {
   deliveryStatusFromLabel,
   deliveryStatusLabels,
   deliveryStatusPresentation,
+  etaFromWindow,
+  etaWindowFromDate,
+  etaWindowLabels,
   type Delivery,
   type DeliveryStatus,
 } from '@/lib/deliveries';
@@ -42,6 +45,7 @@ export function DeliveryUpdateSheet({
       courierName: delivery?.courier_name ?? '',
       trackingNumber: delivery?.tracking_number ?? '',
       status: delivery?.status ?? 'pending',
+      etaWindow: etaWindowFromDate(delivery?.estimated_at ?? null),
     },
     mode: 'onSubmit',
     reValidateMode: 'onChange',
@@ -55,6 +59,7 @@ export function DeliveryUpdateSheet({
       status: values.status as DeliveryStatus,
       courierName: values.courierName,
       trackingNumber: values.trackingNumber,
+      estimatedAt: etaFromWindow(values.etaWindow),
     });
 
     if (error) {
@@ -123,6 +128,21 @@ export function DeliveryUpdateSheet({
                 value={deliveryStatusPresentation(field.value as DeliveryStatus).label}
                 onChange={(label) => field.onChange(deliveryStatusFromLabel(label))}
                 error={errors.status?.message}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="etaWindow"
+            render={({ field }) => (
+              <ChipSelect
+                label="Arrival window"
+                required
+                options={etaWindowLabels}
+                value={field.value}
+                onChange={field.onChange}
+                error={errors.etaWindow?.message}
               />
             )}
           />
