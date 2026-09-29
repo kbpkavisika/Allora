@@ -191,7 +191,6 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
           courier_name: courierName,
           tracking_number: trackingNumber,
           estimated_at: estimatedAt,
-          delivered_at: status === 'delivered' ? new Date().toISOString() : null,
         })
         .eq('order_id', orderId);
 
@@ -212,10 +211,7 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
 
       const { error } = await supabase
         .from('deliveries')
-        .update({
-          status: next,
-          delivered_at: next === 'delivered' ? new Date().toISOString() : null,
-        })
+        .update({ status: next })
         .eq('order_id', orderId);
 
       if (!error) await load();

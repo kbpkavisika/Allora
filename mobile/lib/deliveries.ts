@@ -17,6 +17,8 @@ export interface Delivery {
   courier_name: string | null;
   tracking_number: string | null;
   estimated_at: string | null;
+  packed_at: string | null;
+  shipped_at: string | null;
   delivered_at: string | null;
   created_at: string;
   updated_at: string;

@@ -9,6 +9,8 @@ create table public.deliveries (
   courier_name text,
   tracking_number text,
   estimated_at timestamptz,
+  packed_at timestamptz,
+  shipped_at timestamptz,
   delivered_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -33,6 +35,31 @@ $$;
 create trigger orders_create_delivery
   after insert on public.orders
   for each row execute function public.create_delivery_for_order();
+
+-- Stamped here rather than by the client so the sheet and the one-tap advance agree, and so a
+-- status that is set twice keeps the time it first happened.
+create function public.stamp_delivery_progress()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.status = 'packed' and new.packed_at is null then
+    new.packed_at = now();
+  elsif new.status = 'shipped' and new.shipped_at is null then
+    new.shipped_at = now();
+  elsif new.status = 'delivered' and new.delivered_at is null then
+    new.delivered_at = now();
+  end if;
+
+  return new;
+end;
+$$;
+
+create trigger deliveries_stamp_progress
+  before update of status on public.deliveries
+  for each row
+  when (new.status is distinct from old.status)
+  execute function public.stamp_delivery_progress();
 
 -- The seller only ever sets the delivery status; the order status follows from it so the
 -- existing order tabs, filters and counts keep working.

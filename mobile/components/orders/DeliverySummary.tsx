@@ -17,14 +17,19 @@ export interface DeliverySummaryProps {
 export function DeliverySummary({ delivery, onEdit }: DeliverySummaryProps) {
   const presentation = deliveryStatusPresentation(delivery?.status ?? 'pending');
 
+  const stamp = (value: string | null | undefined) =>
+    value ? formatDeliveryDate(value) : undefined;
+
   const rows = [
     { label: 'Courier', value: delivery?.courier_name },
     { label: 'Tracking number', value: delivery?.tracking_number },
+    { label: 'Packed', value: stamp(delivery?.packed_at) },
+    { label: 'Shipped', value: stamp(delivery?.shipped_at) },
+    { label: 'Delivered', value: stamp(delivery?.delivered_at) },
   ].filter((row): row is { label: string; value: string } => Boolean(row.value));
 
-  const caption = delivery?.delivered_at
-    ? `Delivered ${formatDeliveryDate(delivery.delivered_at)}`
-    : delivery?.estimated_at
+  const caption =
+    !delivery?.delivered_at && delivery?.estimated_at
       ? `Arriving ${formatDeliveryDate(delivery.estimated_at)}`
       : null;
 
@@ -44,9 +49,11 @@ export function DeliverySummary({ delivery, onEdit }: DeliverySummaryProps) {
           </View>
         ))}
 
-        <Text className="type-text-secondary text-secondary">
-          {caption ?? 'Delivery details will appear here once the order is dispatched.'}
-        </Text>
+        {caption || rows.length === 0 ? (
+          <Text className="type-text-secondary text-secondary">
+            {caption ?? 'Delivery details will appear here once the order is dispatched.'}
+          </Text>
+        ) : null}
 
         {onEdit ? (
           <Button variant="secondary" size="sm" label="Update delivery" onPress={onEdit} />
