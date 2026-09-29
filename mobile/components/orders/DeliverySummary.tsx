@@ -17,9 +17,18 @@ export interface DeliverySummaryProps {
   issue?: DeliveryIssue | null;
   onEdit?: () => void;
   onReport?: () => void;
+  onResolve?: () => void;
+  isResolving?: boolean;
 }
 
-export function DeliverySummary({ delivery, issue, onEdit, onReport }: DeliverySummaryProps) {
+export function DeliverySummary({
+  delivery,
+  issue,
+  onEdit,
+  onReport,
+  onResolve,
+  isResolving = false,
+}: DeliverySummaryProps) {
   const presentation = deliveryStatusPresentation(delivery?.status ?? 'pending');
 
   const stamp = (value: string | null | undefined) =>
@@ -61,10 +70,21 @@ export function DeliverySummary({ delivery, issue, onEdit, onReport }: DeliveryS
         ) : null}
 
         {issue ? (
-          <Callout
-            tone="warning"
-            message={`Reported: ${deliveryIssueLabel(issue.kind)}. The seller is looking into it.`}
-          />
+          <View className="gap-2">
+            <Callout tone="warning" message={`Reported: ${deliveryIssueLabel(issue.kind)}`} />
+            {issue.details ? (
+              <Text className="type-text-secondary text-secondary">{issue.details}</Text>
+            ) : null}
+            {onResolve ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                label="Mark as resolved"
+                loading={isResolving}
+                onPress={onResolve}
+              />
+            ) : null}
+          </View>
         ) : null}
 
         {onEdit ? (

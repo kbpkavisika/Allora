@@ -1,8 +1,9 @@
 import { Pressable, Text, View } from 'react-native';
 
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
-import { deliveryCaption, nextDeliveryStatusLabel } from '@/lib/deliveries';
+import { deliveryCaption, nextDeliveryStatusLabel, openDeliveryIssue } from '@/lib/deliveries';
 import { formatPlacedAt, itemSummary, statusPresentation, type Order } from '@/lib/orders';
 
 export interface SellerOrderCardProps {
@@ -23,13 +24,14 @@ export function SellerOrderCard({
   const status = statusPresentation(order.status);
   const advanceLabel = nextDeliveryStatusLabel(order.delivery?.status ?? 'pending');
   const delivery = deliveryCaption(order.delivery);
+  const issue = openDeliveryIssue(order.issues);
 
   return (
     <View className="gap-3 rounded-12 border-1 border-border bg-surface p-3">
       <Pressable
         onPress={onPress}
         role="button"
-        aria-label={`Order ${order.order_number}, ${order.ship_name ?? 'Buyer'}, ${status.label}${position ? `, ${position}` : ''}`}
+        aria-label={`Order ${order.order_number}, ${order.ship_name ?? 'Buyer'}, ${status.label}${issue ? ', problem reported' : ''}${position ? `, ${position}` : ''}`}
         accessibilityHint="Opens the order details"
         className="flex-row items-center gap-3 active:bg-surface-muted">
         <View className="h-14 w-14 items-center justify-center rounded-8 bg-surface-sunken">
@@ -56,6 +58,8 @@ export function SellerOrderCard({
               {status.label} · {delivery ?? formatPlacedAt(order.placed_at)}
             </Text>
           </View>
+
+          {issue ? <Badge label="Problem reported" variant="warning" /> : null}
         </View>
 
         <Icon name="forward" size="md" className="text-secondary" />
