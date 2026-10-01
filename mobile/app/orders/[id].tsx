@@ -14,6 +14,7 @@ import { useSellerChat } from '@/hooks/useSellerChat';
 import { deliveryTrackingStep } from '@/lib/deliveries';
 import { formatMoney, statusPresentation, type OrderItem } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
+import { refundService } from '@/services/refund/refundService';
 
 export default function OrderDetailScreen() {
   const insets = useSafeAreaInsets();
@@ -22,6 +23,7 @@ export default function OrderDetailScreen() {
   const { openSellerChat, isOpening } = useSellerChat();
 
   const order = id ? getOrder(id) : undefined;
+  const refund = order ? refundService.getRefund(order.id) : undefined;
 
   if (!order) {
     return (
@@ -47,6 +49,12 @@ export default function OrderDetailScreen() {
   const presentation = statusPresentation(order.status);
   const step = deliveryTrackingStep(order.delivery);
   const total = order.items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
+  const isEligibleForRefund =
+    order.payment_status !== 'failed' &&
+    (order.payment_method === 'payhere' ||
+      Boolean(order.payment_reference) ||
+      order.payment_status === 'paid' ||
+      order.status === 'completed');
 
   return (
     <View className="flex-1 bg-surface">
@@ -57,6 +65,44 @@ export default function OrderDetailScreen() {
         showsVerticalScrollIndicator={false}>
         {returned ? (
           <SuccessBanner message="Return request sent. The seller will be in touch." />
+        ) : null}
+
+        {refund ? (
+          <View className="gap-2 rounded-12 border-1 border-border bg-surface p-4">
+            <View className="flex-row items-center justify-between">
+              <Text className="type-label-lg text-primary">Refund Request</Text>
+              <Badge
+                label={
+                  refund.status === 'refunded'
+                    ? 'Refunded'
+                    : refund.status === 'failed'
+                      ? 'Refund failed'
+                      : 'Refund processing'
+                }
+                variant={
+                  refund.status === 'refunded'
+                    ? 'success'
+                    : refund.status === 'failed'
+                      ? 'warning'
+                      : 'neutral'
+                }
+              />
+            </View>
+            <Text className="type-text-secondary text-secondary">
+              {formatMoney(refund.refundAmount)} · {refund.reasonLabel}
+            </Text>
+            <Button
+              variant="secondary"
+              size="sm"
+              label="View refund status"
+              onPress={() =>
+                router.push({
+                  pathname: '/orders/[id]/refund-status' as any,
+                  params: { id: order.id },
+                })
+              }
+            />
+          </View>
         ) : null}
 
         <View className="gap-2">
@@ -114,29 +160,42 @@ export default function OrderDetailScreen() {
 
         <Callout message="You'll get a visual and vibration alert on every status change." />
 
-        <View className="flex-row gap-3">
-          <View className="flex-1">
+        <View className="gap-3">
+          {!refund && isEligibleForRefund ? (
             <Button
               variant="secondary"
-              size="sm"
-              label="Return item"
+              size="md"
+              label="Request refund"
               onPress={() =>
-                router.push({ pathname: '/orders/[id]/return', params: { id: order.id } })
+                router.push({ pathname: '/orders/[id]/refund' as any, params: { id: order.id } })
               }
             />
-          </View>
-          <View className="flex-1">
-            <Button
-              variant="secondary"
-              size="sm"
-              label="Chat with seller"
-              loading={isOpening}
-              disabled={!order.shop_id}
-              hint="Opens a conversation with the seller about this order"
-              onPress={() =>
-                order.shop_id && openSellerChat({ shopId: order.shop_id, orderId: order.id })
-              }
-            />
+          ) : null}
+
+          <View className="flex-row gap-3">
+            <View className="flex-1">
+              <Button
+                variant="secondary"
+                size="sm"
+                label="Return item"
+                onPress={() =>
+                  router.push({ pathname: '/orders/[id]/return', params: { id: order.id } })
+                }
+              />
+            </View>
+            <View className="flex-1">
+              <Button
+                variant="secondary"
+                size="sm"
+                label="Chat with seller"
+                loading={isOpening}
+                disabled={!order.shop_id}
+                hint="Opens a conversation with the seller about this order"
+                onPress={() =>
+                  order.shop_id && openSellerChat({ shopId: order.shop_id, orderId: order.id })
+                }
+              />
+            </View>
           </View>
         </View>
       </ScrollView>

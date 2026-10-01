@@ -151,6 +151,8 @@ function RootNavigator() {
             <Stack.Screen name="chat/index" options={{ headerShown: false }} />
             <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="orders/[id]/return" options={{ headerShown: false }} />
+            <Stack.Screen name="orders/[id]/refund" options={{ headerShown: false }} />
+            <Stack.Screen name="orders/[id]/refund-status" options={{ headerShown: false }} />
             <Stack.Screen name="payment/checkout" options={{ headerShown: false }} />
             <Stack.Screen name="payment/result" options={{ headerShown: false }} />
             <Stack.Screen
