@@ -15,7 +15,9 @@ export function isPayHereInitializationUnavailable(error: unknown): boolean {
       message.includes('network') ||
       message.includes('not deployed') ||
       message.includes('not available') ||
-      message.includes('temporarily unavailable')
+      message.includes('temporarily unavailable') ||
+      message.includes('timeout') ||
+      message.includes('aborted')
     ) {
       return true;
     }
@@ -28,7 +30,9 @@ export function isPayHereInitializationUnavailable(error: unknown): boolean {
       message.includes('network') ||
       message.includes('not deployed') ||
       message.includes('not available') ||
-      message.includes('temporarily unavailable')
+      message.includes('temporarily unavailable') ||
+      message.includes('timeout') ||
+      message.includes('aborted')
     );
   }
 
@@ -73,6 +77,7 @@ export async function initializePayHerePayment(
       amount,
       currency: 'LKR',
     }),
+    signal: AbortSignal.timeout(2500),
   });
 
   if (!response.ok) {

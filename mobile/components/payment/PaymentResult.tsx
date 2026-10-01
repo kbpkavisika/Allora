@@ -2,10 +2,14 @@ import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
 import { Text, View } from 'react-native';
 
+import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
+import { formatPaymentResultSpeech } from '@/components/payment/paymentSpeech';
 import type { PaymentResult as PaymentResultData } from '@/services/payment/paymentTypes';
 
 export interface PaymentResultProps {
   result: PaymentResultData;
+  amount?: number;
+  currency?: string;
 }
 
 const TITLES: Record<PaymentResultData['state'], string> = {
@@ -16,7 +20,7 @@ const TITLES: Record<PaymentResultData['state'], string> = {
   pending: 'Payment is still being processed.',
 } as const;
 
-export function PaymentResult({ result }: PaymentResultProps) {
+export function PaymentResult({ result, amount, currency }: PaymentResultProps) {
   useEffect(() => {
     Haptics.notificationAsync(
       result.state === 'success'
@@ -38,6 +42,7 @@ export function PaymentResult({ result }: PaymentResultProps) {
       <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
         Reference: {result.reference}
       </Text>
+      <ReadAloudButton text={formatPaymentResultSpeech(result, amount, currency)} />
     </View>
   );
 }

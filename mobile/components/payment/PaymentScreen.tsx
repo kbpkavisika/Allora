@@ -91,7 +91,7 @@ export function PaymentScreen({ request, gateway = new MockPaymentGateway() }: P
         ) : null}
 
         {result && state !== 'authentication_required' && state !== 'processing' ? (
-          <PaymentResult result={result} />
+          <PaymentResult result={result} amount={request.amount} currency={request.currency} />
         ) : null}
 
         {state !== 'idle' && state !== 'processing' && state !== 'authentication_required' ? (

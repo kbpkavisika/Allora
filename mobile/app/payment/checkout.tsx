@@ -5,6 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PaymentMethodOption } from '@/components/payment/PaymentMethodOption';
 import { PaymentAuthentication } from '@/components/payment/PaymentAuthentication';
+import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
+import { formatPaymentConfirmationSpeech } from '@/components/payment/paymentSpeech';
 import { Button } from '@/components/ui/Button';
 import { FormError } from '@/components/ui/FormError';
 import { SectionHeader } from '@/components/ui/SectionHeader';
@@ -154,10 +156,11 @@ export default function CheckoutScreen() {
           })),
         });
 
-        const receiptSent = await sendPaymentReceipt(receiptPayload);
-        if (!receiptSent) {
-          console.warn('[Checkout] Receipt email was not sent successfully, but the payment remains successful.');
-        }
+        void sendPaymentReceipt(receiptPayload).then((receiptSent) => {
+          if (!receiptSent) {
+            console.warn('[Checkout] Receipt email was not sent successfully, but the payment remains successful.');
+          }
+        });
       } else {
         console.warn('[Checkout] Payment succeeded, but no authenticated email was available for the receipt.');
       }
@@ -352,6 +355,15 @@ export default function CheckoutScreen() {
           <Text className="type-label-lg text-primary">Total</Text>
           <Text className="type-h3 text-primary">{formatMoney(total)}</Text>
         </View>
+        <ReadAloudButton
+          text={formatPaymentConfirmationSpeech({
+            amount: total,
+            currency: 'LKR',
+            actionLabel: method === 'payhere' ? 'Pay' : 'Place order',
+          })}
+          label="Read aloud"
+          disabled={isSubmitting || isAuthenticatingPayment}
+        />
         <Button
           label={method === 'payhere' ? `Pay ${formatMoney(total)}` : 'Place order'}
           loading={isSubmitting || isAuthenticatingPayment}
