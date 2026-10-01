@@ -173,3 +173,63 @@ export function formatCheckoutResultSpeech({
   const detail = message || "The payment wasn't completed, so your order was not placed.";
   return `Payment failed. ${detail.replace(/\.$/, '')}.${referenceText}`;
 }
+
+export function formatRefundRequestSpeech({
+  orderNumber,
+  amount,
+  currency = 'LKR',
+}: {
+  orderNumber: string;
+  amount: number;
+  currency?: string;
+}): string {
+  const amountText = `${formatAmountForSpeech(amount)} ${formatCurrencyName(currency)}`;
+  return `Refund request for order ${orderNumber}. The refundable amount is ${amountText}. Choose full or partial refund, select a reason, and press continue to confirm.`;
+}
+
+export function formatRefundConfirmationSpeech({
+  amount,
+  currency = 'LKR',
+  reason,
+  reference,
+}: {
+  amount: number;
+  currency?: string;
+  reason: string;
+  reference?: string;
+}): string {
+  const amountText = `${formatAmountForSpeech(amount)} ${formatCurrencyName(currency)}`;
+  const referenceText = reference ? ` Payment reference is ${reference}.` : '';
+  return `Confirm refund request. You are requesting a refund of ${amountText} for reason: ${reason}.${referenceText} Press Confirm refund to submit.`;
+}
+
+export function formatRefundStatusSpeech({
+  status,
+  amount,
+  currency = 'LKR',
+  refundReference,
+  reason,
+}: {
+  status: string;
+  amount: number;
+  currency?: string;
+  refundReference: string;
+  reason?: string;
+}): string {
+  const amountText = `${formatAmountForSpeech(amount)} ${formatCurrencyName(currency)}`;
+  const reasonText = reason ? ` Reason: ${reason}.` : '';
+
+  if (status === 'processing' || status === 'requested') {
+    return `Refund request submitted. Your refund of ${amountText} is currently being processed. Refund reference is ${refundReference}.${reasonText}`;
+  }
+
+  if (status === 'refunded') {
+    return `Refund completed. Your refund of ${amountText} has been completed successfully. Refund reference is ${refundReference}.${reasonText}`;
+  }
+
+  if (status === 'failed') {
+    return `Refund request failed for ${amountText}. Please try again or contact support.`;
+  }
+
+  return `Refund status: ${status}. Amount: ${amountText}. Reference: ${refundReference}.${reasonText}`;
+}
