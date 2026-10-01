@@ -1,29 +1,206 @@
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Pressable, Text, TextInput, View } from 'react-native';
+import type { TurboModule } from 'react-native';
+import {
+  DeviceEventEmitter,
+  NativeModules,
+  Platform,
+  Pressable,
+  Text,
+  TextInput,
+  TurboModuleRegistry,
+  View,
+} from 'react-native';
+
+import { Button } from '@/components/ui/Button';
+import { FormError } from '@/components/ui/FormError';
+import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
+import { formatPaymentAuthenticationSpeech } from '@/components/payment/paymentSpeech';
+import {
+  requestPaymentOtp,
+  verifyPaymentOtp,
+  type PaymentOtpVerificationErrorCode,
+} from '@/lib/payments/paymentOtp';
+
+type NativeSmsRetrieverModule = TurboModule & {
+  getAppHash: () => Promise<string>;
+  startSMSListener: () => void;
+  stopSMSListener: () => void;
+};
+
+function getNativeSmsRetriever(): NativeSmsRetrieverModule | null {
+  if (Platform.OS !== 'android') return null;
+  return (
+    NativeModules.SMSRetriever ??
+    TurboModuleRegistry.getEnforcing<NativeSmsRetrieverModule>('SMSRetriever')
+  );
+}
 
 export interface PaymentAuthenticationProps {
-  countdownSeconds?: number;
-  onSubmitOtp?: (otp: string) => void;
-  onResend?: () => void;
-  onRequestMoreTime?: () => void;
+  onVerified?: () => void;
+  onCancel?: () => void;
 }
 
 export function PaymentAuthentication({
-  countdownSeconds = 120,
-  onSubmitOtp,
-  onResend,
-  onRequestMoreTime,
+  onVerified,
+  onCancel,
 }: PaymentAuthenticationProps) {
   const [otp, setOtp] = useState<string[]>(['', '', '', '', '', '']);
-  const [secondsRemaining, setSecondsRemaining] = useState(countdownSeconds);
+  const [secondsRemaining, setSecondsRemaining] = useState(0);
+  const [maskedPhone, setMaskedPhone] = useState<string | null>(null);
+  const [isRequesting, setIsRequesting] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const inputRefs = useRef<(TextInput | null)[]>([]);
+  const maskedPhoneRef = useRef<string | null>(null);
+  const verificationInProgressRef = useRef(false);
+  const verifiedRef = useRef(false);
+  const lastAutomaticallySubmittedCodeRef = useRef<string | null>(null);
+  const smsRetrievedSubscriptionRef = useRef<{ remove: () => void } | null>(null);
+  const smsErrorSubscriptionRef = useRef<{ remove: () => void } | null>(null);
+
+  function stopSmsRetriever() {
+    if (Platform.OS !== 'android') return;
+    smsRetrievedSubscriptionRef.current?.remove();
+    smsRetrievedSubscriptionRef.current = null;
+    smsErrorSubscriptionRef.current?.remove();
+    smsErrorSubscriptionRef.current = null;
+    getNativeSmsRetriever()?.stopSMSListener();
+  }
+
+  function extractOtp(message: string): string | null {
+    const sixDigitMatches = message.match(/\d+/g)?.filter((match) => match.length === 6) ?? [];
+    return sixDigitMatches.length === 1 ? sixDigitMatches[0] : null;
+  }
+
+  async function startSmsRetriever(): Promise<boolean> {
+    const nativeSmsRetriever = getNativeSmsRetriever();
+    if (!nativeSmsRetriever) return false;
+
+    stopSmsRetriever();
+
+    try {
+      const appHash = await nativeSmsRetriever.getAppHash();
+      console.info('[PaymentOTP] SMS Retriever app hash', appHash);
+      if (appHash !== 'H8Wm9X62u/o') {
+        console.error('[PaymentOTP] SMS Retriever app hash mismatch', appHash);
+        return false;
+      }
+
+      smsRetrievedSubscriptionRef.current = DeviceEventEmitter.addListener('onSMSRetrieved', (message: string) => {
+        console.info('[PaymentOTP] SMS received');
+        const code = extractOtp(message);
+        if (!code) return;
+
+        console.info('[PaymentOTP] extracted OTP');
+        setOtp(code.split(''));
+        console.info('[PaymentOTP] autofill submitting');
+        void verifyCode(code, true);
+      });
+      smsErrorSubscriptionRef.current = DeviceEventEmitter.addListener('onSMSError', (smsError: { type?: string }) => {
+        console.info('[PaymentOTP] SMS Retriever error', smsError.type ?? 'unknown');
+      });
+      nativeSmsRetriever.startSMSListener();
+      console.info('[PaymentOTP] SMS Retriever started');
+      return true;
+    } catch {
+      stopSmsRetriever();
+      return false;
+    }
+  }
 
   useEffect(() => {
     if (secondsRemaining <= 0) return;
     const timer = setInterval(() => setSecondsRemaining((current) => Math.max(0, current - 1)), 1000);
     return () => clearInterval(timer);
   }, [secondsRemaining]);
+
+  useEffect(() => stopSmsRetriever, []);
+
+  async function requestCode() {
+    if (isRequesting || isVerifying) return;
+
+    setError(null);
+    setOtp(['', '', '', '', '', '']);
+    setIsVerified(false);
+    verifiedRef.current = false;
+    lastAutomaticallySubmittedCodeRef.current = null;
+    setIsRequesting(true);
+    console.info('[PaymentOTP] request started');
+
+    try {
+      const smsRetrieverStarted = await startSmsRetriever();
+      if (!smsRetrieverStarted) {
+        throw new Error('SMS Retriever is unavailable or the app hash does not match.');
+      }
+      const result = await requestPaymentOtp();
+      maskedPhoneRef.current = result.maskedPhone;
+      setMaskedPhone(result.maskedPhone);
+      setSecondsRemaining(result.expiresInSeconds);
+      console.info('[PaymentOTP] request succeeded');
+      inputRefs.current[0]?.focus();
+    } catch (requestError) {
+      stopSmsRetriever();
+      setError(requestError instanceof Error ? requestError.message : 'Unable to send verification code.');
+    } finally {
+      setIsRequesting(false);
+    }
+  }
+
+  function verificationMessage(errorCode: PaymentOtpVerificationErrorCode): string {
+    const messages: Record<PaymentOtpVerificationErrorCode, string> = {
+      invalid_code: 'Incorrect verification code. Please check the code and try again.',
+      expired: 'This verification code has expired.',
+      too_many_attempts: 'Too many incorrect attempts. Request a new code.',
+      not_found: 'No active verification code was found. Request a new code.',
+      network: 'Unable to verify the code. Check your connection and try again.',
+      unauthorized: 'Your session has expired. Please sign in again.',
+    };
+
+    return messages[errorCode] || 'Incorrect verification code. Please check the code and try again.';
+  }
+
+  async function verifyCode(code: string, automatic = false) {
+    if (
+      verificationInProgressRef.current ||
+      verifiedRef.current ||
+      isVerifying ||
+      !maskedPhoneRef.current ||
+      !/^\d{6}$/.test(code)
+    ) {
+      return;
+    }
+
+    if (automatic && lastAutomaticallySubmittedCodeRef.current === code) return;
+    if (automatic) lastAutomaticallySubmittedCodeRef.current = code;
+
+    setError(null);
+    verificationInProgressRef.current = true;
+    setIsVerifying(true);
+    console.info('[PaymentOTP] verification started');
+
+    try {
+      const result = await verifyPaymentOtp(code);
+      if (result.verified) {
+        stopSmsRetriever();
+        verifiedRef.current = true;
+        setIsVerified(true);
+        console.info('[PaymentOTP] verification succeeded');
+        onVerified?.();
+        return;
+      }
+
+      console.info('[PaymentOTP] verification failed', result.error);
+      setError(verificationMessage(result.error));
+    } catch {
+      console.info('[PaymentOTP] verification failed', 'network');
+      setError('Unable to verify the code. Check your connection and try again.');
+    } finally {
+      verificationInProgressRef.current = false;
+      setIsVerifying(false);
+    }
+  }
 
   function handleChange(index: number, value: string) {
     const digits = value.replace(/\D/g, '');
@@ -40,7 +217,7 @@ export function PaymentAuthentication({
     setOtp(nextDigits);
 
     if (nextDigits.every(Boolean)) {
-      onSubmitOtp?.(nextDigits.join(''));
+      void verifyCode(nextDigits.join(''), true);
       return;
     }
 
@@ -49,20 +226,12 @@ export function PaymentAuthentication({
 
   async function handleResend() {
     await Haptics.selectionAsync();
-    setOtp(['', '', '', '', '', '']);
-    setSecondsRemaining(countdownSeconds);
-    onResend?.();
-    AccessibilityInfo.announceForAccessibility(
-      'Resend requested. Enter the new six-digit code when it is available.'
-    );
+    await requestCode();
   }
 
-  async function handleRequestMoreTime() {
-    await Haptics.selectionAsync();
-    onRequestMoreTime?.();
-    AccessibilityInfo.announceForAccessibility(
-      'More time requested. A new code can be provided by the payment provider if supported.'
-    );
+  function handleCancel() {
+    stopSmsRetriever();
+    onCancel?.();
   }
 
   const minutes = Math.floor(secondsRemaining / 60);
@@ -79,9 +248,19 @@ export function PaymentAuthentication({
           Verify your payment
         </Text>
         <Text className="type-text-primary text-secondary" maxFontSizeMultiplier={2}>
-          Enter the six-digit code provided by your payment provider. This screen does not read or store messages.
+          Request a code, then enter the six-digit code sent to your phone. This screen does not read or store messages.
         </Text>
       </View>
+
+      <ReadAloudButton text={formatPaymentAuthenticationSpeech(maskedPhone)} />
+
+      {!maskedPhone ? (
+        <Button label="Send Verification Code" loading={isRequesting} onPress={requestCode} />
+      ) : (
+        <Text className="type-text-primary text-secondary" maxFontSizeMultiplier={2}>
+          Verification code sent to {maskedPhone}
+        </Text>
+      )}
 
       <View accessibilityLabel="Six-digit payment authentication code" className="flex-row gap-2">
         {Array.from({ length: 6 }, (_, index) => {
@@ -95,6 +274,7 @@ export function PaymentAuthentication({
               accessibilityLabel={`Digit ${index + 1} of 6, ${digit || 'empty'}`}
               accessibilityHint={`Enter digit ${index + 1} of 6 for payment authentication`}
               accessibilityRole="text"
+              editable={Boolean(maskedPhone) && !isVerifying && !isVerified}
               autoComplete={index === 0 ? 'one-time-code' : 'off'}
               keyboardType="number-pad"
               maxLength={1}
@@ -112,29 +292,37 @@ export function PaymentAuthentication({
       </View>
 
       <Text accessibilityLabel={countdownLabel} className="type-text-primary text-secondary" maxFontSizeMultiplier={2}>
-        Code expires in {minutes}:{seconds}.
+        {maskedPhone ? `Code expires in ${minutes}:${seconds}.` : 'Code expires in 5 minutes.'}
       </Text>
+
+      <FormError message={error} />
+
+      {maskedPhone ? (
+        <>
+          <Button
+            label="Verify Code"
+            loading={isVerifying}
+            disabled={isVerifying || isVerified || otp.some((digit) => !digit)}
+            onPress={() => void verifyCode(otp.join(''))}
+          />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Resend payment authentication code"
+            accessibilityState={{ disabled: isRequesting || isVerifying }}
+            disabled={isRequesting || isVerifying}
+            onPress={handleResend}
+            className="min-h-tap justify-center">
+            <Text className="type-label text-primary">Resend code</Text>
+          </Pressable>
+        </>
+      ) : null}
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Resend payment authentication code"
-        accessibilityHint="Requests a new code and resets the countdown"
-        accessibilityState={{ disabled: false }}
-        onPress={handleResend}
+        accessibilityLabel="Cancel payment authentication"
+        onPress={handleCancel}
         className="min-h-tap justify-center">
-        <Text className="type-label text-primary">Resend code</Text>
-      </Pressable>
-
-      <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
-        Didn&apos;t receive the code?
-      </Text>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Request more time for payment authentication"
-        accessibilityHint="Requests a new authentication code if the provider supports it"
-        onPress={handleRequestMoreTime}
-        className="min-h-tap justify-center">
-        <Text className="type-label text-primary">Need more time?</Text>
+        <Text className="type-label text-secondary">Cancel</Text>
       </Pressable>
     </View>
   );

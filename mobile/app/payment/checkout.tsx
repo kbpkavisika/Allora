@@ -1,9 +1,12 @@
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PaymentMethodOption } from '@/components/payment/PaymentMethodOption';
+import { PaymentAuthentication } from '@/components/payment/PaymentAuthentication';
+import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
+import { formatPaymentConfirmationSpeech } from '@/components/payment/paymentSpeech';
 import { Button } from '@/components/ui/Button';
 import { FormError } from '@/components/ui/FormError';
 import { SectionHeader } from '@/components/ui/SectionHeader';
@@ -36,7 +39,10 @@ export default function CheckoutScreen() {
 
   const [method, setMethod] = useState<PaymentMethod>('payhere');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAuthenticatingPayment, setIsAuthenticatingPayment] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const otpVerifiedRef = useRef(false);
 
   const total = subtotal;
 
@@ -44,13 +50,19 @@ export default function CheckoutScreen() {
     router.replace({ pathname: '/payment/result', params });
   }
 
-  async function submit() {
+  async function executePayment() {
     if (!address) {
       setError('Add a delivery address before checking out.');
       return;
     }
 
     setError(null);
+
+    if (method === 'payhere' && !(otpVerified || otpVerifiedRef.current)) {
+      console.warn('[CheckoutOTP] blocked PayHere execution before verification');
+      return;
+    }
+
     setIsSubmitting(true);
 
     if (method === 'payhere') {
@@ -144,10 +156,11 @@ export default function CheckoutScreen() {
           })),
         });
 
-        const receiptSent = await sendPaymentReceipt(receiptPayload);
-        if (!receiptSent) {
-          console.warn('[Checkout] Receipt email was not sent successfully, but the payment remains successful.');
-        }
+        void sendPaymentReceipt(receiptPayload).then((receiptSent) => {
+          if (!receiptSent) {
+            console.warn('[Checkout] Receipt email was not sent successfully, but the payment remains successful.');
+          }
+        });
       } else {
         console.warn('[Checkout] Payment succeeded, but no authenticated email was available for the receipt.');
       }
@@ -185,6 +198,45 @@ export default function CheckoutScreen() {
       count: String(orders.length),
       total: String(total),
     });
+  }
+
+  function handlePayPress() {
+    console.info('[CheckoutOTP] Pay pressed');
+
+    if (method !== 'payhere') {
+      void executePayment();
+      return;
+    }
+
+    if (!address) {
+      setError('Add a delivery address before checking out.');
+      return;
+    }
+
+    otpVerifiedRef.current = false;
+    setOtpVerified(false);
+    setError(null);
+    setIsAuthenticatingPayment(true);
+    console.info('[CheckoutOTP] showing authentication');
+  }
+
+  function handleOtpVerified() {
+    if (!isAuthenticatingPayment || method !== 'payhere') return;
+
+    otpVerifiedRef.current = true;
+    setOtpVerified(true);
+    setIsAuthenticatingPayment(false);
+    console.info('[CheckoutOTP] authentication verified');
+    console.info('[CheckoutOTP] continuing to PayHere');
+    void executePayment();
+  }
+
+  function handleAuthenticationCancel() {
+    otpVerifiedRef.current = false;
+    setOtpVerified(false);
+    setIsAuthenticatingPayment(false);
+    setError(null);
+    console.info('[CheckoutOTP] authentication cancelled');
   }
 
   if (lines.length === 0) {
@@ -286,6 +338,13 @@ export default function CheckoutScreen() {
           />
         </View>
 
+        {isAuthenticatingPayment ? (
+          <PaymentAuthentication
+            onVerified={handleOtpVerified}
+            onCancel={handleAuthenticationCancel}
+          />
+        ) : null}
+
         <FormError message={error} />
       </ScrollView>
 
@@ -296,10 +355,20 @@ export default function CheckoutScreen() {
           <Text className="type-label-lg text-primary">Total</Text>
           <Text className="type-h3 text-primary">{formatMoney(total)}</Text>
         </View>
+        <ReadAloudButton
+          text={formatPaymentConfirmationSpeech({
+            amount: total,
+            currency: 'LKR',
+            actionLabel: method === 'payhere' ? 'Pay' : 'Place order',
+          })}
+          label="Read aloud"
+          disabled={isSubmitting || isAuthenticatingPayment}
+        />
         <Button
           label={method === 'payhere' ? `Pay ${formatMoney(total)}` : 'Place order'}
-          loading={isSubmitting}
-          onPress={submit}
+          loading={isSubmitting || isAuthenticatingPayment}
+          disabled={isAuthenticatingPayment}
+          onPress={handlePayPress}
           hint={
             method === 'payhere'
               ? 'Opens PayHere to complete payment'
