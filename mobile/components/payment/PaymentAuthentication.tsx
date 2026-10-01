@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
 import type { TurboModule } from 'react-native';
 import {
+  ActivityIndicator,
   DeviceEventEmitter,
   NativeModules,
   Platform,
@@ -12,7 +13,6 @@ import {
   View,
 } from 'react-native';
 
-import { Button } from '@/components/ui/Button';
 import { FormError } from '@/components/ui/FormError';
 import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
 import { formatPaymentAuthenticationSpeech } from '@/components/payment/paymentSpeech';
@@ -30,10 +30,15 @@ type NativeSmsRetrieverModule = TurboModule & {
 
 function getNativeSmsRetriever(): NativeSmsRetrieverModule | null {
   if (Platform.OS !== 'android') return null;
-  return (
-    NativeModules.SMSRetriever ??
-    TurboModuleRegistry.getEnforcing<NativeSmsRetrieverModule>('SMSRetriever')
-  );
+  try {
+    return (
+      NativeModules.SMSRetriever ??
+      TurboModuleRegistry.get<NativeSmsRetrieverModule>('SMSRetriever') ??
+      null
+    );
+  } catch {
+    return null;
+  }
 }
 
 export interface PaymentAuthenticationProps {
@@ -62,11 +67,15 @@ export function PaymentAuthentication({
 
   function stopSmsRetriever() {
     if (Platform.OS !== 'android') return;
-    smsRetrievedSubscriptionRef.current?.remove();
-    smsRetrievedSubscriptionRef.current = null;
-    smsErrorSubscriptionRef.current?.remove();
-    smsErrorSubscriptionRef.current = null;
-    getNativeSmsRetriever()?.stopSMSListener();
+    try {
+      smsRetrievedSubscriptionRef.current?.remove();
+      smsRetrievedSubscriptionRef.current = null;
+      smsErrorSubscriptionRef.current?.remove();
+      smsErrorSubscriptionRef.current = null;
+      getNativeSmsRetriever()?.stopSMSListener();
+    } catch (e) {
+      console.warn('[PaymentOTP] Failed to stop SMS listener cleanly:', e);
+    }
   }
 
   function extractOtp(message: string): string | null {
@@ -84,7 +93,7 @@ export function PaymentAuthentication({
       const appHash = await nativeSmsRetriever.getAppHash();
       console.info('[PaymentOTP] SMS Retriever app hash', appHash);
       if (appHash !== 'H8Wm9X62u/o') {
-        console.error('[PaymentOTP] SMS Retriever app hash mismatch', appHash);
+        console.warn('[PaymentOTP] SMS Retriever app hash mismatch', appHash);
         return false;
       }
 
@@ -130,10 +139,9 @@ export function PaymentAuthentication({
     console.info('[PaymentOTP] request started');
 
     try {
-      const smsRetrieverStarted = await startSmsRetriever();
-      if (!smsRetrieverStarted) {
-        throw new Error('SMS Retriever is unavailable or the app hash does not match.');
-      }
+      void startSmsRetriever().catch((err) => {
+        console.warn('[PaymentOTP] SMS Retriever startup failed:', err);
+      });
       const result = await requestPaymentOtp();
       maskedPhoneRef.current = result.maskedPhone;
       setMaskedPhone(result.maskedPhone);
@@ -255,7 +263,22 @@ export function PaymentAuthentication({
       <ReadAloudButton text={formatPaymentAuthenticationSpeech(maskedPhone)} />
 
       {!maskedPhone ? (
-        <Button label="Send Verification Code" loading={isRequesting} onPress={requestCode} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Send Verification Code"
+          disabled={isRequesting}
+          onPress={requestCode}
+          className={`min-h-control-lg w-full flex-row items-center justify-center rounded-full px-6 ${
+            isRequesting ? 'bg-border' : 'bg-primary active:bg-primary-hover'
+          }`}>
+          {isRequesting ? (
+            <ActivityIndicator size={20} color="#FFFFFF" />
+          ) : (
+            <Text className="type-label-lg text-surface" maxFontSizeMultiplier={2}>
+              Send Verification Code
+            </Text>
+          )}
+        </Pressable>
       ) : (
         <Text className="type-text-primary text-secondary" maxFontSizeMultiplier={2}>
           Verification code sent to {maskedPhone}
@@ -299,12 +322,31 @@ export function PaymentAuthentication({
 
       {maskedPhone ? (
         <>
-          <Button
-            label="Verify Code"
-            loading={isVerifying}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Verify Code"
+            accessibilityState={{ disabled: isVerifying || isVerified || otp.some((digit) => !digit) }}
             disabled={isVerifying || isVerified || otp.some((digit) => !digit)}
             onPress={() => void verifyCode(otp.join(''))}
-          />
+            className={`min-h-control-lg w-full flex-row items-center justify-center rounded-full px-6 ${
+              isVerifying || isVerified || otp.some((digit) => !digit)
+                ? 'bg-border'
+                : 'bg-primary active:bg-primary-hover'
+            }`}>
+            {isVerifying ? (
+              <ActivityIndicator size={20} color="#FFFFFF" />
+            ) : (
+              <Text
+                className={`type-label-lg ${
+                  isVerifying || isVerified || otp.some((digit) => !digit)
+                    ? 'text-disabled'
+                    : 'text-surface'
+                }`}
+                maxFontSizeMultiplier={2}>
+                Verify Code
+              </Text>
+            )}
+          </Pressable>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Resend payment authentication code"
