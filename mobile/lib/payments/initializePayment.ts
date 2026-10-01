@@ -67,18 +67,28 @@ export async function initializePayHerePayment(
     throw new Error('Payment service is not configured.');
   }
 
-  const response = await fetch(`${supabaseUrl}/functions/v1/initialize-payhere-payment`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      amount,
-      currency: 'LKR',
-    }),
-    signal: AbortSignal.timeout(2500),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, 2500);
+
+  let response: Response;
+  try {
+    response = await fetch(`${supabaseUrl}/functions/v1/initialize-payhere-payment`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        amount,
+        currency: 'LKR',
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     const errorMessage = await parseErrorResponse(response);
