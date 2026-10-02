@@ -4,8 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
-import { formatRefundStatusSpeech } from '@/components/payment/paymentSpeech';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Callout } from '@/components/ui/Callout';
@@ -271,16 +269,6 @@ export default function RefundStatusScreen() {
             </View>
           </View>
 
-          <ReadAloudButton
-            text={formatRefundStatusSpeech({
-              status,
-              amount: refundAmount,
-              currency: 'LKR',
-              refundReference: refundRef,
-              reason: reasonText,
-            })}
-            label="Read aloud status"
-          />
         </View>
 
         {/* Status Transition Simulation for Testing */}

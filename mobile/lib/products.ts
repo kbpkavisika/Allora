@@ -23,20 +23,6 @@ export interface StockStatus {
 
 export const LOW_STOCK_THRESHOLD = 10;
 
-export function formatProductSpeech(product: Product, reviewsSummary: string): string {
-  const description = product.description.trim();
-
-  return [
-    product.name,
-    formatPrice(product.price),
-    getStockStatus(product.stock_quantity).detailLabel,
-    description ? i18n.t('readAloud.description', { text: description }) : null,
-    reviewsSummary,
-  ]
-    .filter(Boolean)
-    .join('. ');
-}
-
 export function getStockStatus(stockQuantity: string | number): StockStatus {
   const quantity = Number(stockQuantity);
 

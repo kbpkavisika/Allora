@@ -7,8 +7,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PaymentMethodOption } from '@/components/payment/PaymentMethodOption';
 import { PaymentAuthentication } from '@/components/payment/PaymentAuthentication';
-import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
-import { formatPaymentConfirmationSpeech } from '@/components/payment/paymentSpeech';
 import { Button } from '@/components/ui/Button';
 import { Callout } from '@/components/ui/Callout';
 import { FormError } from '@/components/ui/FormError';
@@ -406,15 +404,6 @@ export default function CheckoutScreen() {
           <Text className="type-label-lg text-primary">{t('cart.total')}</Text>
           <Text className="type-h3 text-primary">{formatMoney(total)}</Text>
         </View>
-        <ReadAloudButton
-          text={formatPaymentConfirmationSpeech({
-            amount: total,
-            currency: 'LKR',
-            actionLabel: method === 'payhere' ? 'Pay' : 'Place order',
-          })}
-          label="Read aloud"
-          disabled={isSubmitting || isAuthenticatingPayment || paymentState === 'processing'}
-        />
         <Button
           label={method === 'payhere' ? t('checkout.pay', { amount: formatMoney(total) }) : t('checkout.placeOrder')}
           loading={isSubmitting || paymentState === 'processing'}

@@ -3,8 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { OrderListCard, orderSpokenSummary } from '@/components/orders/OrderListCard';
-import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
+import { OrderListCard } from '@/components/orders/OrderListCard';
 import { ScrollTabs, type ScrollTabItem } from '@/components/ui/ScrollTabs';
 import { useListPosition } from '@/hooks/useListPosition';
 import { useOrdersRefresh } from '@/hooks/useOrdersRefresh';
@@ -33,12 +32,6 @@ export default function OrdersScreen() {
     [orders, filter]
   );
 
-  const ordersSpeech = [
-    filter === 'active'
-      ? t('readAloud.activeOrders', { count: visibleOrders.length })
-      : t('readAloud.pastOrders', { count: visibleOrders.length }),
-    ...visibleOrders.map((order) => `${orderSpokenSummary(order)}.`),
-  ].join(' ');
 
   const tabs: ScrollTabItem[] = [
     { value: 'active', label: t('orders.active'), count: activeCount },
@@ -71,15 +64,6 @@ export default function OrdersScreen() {
           paddingBottom: insets.bottom + 32,
           gap: 12,
         }}
-        ListHeaderComponent={
-          visibleOrders.length > 0 ? (
-            <ReadAloudButton
-              text={ordersSpeech}
-              hint={filter === 'active' ? t('readAloud.activeOrdersHint') : t('readAloud.pastOrdersHint')}
-              fullWidth
-            />
-          ) : null
-        }
         renderItem={({ item, index }) => (
           <OrderListCard order={item} position={positionOf(index, visibleOrders.length)} />
         )}

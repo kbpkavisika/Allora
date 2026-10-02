@@ -20,6 +20,7 @@ import 'react-native-reanimated';
 import { BrandSplash } from '@/components/BrandSplash';
 import { colorVars, typographyVars } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { PageSpeechProvider, PageSpeechScreen } from '@/hooks/usePageSpeech';
 import { useReduceMotion } from '@/hooks/useReduceMotion';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { AuthProvider, useAuth } from '@/lib/AuthProvider';
@@ -47,7 +48,9 @@ export default function RootLayout() {
             <OrdersProvider>
               <CartProvider>
                 <ChatProvider>
+                  <PageSpeechProvider>
                   <RootNavigator />
+                  </PageSpeechProvider>
                 </ChatProvider>
               </CartProvider>
             </OrdersProvider>
@@ -113,7 +116,9 @@ function RootNavigator() {
           ...typographyVars(!!profile?.large_text),
           ...colorVars(colorScheme === 'dark' ? 'dark' : 'light', !!profile?.high_contrast),
         })}>
-        <Stack screenOptions={{ animation: reduceMotion ? 'none' : 'default', gestureEnabled: !reduceMotion }}>
+        <Stack
+          screenOptions={{ animation: reduceMotion ? 'none' : 'default', gestureEnabled: !reduceMotion }}
+          screenLayout={({ children }) => <PageSpeechScreen>{children}</PageSpeechScreen>}>
           <Stack.Protected guard={showApp && !isSeller}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           </Stack.Protected>
