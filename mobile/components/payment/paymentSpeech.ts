@@ -125,15 +125,15 @@ export function formatPaymentResultSpeech(
     }
     case 'failed': {
       const detail = message || 'The payment was unsuccessful.';
-      return `Payment failed. ${detail.replace(/\.$/, '')}.${reference}`;
+      return `Payment failed. ${detail.replace(/\.$/, '')}.${reference} You can choose to try the payment again or return to checkout.`;
     }
     case 'cancelled': {
-      const detail = message || 'The payment was cancelled.';
-      return `Payment was cancelled. ${detail.replace(/\.$/, '')}.${reference}`;
+      const detail = message || 'The payment process was cancelled before completion.';
+      return `Payment was cancelled. ${detail.replace(/\.$/, '')}.${reference} No amount was charged.`;
     }
     case 'pending': {
       const detail = message || 'Your payment is still being processed.';
-      return `Your payment is still being processed. ${detail.replace(/\.$/, '')}.${reference}`;
+      return `Payment is being processed. ${detail.replace(/\.$/, '')}.${reference} Please wait a moment while the provider completes verification.`;
     }
     case 'authentication_required': {
       const detail = message || 'Enter the six digit verification code sent to your phone.';
@@ -151,7 +151,7 @@ export function formatCheckoutResultSpeech({
   reference,
   message,
 }: {
-  variant: 'success' | 'failure' | 'cod';
+  variant: 'success' | 'failure' | 'cod' | 'cancelled' | 'pending';
   amount: number;
   currency?: string;
   reference?: string;
@@ -163,15 +163,23 @@ export function formatCheckoutResultSpeech({
   const amountText = `${formatAmountForSpeech(amount)} ${formatCurrencyName(currency)}`;
 
   if (variant === 'success') {
-    return `Payment successful. Your payment of ${amountText} was completed successfully.${referenceText}`;
+    return `Payment successful. Your payment of ${amountText} was completed successfully.${referenceText} A confirmation receipt will be delivered to your registered email address.`;
   }
 
   if (variant === 'cod') {
-    return `Order placed. Pay ${amountText} in cash when your order arrives.`;
+    return `Order placed successfully. Pay ${amountText} in cash when your order arrives.`;
+  }
+
+  if (variant === 'cancelled') {
+    return 'Payment was cancelled. No charges were made. You can return to checkout to try again.';
+  }
+
+  if (variant === 'pending') {
+    return `Payment is being processed for ${amountText}.${referenceText} Please wait while the transaction is verified.`;
   }
 
   const detail = message || "The payment wasn't completed, so your order was not placed.";
-  return `Payment failed. ${detail.replace(/\.$/, '')}.${referenceText}`;
+  return `Payment failed. ${detail.replace(/\.$/, '')}.${referenceText} You can try the payment again or choose a different payment method.`;
 }
 
 export function formatRefundRequestSpeech({
@@ -184,7 +192,7 @@ export function formatRefundRequestSpeech({
   currency?: string;
 }): string {
   const amountText = `${formatAmountForSpeech(amount)} ${formatCurrencyName(currency)}`;
-  return `Refund request for order ${orderNumber}. The refundable amount is ${amountText}. Choose full or partial refund, select a reason, and press continue to confirm.`;
+  return `Refund request for order ${orderNumber}. The refundable amount is ${amountText}. Choose full or partial refund, select a reason, and press review refund request to continue.`;
 }
 
 export function formatRefundConfirmationSpeech({
@@ -200,7 +208,7 @@ export function formatRefundConfirmationSpeech({
 }): string {
   const amountText = `${formatAmountForSpeech(amount)} ${formatCurrencyName(currency)}`;
   const referenceText = reference ? ` Payment reference is ${reference}.` : '';
-  return `Confirm refund request. You are requesting a refund of ${amountText} for reason: ${reason}.${referenceText} Press Confirm refund to submit.`;
+  return `Confirm refund request. You are requesting a refund of ${amountText} for reason: ${reason}.${referenceText} Press Confirm refund to submit your request for processing.`;
 }
 
 export function formatRefundStatusSpeech({
@@ -220,15 +228,15 @@ export function formatRefundStatusSpeech({
   const reasonText = reason ? ` Reason: ${reason}.` : '';
 
   if (status === 'processing' || status === 'requested') {
-    return `Refund request submitted. Your refund of ${amountText} is currently being processed. Refund reference is ${refundReference}.${reasonText}`;
+    return `Refund processing. Your refund request of ${amountText} has been submitted and is being processed. Refund reference is ${refundReference}.${reasonText}`;
   }
 
   if (status === 'refunded') {
-    return `Refund completed. Your refund of ${amountText} has been completed successfully. Refund reference is ${refundReference}.${reasonText}`;
+    return `Refund completed. Your refund of ${amountText} has been completed successfully and returned to your payment method. Refund reference is ${refundReference}.${reasonText}`;
   }
 
   if (status === 'failed') {
-    return `Refund request failed for ${amountText}. Please try again or contact support.`;
+    return `Refund request failed for ${amountText}. Please try submitting again or contact support.`;
   }
 
   return `Refund status: ${status}. Amount: ${amountText}. Reference: ${refundReference}.${reasonText}`;
