@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -17,6 +18,7 @@ import { profileSchema, type ProfileValues } from '@/lib/schemas';
 const noop = () => {};
 
 export default function EditPersonalInfoScreen() {
+  const { t } = useTranslation();
   const { session } = useAuth();
   const { profile, updateProfile } = useProfile();
   const phoneRef = useRef<TextInput>(null);
@@ -50,7 +52,7 @@ export default function EditPersonalInfoScreen() {
     });
 
     if (error) {
-      setFormError('Could not save your changes. Try again.');
+      setFormError(t('editProfile.saveError'));
       return;
     }
 
@@ -63,7 +65,7 @@ export default function EditPersonalInfoScreen() {
 
   return (
     <KeyboardScreen>
-      <ScreenHeader title="Personal info" className="mb-5" />
+      <ScreenHeader title={t('account.personalInfo')} className="mb-5" />
 
       <View className="gap-5">
         <Controller
@@ -71,8 +73,8 @@ export default function EditPersonalInfoScreen() {
           name="fullName"
           render={({ field }) => (
             <InputField
-              label="Full name"
-              placeholder="Alex Mercer"
+              label={t('editProfile.fullName')}
+              placeholder={t('editProfile.fullNamePlaceholder')}
               value={field.value}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
@@ -86,12 +88,12 @@ export default function EditPersonalInfoScreen() {
         />
 
         <InputField
-          label="Email"
+          label={t('auth.email')}
           isRequired
           isDisabled
           value={email}
           onChangeText={noop}
-          helperText="Used for order updates and password resets."
+          helperText={t('editProfile.emailHelper')}
         />
 
         <Controller
@@ -100,8 +102,8 @@ export default function EditPersonalInfoScreen() {
           render={({ field }) => (
             <InputField
               ref={phoneRef}
-              label="Phone"
-              placeholder="+1 604 555 0142"
+              label={t('account.phone')}
+              placeholder={t('editProfile.phonePlaceholder')}
               value={field.value ?? ''}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
@@ -121,12 +123,12 @@ export default function EditPersonalInfoScreen() {
         <FormError message={formError} />
 
         <View className="gap-3">
-          <Button label="Save changes" loading={isSubmitting} onPress={submit} />
+          <Button label={t('common.saveChanges')} loading={isSubmitting} onPress={submit} />
           <Button
             variant="secondary"
-            label="Discard"
+            label={t('common.discard')}
             onPress={() => router.back()}
-            hint="Leaves without saving your changes"
+            hint={t('common.discardHint')}
           />
         </View>
       </View>

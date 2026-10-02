@@ -9,18 +9,26 @@ import {
 } from 'react';
 
 import { useAuth } from '@/lib/AuthProvider';
-import { cartItemCount, cartSubtotal, type CartLine } from '@/lib/cart';
+import { cartItemCount, CartStockLimitError, cartSubtotal, type CartLine } from '@/lib/cart';
 import type { Product } from '@/lib/products';
 import { supabase } from '@/lib/supabase';
 
 export type { CartLine } from '@/lib/cart';
+
+export interface CartTotals {
+  itemCount: number;
+  subtotal: number;
+}
 
 export interface CartContextValue {
   lines: CartLine[];
   itemCount: number;
   subtotal: number;
   isLoading: boolean;
-  addItem: (productId: string, quantity?: number) => Promise<{ error: unknown }>;
+  addItem: (
+    productId: string,
+    quantity?: number
+  ) => Promise<{ error: unknown; cart?: CartTotals }>;
   updateQuantity: (productId: string, quantity: number) => Promise<{ error: unknown }>;
   removeItem: (productId: string) => Promise<{ error: unknown }>;
   clear: () => Promise<{ error: unknown }>;
@@ -45,11 +53,11 @@ export function CartProvider({ children }: CartProviderProps) {
   const [lines, setLines] = useState<CartLine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (): Promise<CartLine[]> => {
     if (!userId) {
       setLines([]);
       setIsLoading(false);
-      return;
+      return [];
     }
 
     setIsLoading(true);
@@ -61,13 +69,17 @@ export function CartProvider({ children }: CartProviderProps) {
       .order('created_at');
 
     const rows = (data ?? []) as unknown as CartItemRow[];
-    setLines(
-      rows
-        .filter((row): row is CartItemRow & { product: Product } => row.product !== null)
-        .map((row) => ({ product: row.product, quantity: row.quantity }))
-    );
+    const next = rows
+      .filter((row): row is CartItemRow & { product: Product } => row.product !== null)
+      .map((row) => ({ product: row.product, quantity: row.quantity }));
+    setLines(next);
     setIsLoading(false);
+    return next;
   }, [userId]);
+
+  const refresh = useCallback(async () => {
+    await load();
+  }, [load]);
 
   useEffect(() => {
     load();
@@ -77,8 +89,19 @@ export function CartProvider({ children }: CartProviderProps) {
     async (productId: string, quantity = 1) => {
       if (!userId) return { error: new Error('Not signed in.') };
 
+      const { data: product, error: stockError } = await supabase
+        .from('products')
+        .select('stock_quantity')
+        .eq('id', productId)
+        .single();
+      if (stockError) return { error: stockError };
+
       const existing = lines.find((line) => line.product.id === productId);
       const nextQuantity = (existing?.quantity ?? 0) + quantity;
+
+      if (nextQuantity > product.stock_quantity) {
+        return { error: new CartStockLimitError(product.stock_quantity) };
+      }
 
       const { error } = await supabase
         .from('cart_items')
@@ -87,8 +110,10 @@ export function CartProvider({ children }: CartProviderProps) {
           { onConflict: 'user_id,product_id' }
         );
 
-      if (!error) await load();
-      return { error };
+      if (error) return { error };
+
+      const next = await load();
+      return { error: null, cart: { itemCount: cartItemCount(next), subtotal: cartSubtotal(next) } };
     },
     [userId, lines, load]
   );
@@ -96,6 +121,11 @@ export function CartProvider({ children }: CartProviderProps) {
   const updateQuantity = useCallback(
     async (productId: string, quantity: number) => {
       if (!userId) return { error: new Error('Not signed in.') };
+
+      const stock = lines.find((line) => line.product.id === productId)?.product.stock_quantity;
+      if (stock !== undefined && quantity > 0 && quantity > stock) {
+        return { error: new CartStockLimitError(stock) };
+      }
 
       const { error } =
         quantity <= 0
@@ -113,7 +143,7 @@ export function CartProvider({ children }: CartProviderProps) {
       if (!error) await load();
       return { error };
     },
-    [userId, load]
+    [userId, lines, load]
   );
 
   const removeItem = useCallback(
@@ -139,9 +169,9 @@ export function CartProvider({ children }: CartProviderProps) {
       updateQuantity,
       removeItem,
       clear,
-      refresh: load,
+      refresh,
     }),
-    [lines, isLoading, addItem, updateQuantity, removeItem, clear, load]
+    [lines, isLoading, addItem, updateQuantity, removeItem, clear, refresh]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

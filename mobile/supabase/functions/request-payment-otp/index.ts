@@ -14,6 +14,9 @@ const jsonHeaders = {
 };
 
 function getSupabaseSecretKey(): string | null {
+  const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if (serviceKey) return serviceKey;
+
   const rawSecretKeys = Deno.env.get('SUPABASE_SECRET_KEYS');
   if (!rawSecretKeys) return null;
 

@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Controller, useForm, type FieldErrors } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Text, TextInput, View } from 'react-native';
 
 import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
@@ -16,6 +17,7 @@ import { signUpSchema, type SignUpValues } from '@/lib/schemas';
 import { supabase } from '@/lib/supabase';
 
 export default function SignUpScreen() {
+  const { t } = useTranslation();
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const confirmPasswordRef = useRef<TextInput>(null);
@@ -46,7 +48,7 @@ export default function SignUpScreen() {
     }
 
     if (!data.session) {
-      setFormError('Check your inbox to confirm your email address, then log in.');
+      setFormError(t('auth.signUp.confirmEmail'));
     }
   }
 
@@ -61,8 +63,8 @@ export default function SignUpScreen() {
   return (
     <KeyboardScreen>
       <ScreenHeader
-        title="Get your free account"
-        subtitle="Every field can be dictated instead of typed."
+        title={t('auth.signUp.title')}
+        subtitle={t('auth.signUp.subtitle')}
         className="mb-6"
       />
 
@@ -73,8 +75,8 @@ export default function SignUpScreen() {
           render={({ field }) => (
             <InputField
               ref={emailRef}
-              label="Email"
-              placeholder="hello@company.com"
+              label={t('auth.email')}
+              placeholder={t('auth.emailPlaceholder')}
               value={field.value}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
@@ -99,8 +101,8 @@ export default function SignUpScreen() {
           render={({ field }) => (
             <InputField
               ref={passwordRef}
-              label="Password"
-              placeholder="At least 8 characters"
+              label={t('auth.password')}
+              placeholder={t('auth.signUp.passwordPlaceholder')}
               value={field.value}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
@@ -124,8 +126,8 @@ export default function SignUpScreen() {
           render={({ field }) => (
             <InputField
               ref={confirmPasswordRef}
-              label="Confirm password"
-              placeholder="Re-enter your password"
+              label={t('auth.signUp.confirmPassword')}
+              placeholder={t('auth.signUp.confirmPasswordPlaceholder')}
               value={field.value}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
@@ -147,20 +149,20 @@ export default function SignUpScreen() {
       </View>
 
       <Button
-        label="Continue with email"
+        label={t('auth.signUp.continueWithEmail')}
         loading={isSubmitting}
         onPress={submit}
         className="mt-6"
       />
 
-      <Divider label="OR" className="my-6" />
+      <Divider label={t('auth.or')} className="my-6" />
 
       <SocialAuthButtons />
 
       <View className="mt-6 flex-row items-center justify-center gap-2">
-        <Text className="type-text-primary text-secondary">Already have an account?</Text>
+        <Text className="type-text-primary text-secondary">{t('auth.signUp.haveAccount')}</Text>
         <Link href="/sign-in" role="link" className="type-label-lg text-primary underline">
-          Log in
+          {t('auth.logIn')}
         </Link>
       </View>
     </KeyboardScreen>

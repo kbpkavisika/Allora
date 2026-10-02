@@ -1,17 +1,20 @@
 import Feather from '@expo/vector-icons/Feather';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { cssInterop } from 'nativewind';
 import type { StyleProp, TextStyle } from 'react-native';
 
 // Icon fonts are not registered interop components, so className needs wiring up explicitly.
 cssInterop(Feather, { className: { target: 'style', nativeStyleToProp: { color: true } } });
 cssInterop(FontAwesome6, { className: { target: 'style', nativeStyleToProp: { color: true } } });
+cssInterop(MaterialCommunityIcons, { className: { target: 'style', nativeStyleToProp: { color: true } } });
 
 export type IconName =
   | 'back'
   | 'forward'
   | 'chevron'
   | 'filters'
+  | 'send'
   | 'dictate'
   | 'search'
   | 'show'
@@ -28,21 +31,26 @@ export type IconName =
   | 'lock'
   | 'shield'
   | 'check'
+  | 'sparkles'
   | 'chat'
   | 'stop'
   | 'star'
   | 'close'
   | 'notify'
-  | 'mute';
+  | 'mute'
+  | 'play'
+  | 'pause'
+  | 'speak';
 export type IconSize = 'sm' | 'md' | 'lg';
 export type BrandName = 'apple' | 'google';
 export type SolidIconName = 'star';
 
-const GLYPH: Record<IconName, React.ComponentProps<typeof Feather>['name']> = {
+const GLYPH: Record<Exclude<IconName, 'sparkles'>, React.ComponentProps<typeof Feather>['name']> = {
   back: 'chevron-left',
   forward: 'chevron-right',
   chevron: 'chevron-down',
   filters: 'sliders',
+  send: 'send',
   dictate: 'mic',
   search: 'search',
   show: 'eye',
@@ -65,6 +73,9 @@ const GLYPH: Record<IconName, React.ComponentProps<typeof Feather>['name']> = {
   close: 'x',
   notify: 'bell',
   mute: 'bell-off',
+  play: 'play',
+  pause: 'pause',
+  speak: 'volume-2',
 };
 
 const SOLID_GLYPH: Record<SolidIconName, React.ComponentProps<typeof FontAwesome6>['name']> = {
@@ -81,6 +92,18 @@ export interface IconProps {
 }
 
 export function Icon({ name, size = 'lg', className, style }: IconProps) {
+  if (name === 'sparkles') {
+    return (
+      <MaterialCommunityIcons
+        name="creation-outline"
+        size={PX[size]}
+        className={className}
+        style={style}
+        aria-hidden
+        importantForAccessibility="no-hide-descendants"
+      />
+    );
+  }
   return (
     <Feather
       name={GLYPH[name]}

@@ -1,10 +1,12 @@
+import { zodResolver } from '@hookform/resolvers/zod';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { AccessibilityInfo, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
+import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
 import {
   formatRefundConfirmationSpeech,
   formatRefundRequestSpeech,
@@ -18,6 +20,7 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TopBar } from '@/components/ui/TopBar';
 import { formatMoney } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
+import { refundRequestSchema, type RefundRequestValues } from '@/lib/schemas';
 import { refundService } from '@/services/refund/refundService';
 import { REFUND_REASONS, type RefundReason } from '@/services/refund/refundTypes';
 
@@ -41,13 +44,31 @@ export default function RefundRequestScreen() {
     );
   }, [order]);
 
-  const [refundType, setRefundType] = useState<'full' | 'partial'>('full');
-  const [partialAmountText, setPartialAmountText] = useState('');
-  const [selectedReason, setSelectedReason] = useState<RefundReason>('damaged');
-  const [details, setDetails] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const {
+    control,
+    handleSubmit,
+    watch,
+    setError,
+    clearErrors,
+    formState: { errors },
+  } = useForm<RefundRequestValues>({
+    resolver: zodResolver(refundRequestSchema),
+    defaultValues: {
+      refundType: 'full',
+      partialAmount: '',
+      reason: 'damaged',
+      details: '',
+    },
+  });
+
+  const refundType = watch('refundType');
+  const selectedReason = watch('reason');
+  const details = watch('details');
+  const partialAmountText = watch('partialAmount');
 
   if (!order) {
     return (
@@ -69,7 +90,7 @@ export default function RefundRequestScreen() {
   }
 
   const selectedAmount =
-    refundType === 'full' ? totalAmount : parseFloat(partialAmountText) || 0;
+    refundType === 'full' ? totalAmount : parseFloat(partialAmountText || '0') || 0;
   const reasonLabel = VALUE_TO_LABEL.get(selectedReason) ?? 'Other';
   const paymentReference = order.payment_reference || `ORDER-${order.order_number}`;
   const paymentMethodLabel =
@@ -79,65 +100,31 @@ export default function RefundRequestScreen() {
         ? 'Cash on Delivery'
         : 'PayHere';
 
-  function validateStep(): boolean {
+  function onProceedToConfirm(values: RefundRequestValues) {
     setFormError(null);
 
-    if (refundType === 'partial') {
-      const trimmed = partialAmountText.trim();
-      if (!trimmed) {
-        const msg = 'Enter a valid refund amount.';
-        setFormError(msg);
-        AccessibilityInfo.announceForAccessibility(msg);
-        return false;
-      }
-      const parsed = parseFloat(trimmed);
-      if (isNaN(parsed) || parsed <= 0) {
-        const msg = 'Enter a valid refund amount greater than zero.';
-        setFormError(msg);
-        AccessibilityInfo.announceForAccessibility(msg);
-        return false;
-      }
+    if (values.refundType === 'partial') {
+      const parsed = parseFloat(values.partialAmount || '0');
       if (parsed > totalAmount) {
         const msg = `Refund amount cannot exceed the order total of ${formatMoney(totalAmount)}.`;
-        setFormError(msg);
+        setError('partialAmount', { message: msg });
         AccessibilityInfo.announceForAccessibility(msg);
-        return false;
+        return;
       }
     }
 
-    if (!selectedReason) {
-      const msg = 'Please select a reason for the refund.';
-      setFormError(msg);
-      AccessibilityInfo.announceForAccessibility(msg);
-      return false;
-    }
-
-    if (selectedReason === 'other' && !details.trim()) {
-      const msg = 'Please enter details explaining your reason for the refund.';
-      setFormError(msg);
-      AccessibilityInfo.announceForAccessibility(msg);
-      return false;
-    }
-
-    return true;
-  }
-
-  async function handleProceedToConfirm() {
-    if (!validateStep()) return;
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setIsConfirming(true);
     AccessibilityInfo.announceForAccessibility('Review refund request details before confirming.');
   }
 
-  async function handleSubmitRefund() {
-    if (!validateStep()) {
-      setIsConfirming(false);
-      return;
-    }
-
+  async function onSubmitFinal(values: RefundRequestValues) {
     setIsSubmitting(true);
     setFormError(null);
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    const finalAmount =
+      values.refundType === 'full' ? totalAmount : parseFloat(values.partialAmount || '0') || 0;
 
     const outcome = await refundService.requestRefund({
       orderId: order!.id,
@@ -145,10 +132,10 @@ export default function RefundRequestScreen() {
       paymentReference,
       paymentMethod: paymentMethodLabel,
       totalOrderAmount: totalAmount,
-      refundAmount: selectedAmount,
-      refundType,
-      reason: selectedReason,
-      reasonDetails: details.trim() || undefined,
+      refundAmount: finalAmount,
+      refundType: values.refundType,
+      reason: values.reason,
+      reasonDetails: values.details?.trim() || undefined,
       currency: 'LKR',
     });
 
@@ -179,7 +166,6 @@ export default function RefundRequestScreen() {
           contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 40, gap: 24 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
-          {/* Order & Payment Summary Card */}
           <View className="gap-3 rounded-12 border-1 border-border bg-surface p-4">
             <Text className="type-label text-secondary">
               Order {order.order_number} · Placed{' '}
@@ -209,99 +195,123 @@ export default function RefundRequestScreen() {
                 label="Read aloud"
               />
 
-              {/* Refund Type Selector */}
               <View className="gap-3">
                 <SectionHeader title="Refund type" />
-                <View className="flex-row gap-3">
-                  <Pressable
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected: refundType === 'full' }}
-                    accessibilityLabel={`Full refund of ${formatMoney(totalAmount)}`}
-                    onPress={() => {
-                      setRefundType('full');
-                      setFormError(null);
-                    }}
-                    className={`min-h-tap flex-1 items-center justify-center rounded-12 border-1.5 p-4 ${
-                      refundType === 'full'
-                        ? 'border-primary bg-primary-tint'
-                        : 'border-border bg-surface'
-                    }`}>
-                    <Text
-                      className={`type-label-lg ${
-                        refundType === 'full' ? 'text-primary font-bold' : 'text-secondary'
-                      }`}>
-                      Full Refund
-                    </Text>
-                    <Text className="type-text-secondary text-secondary">
-                      {formatMoney(totalAmount)}
-                    </Text>
-                  </Pressable>
+                <Controller
+                  control={control}
+                  name="refundType"
+                  render={({ field }) => (
+                    <View className="flex-row gap-3">
+                      <Pressable
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: field.value === 'full' }}
+                        accessibilityLabel={`Full refund of ${formatMoney(totalAmount)}`}
+                        onPress={() => {
+                          field.onChange('full');
+                          clearErrors('partialAmount');
+                          setFormError(null);
+                        }}
+                        className={`min-h-tap flex-1 items-center justify-center rounded-12 border-1.5 p-4 ${
+                          field.value === 'full'
+                            ? 'border-primary bg-primary-tint'
+                            : 'border-border bg-surface'
+                        }`}>
+                        <Text
+                          className={`type-label-lg ${
+                            field.value === 'full' ? 'text-primary font-bold' : 'text-secondary'
+                          }`}>
+                          Full Refund
+                        </Text>
+                        <Text className="type-text-secondary text-secondary">
+                          {formatMoney(totalAmount)}
+                        </Text>
+                      </Pressable>
 
-                  <Pressable
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected: refundType === 'partial' }}
-                    accessibilityLabel="Partial refund"
-                    onPress={() => {
-                      setRefundType('partial');
-                      setFormError(null);
-                    }}
-                    className={`min-h-tap flex-1 items-center justify-center rounded-12 border-1.5 p-4 ${
-                      refundType === 'partial'
-                        ? 'border-primary bg-primary-tint'
-                        : 'border-border bg-surface'
-                    }`}>
-                    <Text
-                      className={`type-label-lg ${
-                        refundType === 'partial' ? 'text-primary font-bold' : 'text-secondary'
-                      }`}>
-                      Partial Refund
-                    </Text>
-                    <Text className="type-text-secondary text-secondary">Custom amount</Text>
-                  </Pressable>
-                </View>
+                      <Pressable
+                        accessibilityRole="radio"
+                        accessibilityState={{ selected: field.value === 'partial' }}
+                        accessibilityLabel="Partial refund"
+                        onPress={() => {
+                          field.onChange('partial');
+                          setFormError(null);
+                        }}
+                        className={`min-h-tap flex-1 items-center justify-center rounded-12 border-1.5 p-4 ${
+                          field.value === 'partial'
+                            ? 'border-primary bg-primary-tint'
+                            : 'border-border bg-surface'
+                        }`}>
+                        <Text
+                          className={`type-label-lg ${
+                            field.value === 'partial' ? 'text-primary font-bold' : 'text-secondary'
+                          }`}>
+                          Partial Refund
+                        </Text>
+                        <Text className="type-text-secondary text-secondary">Custom amount</Text>
+                      </Pressable>
+                    </View>
+                  )}
+                />
               </View>
 
-              {/* Partial Amount Input */}
               {refundType === 'partial' ? (
                 <View className="gap-2">
-                  <InputField
-                    label="Refund amount (LKR)"
-                    placeholder="e.g. 500"
-                    keyboardType="numeric"
-                    value={partialAmountText}
-                    onChangeText={(val) => {
-                      setPartialAmountText(val.replace(/[^0-9.]/g, ''));
-                      setFormError(null);
-                    }}
-                    helperText={`Max refundable amount is ${formatMoney(totalAmount)}`}
+                  <Controller
+                    control={control}
+                    name="partialAmount"
+                    render={({ field }) => (
+                      <InputField
+                        label="Refund amount (LKR)"
+                        placeholder="e.g. 500"
+                        keyboardType="numeric"
+                        value={field.value ?? ''}
+                        onChangeText={(val) => {
+                          field.onChange(val.replace(/[^0-9.]/g, ''));
+                          setFormError(null);
+                        }}
+                        error={errors.partialAmount?.message}
+                        helperText={`Max refundable amount is ${formatMoney(totalAmount)}`}
+                      />
+                    )}
                   />
                 </View>
               ) : null}
 
-              {/* Reason Selection */}
               <View className="gap-3">
                 <SectionHeader title="Reason for refund" />
-                <ChipSelect
-                  label="Select the primary reason"
-                  options={REASON_LABELS}
-                  value={VALUE_TO_LABEL.get(selectedReason) ?? ''}
-                  onChange={(lbl) => {
-                    const mapped = LABEL_TO_VALUE.get(lbl) ?? 'other';
-                    setSelectedReason(mapped);
-                    setFormError(null);
-                  }}
+                <Controller
+                  control={control}
+                  name="reason"
+                  render={({ field }) => (
+                    <ChipSelect
+                      label="Select the primary reason"
+                      options={REASON_LABELS}
+                      value={VALUE_TO_LABEL.get(field.value) ?? ''}
+                      onChange={(lbl) => {
+                        const mapped = (LABEL_TO_VALUE.get(lbl) ?? 'other') as RefundReason;
+                        field.onChange(mapped);
+                        setFormError(null);
+                      }}
+                      error={errors.reason?.message}
+                    />
+                  )}
                 />
               </View>
 
-              {/* Optional Explanation */}
               {selectedReason === 'other' ? (
                 <View className="gap-2">
-                  <InputField
-                    label="Additional details (optional)"
-                    placeholder="Describe the issue with your item..."
-                    value={details}
-                    onChangeText={setDetails}
-                    multiline
+                  <Controller
+                    control={control}
+                    name="details"
+                    render={({ field }) => (
+                      <InputField
+                        label="Additional details (optional)"
+                        placeholder="Describe the issue with your item..."
+                        value={field.value ?? ''}
+                        onChangeText={field.onChange}
+                        error={errors.details?.message}
+                        multiline
+                      />
+                    )}
                   />
                 </View>
               ) : null}
@@ -311,11 +321,10 @@ export default function RefundRequestScreen() {
               <Button
                 label="Review refund request"
                 hint="Validates your refund options and opens the confirmation summary"
-                onPress={handleProceedToConfirm}
+                onPress={handleSubmit(onProceedToConfirm)}
               />
             </>
           ) : (
-            /* Confirmation Step */
             <View className="gap-5">
               <Callout
                 tone="warning"
@@ -334,7 +343,7 @@ export default function RefundRequestScreen() {
                   <Text className="type-text-primary text-secondary">Reason</Text>
                   <Text className="type-label-lg text-primary">{reasonLabel}</Text>
                 </View>
-                {details.trim() ? (
+                {details?.trim() ? (
                   <View className="border-b-1 border-border pb-3">
                     <Text className="type-text-secondary text-secondary">Details</Text>
                     <Text className="type-text-primary text-primary mt-1">{details.trim()}</Text>
@@ -364,7 +373,7 @@ export default function RefundRequestScreen() {
                   loading={isSubmitting}
                   disabled={isSubmitting}
                   hint="Submits the refund request for processing"
-                  onPress={handleSubmitRefund}
+                  onPress={handleSubmit(onSubmitFinal)}
                 />
                 <Button
                   variant="secondary"

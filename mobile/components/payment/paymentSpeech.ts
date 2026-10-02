@@ -236,8 +236,27 @@ export function formatRefundStatusSpeech({
   }
 
   if (status === 'failed') {
-    return `Refund request failed for ${amountText}. Please try submitting again or contact support.`;
+    return `Refund failed. Amount was ${amountText}. Refund reference is ${refundReference}.${reasonText} You can choose to retry submitting the refund request.`;
   }
 
   return `Refund status: ${status}. Amount: ${amountText}. Reference: ${refundReference}.${reasonText}`;
+}
+
+export function formatPaymentSummarySpeech({
+  status,
+  amount,
+  currency = 'LKR',
+  reference,
+  method,
+}: {
+  status: string;
+  amount: number;
+  currency?: string;
+  reference?: string | null;
+  method?: string | null;
+}): string {
+  const amountText = `${formatAmountForSpeech(amount)} ${formatCurrencyName(currency)}`;
+  const refText = reference ? ` Payment reference is ${reference}.` : ' No payment reference is available.';
+  const methodText = method ? ` Payment method is ${method}.` : '';
+  return `Payment information. Payment status: ${status}. Amount: ${amountText}.${methodText}${refText}`;
 }

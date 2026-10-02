@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
 import { Badge } from '@/components/ui/Badge';
@@ -10,19 +11,21 @@ export interface AddressCardProps {
 }
 
 export function AddressCard({ address, onEdit }: AddressCardProps) {
+  const { t } = useTranslation();
+
   return (
     <View className="gap-3 rounded-12 border-1 border-border bg-surface p-4">
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-2">
           <Text className="type-h3 text-primary">{address.label}</Text>
-          {address.is_default ? <Badge label="Default" variant="dark" /> : null}
+          {address.is_default ? <Badge label={t('account.buyer.default')} variant="dark" /> : null}
         </View>
         <Button
           variant="link"
-          label="Edit"
+          label={t('common.edit')}
           fullWidth={false}
           onPress={onEdit}
-          hint={`Edits the ${address.label} address`}
+          hint={t('addressCard.editHint', { label: address.label })}
         />
       </View>
 

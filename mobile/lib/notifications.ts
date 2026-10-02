@@ -1,9 +1,17 @@
+import { isRunningInExpoGo } from 'expo';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
+import type * as NotificationsModule from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { supabase } from '@/lib/supabase';
+
+// expo-notifications throws on import in Expo Go on Android (SDK 53+), so it is only loaded where supported.
+const Notifications: typeof NotificationsModule | null =
+  Platform.OS === 'android' && isRunningInExpoGo() ? null : require('expo-notifications');
+
+export const useLastNotificationResponse =
+  Notifications?.useLastNotificationResponse ?? (() => null);
 
 export const MESSAGES_CHANNEL_ID = 'messages';
 
@@ -15,13 +23,13 @@ export function setActiveConversation(conversationId: string | null) {
 }
 
 export function notificationConversationId(
-  notification: Notifications.Notification
+  notification: NotificationsModule.Notification
 ): string | null {
   const conversationId = notification.request.content.data?.conversation_id;
   return typeof conversationId === 'string' ? conversationId : null;
 }
 
-Notifications.setNotificationHandler({
+Notifications?.setNotificationHandler({
   handleNotification: async (notification) => {
     const isOpen = notificationConversationId(notification) === activeConversationId;
 
@@ -35,7 +43,7 @@ Notifications.setNotificationHandler({
 });
 
 async function getExpoPushToken(): Promise<string | null> {
-  if (!Device.isDevice || (Platform.OS !== 'ios' && Platform.OS !== 'android')) return null;
+  if (!Notifications || !Device.isDevice || (Platform.OS !== 'ios' && Platform.OS !== 'android')) return null;
 
   const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
   if (!projectId) return null;
@@ -55,7 +63,7 @@ async function getExpoPushToken(): Promise<string | null> {
   return data;
 }
 
-export async function registerPushToken(): Promise<void> {
+export async function registerPushToken(language: string): Promise<void> {
   try {
     const token = await getExpoPushToken();
     if (!token) return;
@@ -63,6 +71,7 @@ export async function registerPushToken(): Promise<void> {
     const { error } = await supabase.rpc('register_push_token', {
       p_token: token,
       p_platform: Platform.OS,
+      p_language: language,
     });
     if (!error) registeredToken = token;
   } catch {

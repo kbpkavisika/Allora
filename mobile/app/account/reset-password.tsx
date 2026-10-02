@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -15,7 +16,7 @@ import { getAuthErrorMessage } from '@/lib/authErrors';
 import { resetPasswordSchema, type ResetPasswordValues } from '@/lib/schemas';
 import { supabase } from '@/lib/supabase';
 
-const STRENGTH_LABEL = ['Weak', 'Weak', 'Medium', 'Strong'] as const;
+const STRENGTH_LABEL = ['weak', 'weak', 'medium', 'strong'] as const;
 const STRENGTH_TONE = ['bg-error', 'bg-error', 'bg-warning', 'bg-success'] as const;
 
 function passwordStrength(password: string): 0 | 1 | 2 | 3 {
@@ -28,6 +29,7 @@ function passwordStrength(password: string): 0 | 1 | 2 | 3 {
 }
 
 export default function ResetPasswordScreen() {
+  const { t } = useTranslation();
   const { session } = useAuth();
   const email = session?.user.email ?? '';
   const newPasswordRef = useRef<TextInput>(null);
@@ -57,7 +59,7 @@ export default function ResetPasswordScreen() {
     });
 
     if (signInError) {
-      setFormError('Current password is incorrect.');
+      setFormError(t('resetPassword.incorrectCurrent'));
       return;
     }
 
@@ -89,9 +91,9 @@ export default function ResetPasswordScreen() {
 
   return (
     <KeyboardScreen>
-      <ScreenHeader title="Reset password" className="mb-2" />
+      <ScreenHeader title={t('account.resetPassword')} className="mb-2" />
       <Text className="type-text-primary mb-8 text-secondary">
-        Choose a new password for {email}. You&rsquo;ll stay signed in on this device.
+        {t('resetPassword.intro', { email })}
       </Text>
 
       <View className="gap-5">
@@ -100,7 +102,7 @@ export default function ResetPasswordScreen() {
           name="currentPassword"
           render={({ field }) => (
             <InputField
-              label="Current password"
+              label={t('resetPassword.current')}
               value={field.value}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
@@ -124,7 +126,7 @@ export default function ResetPasswordScreen() {
             render={({ field }) => (
               <InputField
                 ref={newPasswordRef}
-                label="New password"
+                label={t('resetPassword.new')}
                 value={field.value}
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
@@ -153,19 +155,19 @@ export default function ResetPasswordScreen() {
                   />
                 ))}
               </View>
-              <Text className="type-text-secondary text-secondary">{STRENGTH_LABEL[strength]}</Text>
+              <Text className="type-text-secondary text-secondary">{t(`resetPassword.strength.${STRENGTH_LABEL[strength]}`)}</Text>
             </View>
           ) : null}
         </View>
 
         <FormError message={formError} />
-        <SuccessBanner message={linkSent ? 'Check your inbox for a reset link.' : null} />
+        <SuccessBanner message={linkSent ? t('resetPassword.linkSent') : null} />
 
-        <Button label="Save new password" loading={isSubmitting} onPress={submit} />
+        <Button label={t('resetPassword.save')} loading={isSubmitting} onPress={submit} />
 
         <Button
           variant="link"
-          label="Send me a reset link instead"
+          label={t('resetPassword.sendLinkInstead')}
           className="self-center"
           onPress={sendResetLink}
         />

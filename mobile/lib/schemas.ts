@@ -1,122 +1,203 @@
 import { z } from 'zod';
 
 import { MESSAGE_MAX_LENGTH } from '@/lib/chat';
-import { returnReasons } from '@/lib/orders';
+import { CANCEL_REASON_MAX_LENGTH, RETURN_NOTE_MAX_LENGTH, returnReasons } from '@/lib/orders';
+import i18n from '@/lib/i18n';
 
 const email = z
   .string()
   .trim()
-  .min(1, { error: 'Enter your email address.' })
-  .pipe(z.email({ error: 'Enter a valid email address, like hello@company.com.' }));
+  .min(1, { error: () => i18n.t('validation.emailRequired') })
+  .pipe(z.email({ error: () => i18n.t('validation.emailInvalid') }));
 
-const newPassword = z.string().min(8, { error: 'Use at least 8 characters.' });
+const newPassword = z.string().min(8, { error: () => i18n.t('validation.passwordTooShort') });
 
 export const signInSchema = z.object({
   email,
-  password: z.string().min(1, { error: 'Enter your password.' }),
+  password: z.string().min(1, { error: () => i18n.t('validation.passwordRequired') }),
 });
 
 export const signUpSchema = z
   .object({
     email,
     password: newPassword,
-    confirmPassword: z.string().min(1, { error: 'Re-enter your password.' }),
+    confirmPassword: z.string().min(1, { error: () => i18n.t('validation.confirmPasswordRequired') }),
   })
   .refine((values) => values.password === values.confirmPassword, {
-    error: 'Passwords do not match.',
+    error: () => i18n.t('validation.passwordsMismatch'),
     path: ['confirmPassword'],
   });
 
 export const profileSchema = z.object({
-  fullName: z.string().trim().min(1, { error: 'Enter your name.' }),
+  fullName: z.string().trim().min(1, { error: () => i18n.t('validation.nameRequired') }),
   phone: z
     .string()
     .trim()
     .optional()
-    .refine((value) => !value || value.length >= 7, { error: 'Enter a valid phone number.' }),
+    .refine((value) => !value || value.length >= 7, { error: () => i18n.t('validation.phoneInvalid') }),
 });
 
 export const shippingAddressSchema = z.object({
   label: z
     .string()
     .trim()
-    .min(2, { error: 'Name this address.' })
-    .max(20, { error: 'Keep the name under 20 characters.' }),
+    .min(2, { error: () => i18n.t('validation.addressLabelRequired') })
+    .max(20, { error: () => i18n.t('validation.addressLabelTooLong') }),
   line1: z
     .string()
     .trim()
-    .min(1, { error: 'Enter your street address.' })
-    .max(120, { error: 'Keep the street address under 120 characters.' }),
+    .min(1, { error: () => i18n.t('validation.line1Required') })
+    .max(120, { error: () => i18n.t('validation.line1TooLong') }),
   line2: z
     .string()
     .trim()
-    .max(60, { error: 'Keep the apartment or unit under 60 characters.' })
+    .max(60, { error: () => i18n.t('validation.line2TooLong') })
     .optional(),
   city: z
     .string()
     .trim()
-    .min(1, { error: 'Enter your city.' })
-    .max(80, { error: 'Keep the city under 80 characters.' }),
-  region: z.string().trim().min(1, { error: 'Choose a province.' }),
+    .min(1, { error: () => i18n.t('validation.cityRequired') })
+    .max(80, { error: () => i18n.t('validation.cityTooLong') }),
+  region: z.string().trim().min(1, { error: () => i18n.t('validation.regionRequired') }),
   postalCode: z
     .string()
     .trim()
-    .min(3, { error: 'Enter a complete postal code.' })
-    .max(12, { error: 'Keep the postal code under 12 characters.' }),
-  country: z.string().trim().min(1, { error: 'Choose a country.' }),
+    .min(3, { error: () => i18n.t('validation.postalCodeTooShort') })
+    .max(12, { error: () => i18n.t('validation.postalCodeTooLong') }),
+  country: z.string().trim().min(1, { error: () => i18n.t('validation.countryRequired') }),
   deliveryNote: z
     .string()
     .trim()
-    .max(200, { error: 'Keep the delivery note under 200 characters.' })
+    .max(200, { error: () => i18n.t('validation.deliveryNoteTooLong') })
     .optional(),
   leaveAtDoor: z.boolean(),
 });
 
 export const resetPasswordSchema = z
   .object({
-    currentPassword: z.string().min(1, { error: 'Enter your current password.' }),
+    currentPassword: z.string().min(1, { error: () => i18n.t('validation.currentPasswordRequired') }),
     newPassword,
   })
   .refine((values) => values.newPassword !== values.currentPassword, {
-    error: 'Choose a password you have not used before.',
+    error: () => i18n.t('validation.passwordReused'),
     path: ['newPassword'],
   });
 
 export const returnRequestSchema = z.object({
-  reason: z.enum(returnReasons, { error: 'Choose what went wrong.' }),
+  reason: z.enum(returnReasons, { error: () => i18n.t('validation.returnReasonRequired') }),
   details: z
     .string()
     .trim()
-    .max(1000, { error: 'Keep the details under 1000 characters.' })
+    .max(1000, { error: () => i18n.t('validation.returnDetailsTooLong') })
     .optional(),
 });
+
+export function cancelOrderSchema(isReasonRequired: boolean) {
+  const reason = z
+    .string()
+    .trim()
+    .max(CANCEL_REASON_MAX_LENGTH, { error: () => i18n.t('validation.cancelReasonTooLong') });
+
+  return z.object({
+    reason: isReasonRequired
+      ? reason.min(1, { error: () => i18n.t('validation.cancelReasonRequired') })
+      : reason,
+  });
+}
+
+export function returnResponseSchema(isNoteRequired: boolean) {
+  const note = z
+    .string()
+    .trim()
+    .max(RETURN_NOTE_MAX_LENGTH, { error: () => i18n.t('validation.returnNoteTooLong') });
+
+  return z.object({
+    note: isNoteRequired
+      ? note.min(1, { error: () => i18n.t('validation.returnNoteRequired') })
+      : note,
+  });
+}
+
+export const refundReasons = [
+  'damaged',
+  'wrong_item',
+  'not_received',
+  'not_as_described',
+  'not_needed',
+  'other',
+] as const;
+
+export const refundRequestSchema = z
+  .object({
+    refundType: z.enum(['full', 'partial'], {
+      error: 'Choose full or partial refund.',
+    }),
+    partialAmount: z.string().optional(),
+    reason: z.enum(refundReasons, {
+      error: 'Choose a reason for the refund.',
+    }),
+    details: z
+      .string()
+      .trim()
+      .max(1000, { error: 'Keep the details under 1000 characters.' })
+      .optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.refundType === 'partial') {
+      const trimmed = data.partialAmount?.trim() ?? '';
+      if (!trimmed) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Enter a valid refund amount.',
+          path: ['partialAmount'],
+        });
+      } else {
+        const parsed = parseFloat(trimmed);
+        if (isNaN(parsed) || parsed <= 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Enter a valid refund amount greater than zero.',
+            path: ['partialAmount'],
+          });
+        }
+      }
+    }
+    if (data.reason === 'other' && (!data.details || data.details.trim().length === 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Please enter details explaining your reason for the refund.',
+        path: ['details'],
+      });
+    }
+  });
+
 
 export const reviewSchema = z.object({
   rating: z
     .number()
     .int()
-    .min(1, { error: 'Choose a star rating.' })
-    .max(5, { error: 'Choose a star rating.' }),
+    .min(1, { error: () => i18n.t('validation.ratingRequired') })
+    .max(5, { error: () => i18n.t('validation.ratingRequired') }),
   headline: z
     .string()
     .trim()
-    .min(3, { error: 'Give your review a short headline.' })
-    .max(80, { error: 'Keep the headline under 80 characters.' }),
+    .min(3, { error: () => i18n.t('validation.headlineTooShort') })
+    .max(80, { error: () => i18n.t('validation.headlineTooLong') }),
   body: z
     .string()
     .trim()
-    .min(10, { error: 'Tell us a little more about the product.' })
-    .max(1000, { error: 'Keep your review under 1000 characters.' }),
-  photos: z.array(z.string()).max(6, { error: 'Add up to 6 photos.' }),
+    .min(10, { error: () => i18n.t('validation.reviewBodyTooShort') })
+    .max(1000, { error: () => i18n.t('validation.reviewBodyTooLong') }),
+  photos: z.array(z.string()).max(6, { error: () => i18n.t('validation.tooManyPhotos') }),
 });
 
 export const messageSchema = z.object({
   body: z
     .string()
     .trim()
-    .min(1, { error: 'Write a message first.' })
+    .min(1, { error: () => i18n.t('validation.messageRequired') })
     .max(MESSAGE_MAX_LENGTH, {
-      error: `Keep your message under ${MESSAGE_MAX_LENGTH} characters.`,
+      error: () => i18n.t('validation.messageTooLong', { max: MESSAGE_MAX_LENGTH }),
     }),
 });
 
@@ -138,7 +219,24 @@ export type ProfileValues = z.infer<typeof profileSchema>;
 export type ShippingAddressValues = z.infer<typeof shippingAddressSchema>;
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
 export type ReturnRequestValues = z.infer<typeof returnRequestSchema>;
+export type CancelOrderValues = z.infer<ReturnType<typeof cancelOrderSchema>>;
+export type ReturnResponseValues = z.infer<ReturnType<typeof returnResponseSchema>>;
+export type RefundRequestValues = z.infer<typeof refundRequestSchema>;
 export type ReviewValues = z.infer<typeof reviewSchema>;
 export type MessageValues = z.infer<typeof messageSchema>;
 export type AccessibilityPreferencesValues = z.infer<typeof accessibilityPreferencesSchema>;
 export type NotificationPreferencesValues = z.infer<typeof notificationPreferencesSchema>;
+
+export const shoppingResponseSchema = z.object({
+  action: z.object({
+    type: z.enum(['search', 'add', 'reply']),
+    productId: z.string(),
+    quantity: z.number().int().min(1).max(100),
+    message: z.string().max(2000),
+  }),
+  products: z.array(z.object({
+    id: z.string(), shop_id: z.string(), name: z.string(), description: z.string(),
+    price: z.coerce.number().nonnegative(), stock_quantity: z.number().int().nonnegative(),
+    category: z.string(), photos: z.array(z.string()), created_at: z.string(), updated_at: z.string(),
+  })).max(6),
+});

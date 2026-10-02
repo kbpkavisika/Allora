@@ -1,4 +1,5 @@
 import type { BadgeVariant } from '@/components/ui/Badge';
+import i18n, { formatDate } from '@/lib/i18n';
 
 export const deliveryStatuses = [
   'pending',
@@ -27,30 +28,27 @@ interface DeliveryPresentation {
   variant: BadgeVariant;
 }
 
-const STATUS: Record<DeliveryStatus, DeliveryPresentation> = {
-  pending: { label: 'Not dispatched', variant: 'neutral' },
-  packed: { label: 'Packed', variant: 'neutral' },
-  shipped: { label: 'Shipped', variant: 'dark' },
-  delivered: { label: 'Delivered', variant: 'success' },
-  failed: { label: 'Delivery failed', variant: 'warning' },
+const VARIANT: Record<DeliveryStatus, BadgeVariant> = {
+  pending: 'neutral',
+  packed: 'neutral',
+  shipped: 'dark',
+  delivered: 'success',
+  failed: 'warning',
 };
 
-export function deliveryStatusPresentation(status: DeliveryStatus): DeliveryPresentation {
-  return STATUS[status];
+export function deliveryStatusLabel(status: string): string {
+  return i18n.t(`deliveries.status.${status}`);
 }
 
-export const deliveryStatusLabels = deliveryStatuses.map((status) => STATUS[status].label);
+export function deliveryStatusPresentation(status: DeliveryStatus): DeliveryPresentation {
+  return { label: deliveryStatusLabel(status), variant: VARIANT[status] };
+}
 
 const NEXT_STATUS: Partial<Record<DeliveryStatus, DeliveryStatus>> = {
   pending: 'packed',
   packed: 'shipped',
   shipped: 'delivered',
-};
-
-const NEXT_ACTION_LABEL: Partial<Record<DeliveryStatus, string>> = {
-  pending: 'Mark as packed',
-  packed: 'Mark as shipped',
-  shipped: 'Mark as delivered',
+  failed: 'shipped',
 };
 
 export function nextDeliveryStatus(status: DeliveryStatus): DeliveryStatus | null {
@@ -58,11 +56,8 @@ export function nextDeliveryStatus(status: DeliveryStatus): DeliveryStatus | nul
 }
 
 export function nextDeliveryStatusLabel(status: DeliveryStatus): string | null {
-  return NEXT_ACTION_LABEL[status] ?? null;
-}
-
-export function deliveryStatusFromLabel(label: string): DeliveryStatus {
-  return deliveryStatuses.find((status) => STATUS[status].label === label) ?? 'pending';
+  const next = NEXT_STATUS[status];
+  return next ? i18n.t(`deliveries.markAs.${next}`) : null;
 }
 
 interface DeliveryTrackingStep {
@@ -71,16 +66,21 @@ interface DeliveryTrackingStep {
   label: string;
 }
 
-const TRACKING: Record<DeliveryStatus, DeliveryTrackingStep> = {
-  pending: { current: 1, total: 4, label: 'Order placed' },
-  packed: { current: 2, total: 4, label: 'Packed by the seller' },
-  shipped: { current: 3, total: 4, label: 'On the way to you' },
-  delivered: { current: 4, total: 4, label: 'Delivered' },
-  failed: { current: 3, total: 4, label: 'Delivery could not be completed' },
+const TRACKING_STEP: Record<DeliveryStatus, number> = {
+  pending: 1,
+  packed: 2,
+  shipped: 3,
+  delivered: 4,
+  failed: 3,
 };
 
 export function deliveryTrackingStep(delivery: Delivery | null): DeliveryTrackingStep {
-  return TRACKING[delivery?.status ?? 'pending'];
+  const status = delivery?.status ?? 'pending';
+  return {
+    current: TRACKING_STEP[status],
+    total: 4,
+    label: i18n.t(`deliveries.tracking.${status}`),
+  };
 }
 
 export function deliveryCaption(delivery: Delivery | null): string | null {
@@ -88,11 +88,11 @@ export function deliveryCaption(delivery: Delivery | null): string | null {
     return null;
   }
 
-  return STATUS[delivery.status].label;
+  return deliveryStatusLabel(delivery.status);
 }
 
 export function formatDeliveryDate(value: string): string {
-  return new Date(value).toLocaleDateString('en-US', {
+  return formatDate(value, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',

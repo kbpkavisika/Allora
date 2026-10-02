@@ -2,7 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Text, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { Alert, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { ChipSelect } from '@/components/ui/ChipSelect';
@@ -19,10 +20,13 @@ import {
   productDetailsSchema,
   type ProductDetailsValues,
 } from '@/lib/sellerSchemas';
+import { translateOption } from '@/lib/i18n';
+import { photoUploadErrorMessage } from '@/lib/photoUpload';
 
 export default function EditProductScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { products, isLoading, updateProduct } = useProducts();
+  const { products, isLoading, updateProduct, deleteProduct } = useProducts();
   const product = products.find((item) => item.id === id);
 
   const nameRef = useRef<TextInput>(null);
@@ -31,6 +35,7 @@ export default function EditProductScreen() {
   const stockQuantityRef = useRef<TextInput>(null);
   const [updated, setUpdated] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const {
     control,
@@ -74,7 +79,10 @@ export default function EditProductScreen() {
     const { error } = await updateProduct(product.id, toProductInput(values));
 
     if (error) {
-      setFormError('Something went wrong saving your changes. Please try again.');
+      console.warn('[EditProduct] save failed', error);
+      setFormError(
+        photoUploadErrorMessage(error, t('editProduct.saveError'), t('productForm.photoUploadError'))
+      );
       return;
     }
 
@@ -83,16 +91,42 @@ export default function EditProductScreen() {
 
   const submit = handleSubmit(onSubmit, () => nameRef.current?.focus());
 
+  async function removeProduct() {
+    if (!product) return;
+
+    setFormError(null);
+    setIsDeleting(true);
+    const { error } = await deleteProduct(product.id);
+
+    if (error) {
+      setIsDeleting(false);
+      setFormError(t('editProduct.deleteError'));
+    }
+  }
+
+  function confirmDelete() {
+    if (!product) return;
+
+    Alert.alert(
+      t('editProduct.deleteConfirmTitle', { name: product.name }),
+      t('editProduct.deleteConfirmBody'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('editProduct.delete'), style: 'destructive', onPress: removeProduct },
+      ]
+    );
+  }
+
   if (!product) {
     return null;
   }
 
   return (
     <KeyboardScreen>
-      <ScreenHeader title="Edit product" className="mb-2" />
+      <ScreenHeader title={t('editProduct.title')} className="mb-2" />
 
       <Text className="type-text-primary mb-8 text-secondary">
-        Update the details, photo, or stock for {product.name}.
+        {t('editProduct.intro', { name: product.name })}
       </Text>
 
       <View className="gap-5">
@@ -101,7 +135,7 @@ export default function EditProductScreen() {
           name="photos"
           render={({ field }) => (
             <ProductPhotoGrid
-              label="Product photos"
+              label={t('productForm.photos')}
               photos={field.value}
               onChange={(photos) => {
                 setUpdated(false);
@@ -118,7 +152,7 @@ export default function EditProductScreen() {
           render={({ field }) => (
             <InputField
               ref={nameRef}
-              label="Product name"
+              label={t('productForm.name')}
               value={field.value}
               onChangeText={(text) => {
                 setUpdated(false);
@@ -140,7 +174,7 @@ export default function EditProductScreen() {
           render={({ field }) => (
             <InputField
               ref={descriptionRef}
-              label="Description"
+              label={t('product.description')}
               value={field.value}
               onChangeText={(text) => {
                 setUpdated(false);
@@ -162,7 +196,7 @@ export default function EditProductScreen() {
             render={({ field }) => (
               <InputField
                 ref={priceRef}
-                label="Price"
+                label={t('productForm.price')}
                 value={field.value}
                 onChangeText={(text) => {
                   setUpdated(false);
@@ -186,7 +220,7 @@ export default function EditProductScreen() {
             render={({ field }) => (
               <InputField
                 ref={stockQuantityRef}
-                label="Stock quantity"
+                label={t('productForm.stockQuantity')}
                 value={field.value}
                 onChangeText={(text) => {
                   setUpdated(false);
@@ -210,8 +244,9 @@ export default function EditProductScreen() {
           name="category"
           render={({ field }) => (
             <ChipSelect
-              label="Category"
+              label={t('productForm.category')}
               options={productCategories}
+              formatOption={translateOption}
               value={field.value}
               onChange={(value) => {
                 setUpdated(false);
@@ -225,9 +260,23 @@ export default function EditProductScreen() {
 
         <FormError message={formError} />
 
-        <SuccessBanner message={updated ? 'Changes saved.' : null} />
+        <SuccessBanner message={updated ? t('editProduct.saved') : null} />
 
-        <Button label="Save changes" loading={isSubmitting} onPress={submit} />
+        <Button
+          label={t('common.saveChanges')}
+          loading={isSubmitting}
+          disabled={isDeleting}
+          onPress={submit}
+        />
+
+        <Button
+          variant="destructive"
+          label={t('editProduct.delete')}
+          hint={t('editProduct.deleteHint')}
+          loading={isDeleting}
+          disabled={isSubmitting}
+          onPress={confirmDelete}
+        />
       </View>
     </KeyboardScreen>
   );

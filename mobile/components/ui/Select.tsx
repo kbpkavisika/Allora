@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { Icon } from '@/components/ui/Icon';
@@ -9,6 +10,7 @@ export interface SelectProps {
   options: readonly string[];
   value: string;
   onChange: (value: string) => void;
+  formatOption?: (option: string) => string;
   placeholder?: string;
   error?: string | null;
   required?: boolean;
@@ -37,21 +39,23 @@ export function Select({
   options,
   value,
   onChange,
-  placeholder = 'Select an option',
+  formatOption = (option) => option,
+  placeholder,
   error,
   required = false,
   disabled = false,
   className = '',
 }: SelectProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   const hasError = Boolean(error);
   const state: SelectState = disabled ? 'disabled' : hasError ? 'error' : open ? 'open' : 'rest';
 
   const nameParts = [label];
-  if (required) nameParts.push('required');
-  if (value) nameParts.push(value);
-  if (error) nameParts.push(`error, ${error}`);
+  if (required) nameParts.push(t('common.requiredLower'));
+  if (value) nameParts.push(formatOption(value));
+  if (error) nameParts.push(t('common.errorAnnouncement', { error }));
 
   return (
     <View className={className}>
@@ -63,7 +67,7 @@ export function Select({
           <Text
             className={`type-text-primary ${disabled ? 'text-disabled' : 'text-secondary'}`}
             maxFontSizeMultiplier={2}>
-            Required
+            {t('common.required')}
           </Text>
         ) : null}
       </View>
@@ -80,7 +84,7 @@ export function Select({
           className={`type-text-primary flex-1 ${value ? 'text-primary' : 'text-secondary'}`}
           numberOfLines={1}
           maxFontSizeMultiplier={2}>
-          {value || placeholder}
+          {value ? formatOption(value) : (placeholder ?? t('common.selectOption'))}
         </Text>
         <Icon
           name="forward"
@@ -95,6 +99,7 @@ export function Select({
           label={label}
           options={options}
           value={value}
+          formatOption={formatOption}
           onChange={(option) => {
             onChange(option);
             setOpen(false);

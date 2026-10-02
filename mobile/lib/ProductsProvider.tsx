@@ -25,6 +25,7 @@ export interface ProductsContextValue {
   createProduct: (input: ProductInput) => Promise<{ error: unknown }>;
   updateProduct: (id: string, input: ProductInput) => Promise<{ error: unknown }>;
   updateStock: (updates: StockUpdate[]) => Promise<{ error: unknown }>;
+  deleteProduct: (id: string) => Promise<{ error: unknown }>;
   refresh: () => Promise<void>;
 }
 
@@ -145,12 +146,24 @@ export function ProductsProvider({ children }: ProductsProviderProps) {
     return { error: null };
   }
 
+  async function deleteProduct(id: string) {
+    const { error } = await supabase.from('products').delete().eq('id', id);
+
+    if (error) {
+      return { error };
+    }
+
+    setProducts((current) => current.filter((product) => product.id !== id));
+    return { error: null };
+  }
+
   const value: ProductsContextValue = {
     products,
     isLoading,
     createProduct,
     updateProduct,
     updateStock,
+    deleteProduct,
     refresh: load,
   };
 

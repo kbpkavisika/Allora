@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,15 +12,12 @@ import { ChipSelect } from '@/components/ui/ChipSelect';
 import { FormError } from '@/components/ui/FormError';
 import { InputField } from '@/components/ui/InputField';
 import { TopBar } from '@/components/ui/TopBar';
-import { RETURN_REASONS, type ReturnReason } from '@/lib/orders';
+import { canRequestReturn, returnReasonLabel, returnReasons } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 import { returnRequestSchema, type ReturnRequestValues } from '@/lib/schemas';
 
-const REASON_LABELS = RETURN_REASONS.map((reason) => reason.label);
-const LABEL_TO_VALUE = new Map(RETURN_REASONS.map((reason) => [reason.label, reason.value]));
-const VALUE_TO_LABEL = new Map(RETURN_REASONS.map((reason) => [reason.value, reason.label]));
-
 export default function ReturnRequestScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { getOrder, submitReturn } = useOrders();
@@ -48,23 +46,22 @@ export default function ReturnRequestScreen() {
       reason: values.reason,
       details: values.details,
     });
-    setIsSubmitting(false);
-
     if (error) {
-      setFormError('Could not send your request. Please try again.');
+      setIsSubmitting(false);
+      setFormError(t('returns.sendError'));
       return;
     }
 
     router.replace({ pathname: '/orders/[id]', params: { id: order.id, returned: '1' } });
   }
 
-  if (!order) {
+  if (!order || (!canRequestReturn(order) && !isSubmitting)) {
     return (
       <View className="flex-1 bg-surface">
-        <TopBar title="Return item" />
+        <TopBar title={t('orders.returnItem')} />
         <View className="items-center gap-3 p-4 pt-16">
           <Text role="heading" className="type-h3 text-primary">
-            Order not found
+            {order ? t('returns.unavailable') : t('orders.notFound')}
           </Text>
         </View>
       </View>
@@ -73,7 +70,7 @@ export default function ReturnRequestScreen() {
 
   return (
     <View className="flex-1 bg-surface">
-      <TopBar title="Return item" />
+      <TopBar title={t('orders.returnItem')} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -83,7 +80,7 @@ export default function ReturnRequestScreen() {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}>
           <Text className="type-mono text-secondary">
-            Order {order.order_number} · {order.items[0]?.product_name}
+            {t('orders.orderNumber', { number: order.order_number })} · {order.items[0]?.product_name}
           </Text>
 
           <Controller
@@ -91,10 +88,11 @@ export default function ReturnRequestScreen() {
             name="reason"
             render={({ field }) => (
               <ChipSelect
-                label="What's the issue?"
-                options={REASON_LABELS}
-                value={field.value ? (VALUE_TO_LABEL.get(field.value) ?? '') : ''}
-                onChange={(label) => field.onChange(LABEL_TO_VALUE.get(label) as ReturnReason)}
+                label={t('returns.issue')}
+                options={returnReasons}
+                value={field.value ?? ''}
+                onChange={field.onChange}
+                formatOption={returnReasonLabel}
                 error={errors.reason?.message}
               />
             )}
@@ -105,8 +103,8 @@ export default function ReturnRequestScreen() {
             name="details"
             render={({ field }) => (
               <InputField
-                label="Tell us more"
-                placeholder="Add any details that will help the seller resolve this quickly."
+                label={t('returns.details')}
+                placeholder={t('returns.detailsPlaceholder')}
                 value={field.value ?? ''}
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
@@ -116,11 +114,11 @@ export default function ReturnRequestScreen() {
             )}
           />
 
-          <Callout message="Your request goes directly to the seller. Most replies arrive within 1–2 business days." />
+          <Callout message={t('returns.callout')} />
 
           <FormError message={formError} />
 
-          <Button label="Submit request" loading={isSubmitting} onPress={handleSubmit(onSubmit)} />
+          <Button label={t('returns.submit')} loading={isSubmitting} onPress={handleSubmit(onSubmit)} />
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

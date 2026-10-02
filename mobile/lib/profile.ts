@@ -1,3 +1,5 @@
+import i18n, { formatDate } from '@/lib/i18n';
+
 export type UserRole = 'user' | 'seller';
 
 export interface Profile {
@@ -57,38 +59,18 @@ export const COUNTRY_OPTIONS = ['Canada', 'United States'] as const;
 export const ADDRESS_LABELS = ['Home', 'Work', 'Other'] as const;
 
 export const ACCESSIBILITY_FEATURES = [
-  {
-    key: 'large_text',
-    title: 'Large text',
-    description: 'Scales every label and price up one step.',
-  },
-  {
-    key: 'high_contrast',
-    title: 'High contrast',
-    description: 'Stronger borders and darker body text.',
-  },
-  {
-    key: 'dictation_enabled',
-    title: 'Dictation',
-    description: 'Speak into any field instead of typing.',
-  },
-  {
-    key: 'screen_reader_support',
-    title: 'Screen reader support',
-    description: 'Extra spoken labels and reading order cues.',
-  },
-  {
-    key: 'reduce_motion',
-    title: 'Reduce motion',
-    description: 'Removes sliding and fading transitions.',
-  },
-] as const satisfies readonly { key: keyof Profile; title: string; description: string }[];
+  'large_text',
+  'high_contrast',
+  'dictation_enabled',
+  'reduce_motion',
+  'screen_reader_support',
+] as const satisfies readonly (keyof Profile)[];
 
 export function enabledAccessibilityFeatures(profile: Profile): string {
-  const on = ACCESSIBILITY_FEATURES.filter((feature) => profile[feature.key]).map(
-    (feature) => feature.title
+  const on = ACCESSIBILITY_FEATURES.filter((key) => profile[key]).map((key) =>
+    i18n.t(`accessibility.features.${key}.title`)
   );
-  return on.length > 0 ? on.join(', ') : 'None yet';
+  return on.length > 0 ? on.join(', ') : i18n.t('accessibility.noneYet');
 }
 
 export function formatAddressLines(address: Address): string[] {
@@ -112,7 +94,7 @@ export function initials(name: string | null, email: string | null | undefined):
 }
 
 export function memberSince(createdAt: string): string {
-  return new Date(createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  return formatDate(createdAt, { month: 'short', year: 'numeric' });
 }
 
 export function nextCarrier(current: string): string {

@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { Badge } from '@/components/ui/Badge';
@@ -24,6 +25,8 @@ import {
   productStepFields,
   type ProductDetailsValues,
 } from '@/lib/sellerSchemas';
+import { translateOption } from '@/lib/i18n';
+import { photoUploadErrorMessage } from '@/lib/photoUpload';
 
 const TOTAL_STEPS = 4;
 
@@ -36,6 +39,7 @@ function formatDuration(seconds: number) {
 }
 
 export default function AddProductScreen() {
+  const { t } = useTranslation();
   const nameRef = useRef<TextInput>(null);
   const descriptionRef = useRef<TextInput>(null);
   const priceRef = useRef<TextInput>(null);
@@ -123,7 +127,10 @@ export default function AddProductScreen() {
     const { error } = await createProduct(toProductInput(values));
 
     if (error) {
-      setFormError('Something went wrong publishing your product. Please try again.');
+      console.warn('[AddProduct] publish failed', error);
+      setFormError(
+        photoUploadErrorMessage(error, t('addProduct.publishError'), t('productForm.photoUploadError'))
+      );
       return;
     }
 
@@ -155,8 +162,8 @@ export default function AddProductScreen() {
           variant="outlined"
           diameter={44}
           icon={<Icon name="back" size="lg" className="text-primary" />}
-          label={step === 1 ? 'Close' : 'Go back'}
-          hint={step === 1 ? 'Closes without adding a product' : 'Returns to the previous step'}
+          label={step === 1 ? t('common.close') : t('common.goBack')}
+          hint={step === 1 ? t('addProduct.closeHint') : t('common.previousStepHint')}
           onPress={goBack}
           className="mb-6"
         />
@@ -166,10 +173,14 @@ export default function AddProductScreen() {
 
       <View className="mb-8 mt-3 items-center gap-1">
         <Text role="heading" className="type-h1 text-primary" maxFontSizeMultiplier={1.5}>
-          New product
+          {t('addProduct.title')}
         </Text>
         <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
-          Step {step} of {TOTAL_STEPS} · {STEP_CAPTIONS[step - 1]}
+          {t('orders.step', {
+            current: step,
+            total: TOTAL_STEPS,
+            label: t(`addProduct.steps.${STEP_CAPTIONS[step - 1]}`),
+          })}
         </Text>
       </View>
 
@@ -180,12 +191,12 @@ export default function AddProductScreen() {
               role="heading"
               className="type-h2 text-center text-primary"
               maxFontSizeMultiplier={1.5}>
-              Tell us about your product
+              {t('addProduct.recordTitle')}
             </Text>
             <Text
               className="type-text-primary text-center text-secondary"
               maxFontSizeMultiplier={1.5}>
-              Press the mic and say the name, the price and how many you have.
+              {t('addProduct.recordBody')}
             </Text>
           </View>
 
@@ -193,7 +204,7 @@ export default function AddProductScreen() {
             <Pressable
               onPress={toggleRecording}
               role="button"
-              aria-label={isRecording ? 'Stop recording' : 'Start recording'}
+              aria-label={isRecording ? t('addProduct.stopRecording') : t('addProduct.startRecording')}
               aria-pressed={isRecording}
               className="h-16 w-16 items-center justify-center rounded-full bg-primary active:bg-primary-hover">
               <Icon name={isRecording ? 'stop' : 'dictate'} size="lg" className="text-surface" />
@@ -203,18 +214,18 @@ export default function AddProductScreen() {
           {isRecording ? (
             <View className="flex-row items-center gap-2" aria-live="polite">
               <View className="h-2 w-2 rounded-full bg-accent" aria-hidden />
-              <Text className="type-overline text-accent-pressed">Recording</Text>
+              <Text className="type-overline text-accent-pressed">{t('addProduct.recording')}</Text>
               <Text className="type-mono text-primary">{formatDuration(elapsed)}</Text>
             </View>
           ) : (
-            <Text className="type-text-secondary text-secondary">Tap the mic to start</Text>
+            <Text className="type-text-secondary text-secondary">{t('addProduct.tapMic')}</Text>
           )}
 
-          <Callout message="Try: “Teak serving tray, two thousand rupees, five in stock, handmade from recycled teak.”" />
+          <Callout message={t('addProduct.example')} />
 
           <Button
             variant="link"
-            label="Type it in instead"
+            label={t('addProduct.typeInstead')}
             fullWidth={false}
             onPress={() => setStep(2)}
           />
@@ -223,7 +234,7 @@ export default function AddProductScreen() {
 
       {step === 2 ? (
         <View className="gap-5">
-          <Callout message="We heard this — check if it's right!" />
+          <Callout message={t('addProduct.heard')} />
 
           <Controller
             control={control}
@@ -231,8 +242,8 @@ export default function AddProductScreen() {
             render={({ field }) => (
               <InputField
                 ref={nameRef}
-                label="Product name"
-                placeholder="e.g. Teak serving tray"
+                label={t('productForm.name')}
+                placeholder={t('productForm.namePlaceholder')}
                 value={field.value}
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
@@ -252,7 +263,7 @@ export default function AddProductScreen() {
               render={({ field }) => (
                 <InputField
                   ref={priceRef}
-                  label="Price (LKR)"
+                  label={t('productForm.priceLkr')}
                   placeholder="0.00"
                   value={field.value}
                   onChangeText={field.onChange}
@@ -274,7 +285,7 @@ export default function AddProductScreen() {
               render={({ field }) => (
                 <InputField
                   ref={stockQuantityRef}
-                  label="In stock"
+                  label={t('stock.inStock')}
                   placeholder="0"
                   value={field.value}
                   onChangeText={field.onChange}
@@ -297,8 +308,8 @@ export default function AddProductScreen() {
             render={({ field }) => (
               <InputField
                 ref={descriptionRef}
-                label="Description"
-                placeholder="Describe the material, size and finish"
+                label={t('product.description')}
+                placeholder={t('productForm.descriptionPlaceholder')}
                 value={field.value}
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
@@ -315,8 +326,9 @@ export default function AddProductScreen() {
             name="category"
             render={({ field }) => (
               <ChipSelect
-                label="Category"
+                label={t('productForm.category')}
                 options={productCategories}
+                formatOption={translateOption}
                 value={field.value}
                 onChange={field.onChange}
                 error={errors.category?.message}
@@ -327,10 +339,10 @@ export default function AddProductScreen() {
 
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <Button variant="secondary" label="Re-record" onPress={goToRecord} />
+              <Button variant="secondary" label={t('addProduct.reRecord')} onPress={goToRecord} />
             </View>
             <View className="flex-1">
-              <Button label="Continue" onPress={goToPhotos} />
+              <Button label={t('common.continue')} onPress={goToPhotos} />
             </View>
           </View>
         </View>
@@ -340,10 +352,10 @@ export default function AddProductScreen() {
         <View className="gap-5">
           <View className="gap-2">
             <Text role="heading" className="type-h2 text-primary" maxFontSizeMultiplier={1.5}>
-              Add photos
+              {t('addProduct.photosTitle')}
             </Text>
             <Text className="type-text-primary text-secondary" maxFontSizeMultiplier={1.5}>
-              Add up to 6 photos so buyers can see the item clearly. The first photo is the cover.
+              {t('addProduct.photosBody')}
             </Text>
           </View>
 
@@ -361,7 +373,7 @@ export default function AddProductScreen() {
 
           <Callout
             tone="warning"
-            message="Tip: natural light and a plain background help items sell faster."
+            message={t('addProduct.photoTip')}
           />
 
           <FormError message={formError} />
@@ -370,13 +382,13 @@ export default function AddProductScreen() {
             <View className="flex-1">
               <Button
                 variant="secondary"
-                label="Skip for now"
+                label={t('onboarding.personalize.skip')}
                 loading={isSubmitting}
                 onPress={submit}
               />
             </View>
             <View className="flex-1">
-              <Button label="Continue" loading={isSubmitting} onPress={submit} />
+              <Button label={t('common.continue')} loading={isSubmitting} onPress={submit} />
             </View>
           </View>
         </View>
@@ -387,11 +399,11 @@ export default function AddProductScreen() {
           <PublishedStep values={getValues()} />
 
           <View className="w-full gap-3">
-            <Button label="Add another product" onPress={addAnother} />
-            <Button variant="secondary" label="View listing" onPress={viewListing} />
+            <Button label={t('addProduct.addAnother')} onPress={addAnother} />
+            <Button variant="secondary" label={t('addProduct.viewListing')} onPress={viewListing} />
             <Button
               variant="link"
-              label="Back to my shop"
+              label={t('addProduct.backToShop')}
               className="self-center"
               onPress={goToShop}
             />
@@ -403,6 +415,7 @@ export default function AddProductScreen() {
 }
 
 function PublishedStep({ values }: { values: ProductDetailsValues }) {
+  const { t } = useTranslation();
   const stock = getStockStatus(values.stockQuantity);
   const cover = values.photos[0];
 
@@ -417,12 +430,12 @@ function PublishedStep({ values }: { values: ProductDetailsValues }) {
           role="heading"
           className="type-h1 text-center text-primary"
           maxFontSizeMultiplier={1.5}>
-          {values.name} is live!
+          {t('addProduct.live', { name: values.name })}
         </Text>
         <Text
           className="type-text-primary text-center text-secondary"
           maxFontSizeMultiplier={1.5}>
-          Buyers browsing {values.category} can find it now
+          {t('addProduct.liveBody', { category: translateOption(values.category) })}
         </Text>
       </View>
 

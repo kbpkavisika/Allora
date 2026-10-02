@@ -1,6 +1,6 @@
-import { useFocusEffect } from '@react-navigation/native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -14,6 +14,7 @@ export interface ConversationListProps {
 }
 
 export function ConversationList({ emptyMessage }: ConversationListProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
   const { conversations, isLoading, refresh } = useChat();
@@ -61,7 +62,7 @@ export function ConversationList({ emptyMessage }: ConversationListProps) {
         <View className="flex-1 items-center justify-center gap-3 px-8 py-16">
           <Icon name="chat" size="lg" className="text-secondary" />
           <Text role="heading" className="type-h3 text-primary">
-            No messages yet
+            {t('chat.noMessagesYet')}
           </Text>
           <Text className="type-text-primary text-center text-secondary">{emptyMessage}</Text>
         </View>

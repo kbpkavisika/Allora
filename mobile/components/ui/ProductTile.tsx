@@ -1,8 +1,10 @@
 import { Image } from 'expo-image';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { Badge } from '@/components/ui/Badge';
 import { Icon } from '@/components/ui/Icon';
+import { useReduceMotion } from '@/hooks/useReduceMotion';
 import { formatMoney } from '@/lib/orders';
 import { getStockStatus, type Product } from '@/lib/products';
 
@@ -13,6 +15,8 @@ export interface ProductTileProps {
 }
 
 export function ProductTile({ product, onPress, position }: ProductTileProps) {
+  const { t } = useTranslation();
+  const reduceMotion = useReduceMotion();
   const stock = getStockStatus(product.stock_quantity);
   const price = formatMoney(product.price);
   // In-stock is the default: only surface a badge when availability is a buying signal.
@@ -23,7 +27,7 @@ export function ProductTile({ product, onPress, position }: ProductTileProps) {
       onPress={onPress}
       role="button"
       aria-label={`${product.name}, ${price}, ${stock.detailLabel}${position ? `, ${position}` : ''}`}
-      accessibilityHint="Opens the product"
+      accessibilityHint={t('product.openHint')}
       className="w-full active:opacity-90">
       <View className="aspect-[3/4] w-full items-center justify-center overflow-hidden rounded-12 bg-surface-sunken">
         {product.photos[0] ? (
@@ -31,7 +35,7 @@ export function ProductTile({ product, onPress, position }: ProductTileProps) {
             source={{ uri: product.photos[0] }}
             style={{ width: '100%', height: '100%' }}
             contentFit="cover"
-            transition={120}
+            transition={reduceMotion ? 0 : 120}
           />
         ) : (
           <Icon name="shop" size="lg" className="text-secondary" />

@@ -1,5 +1,6 @@
 import Feather from '@expo/vector-icons/Feather';
 import { Image } from 'expo-image';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -24,12 +25,13 @@ export function ImagePickerField({
   onChange,
   error,
   required = false,
-  placeholder = 'Add photo',
+  placeholder,
   fullWidth = false,
   aspectRatio = 3 / 4,
   allowCamera = false,
   className = '',
 }: ImagePickerFieldProps) {
+  const { t } = useTranslation();
   const hasError = Boolean(error);
   const secondaryColor = useThemeColor({}, 'secondary');
 
@@ -39,7 +41,7 @@ export function ImagePickerField({
     const uri = await pickImage({
       aspect: cropAspect,
       allowCamera,
-      title: `Add ${label.toLowerCase()}`,
+      title: t('imagePicker.addLabel', { label: label.toLowerCase() }),
     });
 
     if (uri) {
@@ -53,7 +55,9 @@ export function ImagePickerField({
         <Text className={`type-label-lg ${hasError ? 'text-error' : 'text-primary'}`}>
           {label}
         </Text>
-        {required ? <Text className="type-text-primary text-secondary">Required</Text> : null}
+        {required ? (
+          <Text className="type-text-primary text-secondary">{t('common.required')}</Text>
+        ) : null}
       </View>
 
       <Pressable
@@ -73,7 +77,9 @@ export function ImagePickerField({
         ) : (
           <View className="items-center gap-2 px-4">
             <Feather name="camera" size={24} color={secondaryColor} />
-            <Text className="type-text-secondary text-center text-secondary">{placeholder}</Text>
+            <Text className="type-text-secondary text-center text-secondary">
+              {placeholder ?? t('imagePicker.addPhoto')}
+            </Text>
           </View>
         )}
       </Pressable>

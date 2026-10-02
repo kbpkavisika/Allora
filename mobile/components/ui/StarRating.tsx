@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';
 
 import { Icon, SolidIcon, type IconSize } from '@/components/ui/Icon';
@@ -19,8 +20,9 @@ export function StarRating({
   label,
   className = '',
 }: StarRatingProps) {
+  const { t } = useTranslation();
   const stars = Array.from({ length: MAX }, (_, index) => index + 1);
-  const summary = label ?? `${value} out of ${MAX} stars`;
+  const summary = label ?? t('rating.summary', { value, max: MAX });
 
   if (!onChange) {
     return (
@@ -43,7 +45,7 @@ export function StarRating({
           onPress={() => onChange(star)}
           role="radio"
           aria-checked={star === value}
-          aria-label={`${star} ${star === 1 ? 'star' : 'stars'}`}
+          aria-label={t('reviews.stars', { count: star })}
           className="h-tap w-tap items-center justify-center">
           <Star filled={star <= value} size={size} />
         </Pressable>

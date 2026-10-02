@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, Text, View } from 'react-native';
 
 import { BottomSheet } from '@/components/ui/BottomSheet';
@@ -9,9 +10,8 @@ import { ChipSelect } from '@/components/ui/ChipSelect';
 import { FormError } from '@/components/ui/FormError';
 import { InputField } from '@/components/ui/InputField';
 import {
-  deliveryStatusFromLabel,
-  deliveryStatusLabels,
-  deliveryStatusPresentation,
+  deliveryStatusLabel,
+  deliveryStatuses,
   type Delivery,
   type DeliveryStatus,
 } from '@/lib/deliveries';
@@ -29,6 +29,7 @@ export function DeliveryUpdateSheet({
   delivery,
   onDismiss,
 }: DeliveryUpdateSheetProps) {
+  const { t } = useTranslation();
   const { updateDelivery } = useOrders();
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -58,7 +59,7 @@ export function DeliveryUpdateSheet({
     });
 
     if (error) {
-      setFormError('Could not save these delivery details. Try again.');
+      setFormError(t('delivery.saveError'));
       return;
     }
 
@@ -66,10 +67,10 @@ export function DeliveryUpdateSheet({
   }
 
   return (
-    <BottomSheet onDismiss={onDismiss} label="Update delivery">
+    <BottomSheet onDismiss={onDismiss} label={t('delivery.update')}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Text role="heading" className="type-h2 mb-4 text-primary" maxFontSizeMultiplier={1.5}>
-          Update delivery
+          {t('delivery.update')}
         </Text>
 
         <View className="gap-4">
@@ -78,9 +79,9 @@ export function DeliveryUpdateSheet({
             name="courierName"
             render={({ field }) => (
               <InputField
-                label="Courier"
+                label={t('delivery.courier')}
                 isRequired
-                placeholder="DHL"
+                placeholder={t('delivery.courierPlaceholder')}
                 value={field.value}
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
@@ -96,9 +97,9 @@ export function DeliveryUpdateSheet({
             name="trackingNumber"
             render={({ field }) => (
               <InputField
-                label="Tracking number"
+                label={t('delivery.trackingNumber')}
                 isRequired
-                placeholder="LK-88421"
+                placeholder={t('delivery.trackingPlaceholder')}
                 value={field.value}
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
@@ -117,11 +118,12 @@ export function DeliveryUpdateSheet({
             name="status"
             render={({ field }) => (
               <ChipSelect
-                label="Status"
+                label={t('delivery.status')}
                 required
-                options={deliveryStatusLabels}
-                value={deliveryStatusPresentation(field.value as DeliveryStatus).label}
-                onChange={(label) => field.onChange(deliveryStatusFromLabel(label))}
+                options={deliveryStatuses}
+                value={field.value}
+                onChange={field.onChange}
+                formatOption={deliveryStatusLabel}
                 error={errors.status?.message}
               />
             )}
@@ -131,7 +133,7 @@ export function DeliveryUpdateSheet({
         <View className="mt-5 gap-3">
           <FormError message={formError} />
           <Button
-            label="Save delivery"
+            label={t('delivery.save')}
             loading={isSubmitting}
             onPress={handleSubmit(onSubmit)}
           />

@@ -1,5 +1,4 @@
-import { useIsFocused } from '@react-navigation/native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useIsFocused, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -10,8 +9,10 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
-import { MessageComposer } from '@/components/chat/MessageComposer';
+import { MessageComposer, type VoiceRecordingProblem } from '@/components/chat/MessageComposer';
+import { VoiceNotePlayer } from '@/components/chat/VoiceNotePlayer';
 import {
   MessageContextLine,
   type MessageContextLineProps,
@@ -23,18 +24,24 @@ import { IconButton } from '@/components/ui/IconButton';
 import { MessageBubble } from '@/components/ui/MessageBubble';
 import { Toast } from '@/components/ui/Toast';
 import { TopBar } from '@/components/ui/TopBar';
+import { useAppForeground } from '@/hooks/useAppForeground';
+import type { VoiceRecording } from '@/hooks/useVoiceRecorder';
 import { useAuth } from '@/lib/AuthProvider';
+import { uploadErrorMessage } from '@/lib/cloudinary';
 import {
+  conversationName,
   fetchProductNames,
   formatMessageDay,
   formatMessageTime,
   isSameDay,
+  isSeenByCounterpart,
   mergeMessages,
   MESSAGE_PAGE_SIZE,
   NEW_CONVERSATION_ID,
+  uploadVoiceNote,
   type Message,
 } from '@/lib/chat';
-import { useChat } from '@/lib/ChatProvider';
+import { useChat, type SendMessageInput } from '@/lib/ChatProvider';
 import { setActiveConversation } from '@/lib/notifications';
 import { useOrders } from '@/lib/OrdersProvider';
 import { useProfile } from '@/lib/ProfileProvider';
@@ -48,10 +55,12 @@ interface MessageContext {
 type ContextLine = Omit<MessageContextLineProps, 'onRemove' | 'className'>;
 
 export default function ChatThreadScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { id, shopId, productId, orderId } = useLocalSearchParams<{
+  const { id, shopId, buyerId, productId, orderId } = useLocalSearchParams<{
     id?: string;
     shopId?: string;
+    buyerId?: string;
     productId?: string;
     orderId?: string;
   }>();
@@ -122,6 +131,8 @@ export default function ChatThreadScreen() {
     refreshMessages();
   }, [refreshMessages]);
 
+  useAppForeground(refreshMessages);
+
   useEffect(
     () =>
       subscribeToMessages((event) => {
@@ -164,14 +175,23 @@ export default function ChatThreadScreen() {
     );
   }, [messages, pendingContext, productNames]);
 
-  const title = conversation?.counterpart_name ?? shopName ?? 'Chat';
+  const buyerName = buyerId && orderId ? getOrder(orderId)?.ship_name ?? null : null;
+  const counterpartName = buyerId ? buyerName : shopName;
+  const title = conversation
+    ? conversationName(conversation)
+    : (counterpartName ?? t('tabs.chat'));
+  const lastSentMessage = messages.find((message) => message.sender_id === userId);
+  const seenMessageId =
+    conversation && lastSentMessage && isSeenByCounterpart(conversation, lastSentMessage)
+      ? lastSentMessage.id
+      : null;
 
   function contextLine({ productId: product, orderId: order }: MessageContext): ContextLine | null {
     if (order) {
       const orderNumber = getOrder(order)?.order_number;
       return {
         icon: 'orders',
-        label: orderNumber ? `About order ${orderNumber}` : 'About an order',
+        label: orderNumber ? t('chat.aboutOrder', { orderNumber }) : t('chat.aboutAnOrder'),
         onPress: orderNumber
           ? () =>
               router.push({
@@ -186,7 +206,7 @@ export default function ChatThreadScreen() {
       const productName = productNames[product];
       return {
         icon: 'shop',
-        label: productName ? `About ${productName}` : 'About a product',
+        label: productName ? t('chat.aboutProduct', { productName }) : t('chat.aboutAProduct'),
         onPress: productName
           ? () => router.push({ pathname: '/product/[id]', params: { id: product } })
           : undefined,
@@ -203,23 +223,45 @@ export default function ChatThreadScreen() {
     const { error } = await setMuted(conversation.id, muted);
 
     if (error) {
-      setToast('Could not update notifications. Try again.');
+      setToast(t('chat.muteError'));
     } else {
-      setToast(muted ? 'Notifications muted for this chat.' : 'Notifications on for this chat.');
+      setToast(muted ? t('chat.muted') : t('chat.unmuted'));
     }
   }
 
-  async function handleSend(body: string) {
+  function handleSend(body: string) {
+    return deliver({ body });
+  }
+
+  async function handleSendVoice({ uri, durationMs }: VoiceRecording) {
+    let audioUrl: string;
+    try {
+      audioUrl = await uploadVoiceNote(uri);
+    } catch (error) {
+      console.warn('[Chat] voice upload failed', error);
+      setToast(uploadErrorMessage(error, t('chat.sendError'), t('chat.voiceUploadError')));
+      return false;
+    }
+
+    return deliver({ body: '', audioUrl, audioDurationMs: durationMs });
+  }
+
+  function handleVoiceProblem(problem: VoiceRecordingProblem) {
+    setToast(problem === 'denied' ? t('chat.micDenied') : t('chat.recordError'));
+  }
+
+  async function deliver(content: Pick<SendMessageInput, 'body' | 'audioUrl' | 'audioDurationMs'>) {
     const { message, error } = await sendMessage({
-      body,
+      ...content,
       conversationId: conversationId ?? undefined,
       shopId: conversationId ? undefined : shopId,
+      buyerId: conversationId ? undefined : buyerId,
       productId: pendingContext?.productId,
       orderId: pendingContext?.orderId,
     });
 
     if (error || !message) {
-      setToast('Could not send your message. Try again.');
+      setToast(t('chat.sendError'));
       return false;
     }
 
@@ -236,14 +278,14 @@ export default function ChatThreadScreen() {
   if (isMissing) {
     return (
       <View className="flex-1 bg-surface">
-        <TopBar title="Chat" />
+        <TopBar title={t('tabs.chat')} />
         <View className="items-center gap-3 p-4 pt-16">
           <Text role="heading" className="type-h3 text-primary">
-            Conversation not found
+            {t('chat.notFound')}
           </Text>
           <Button
             variant="secondary"
-            label="Go back"
+            label={t('common.goBack')}
             fullWidth={false}
             onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
           />
@@ -264,11 +306,9 @@ export default function ChatThreadScreen() {
               icon={
                 <Icon name={conversation.muted ? 'mute' : 'notify'} className="text-primary" />
               }
-              label={conversation.muted ? 'Unmute chat' : 'Mute chat'}
+              label={conversation.muted ? t('chat.unmute') : t('chat.mute')}
               hint={
-                conversation.muted
-                  ? 'Turns notifications for this chat back on'
-                  : 'Stops notifications for this chat'
+                conversation.muted ? t('chat.unmuteHint') : t('chat.muteHint')
               }
               onPress={toggleMuted}
             />
@@ -286,10 +326,12 @@ export default function ChatThreadScreen() {
         ) : messages.length === 0 ? (
           <View className="flex-1 items-center justify-center gap-3 px-8">
             <Text role="heading" className="type-h3 text-center text-primary">
-              Start the conversation
+              {t('chat.startTitle')}
             </Text>
             <Text className="type-text-primary text-center text-secondary">
-              Ask {shopName ?? 'the seller'} about a product, an order or delivery.
+              {buyerId
+                ? t('chat.sellerStartBody', { name: counterpartName ?? t('account.seller.buyer') })
+                : t('chat.startBody', { name: counterpartName ?? t('chat.theSeller') })}
             </Text>
           </View>
         ) : (
@@ -320,8 +362,18 @@ export default function ChatThreadScreen() {
                     body={item.body}
                     time={formatMessageTime(item.created_at)}
                     isMine={isMine}
-                    senderLabel={isMine ? 'You' : title}
+                    senderLabel={isMine ? t('chat.you') : title}
                     header={line ? <MessageContextLine {...line} /> : null}
+                    status={item.id === seenMessageId ? t('chat.seen') : null}
+                    media={
+                      item.audio_url && item.audio_duration_ms ? (
+                        <VoiceNotePlayer
+                          url={item.audio_url}
+                          durationMs={item.audio_duration_ms}
+                          isMine={isMine}
+                        />
+                      ) : null
+                    }
                   />
                 </View>
               );
@@ -335,7 +387,12 @@ export default function ChatThreadScreen() {
           {pendingLine ? (
             <MessageContextLine {...pendingLine} onRemove={() => setPendingContext(null)} />
           ) : null}
-          <MessageComposer onSend={handleSend} disabled={isLoading} />
+          <MessageComposer
+            onSend={handleSend}
+            onSendVoice={handleSendVoice}
+            onVoiceProblem={handleVoiceProblem}
+            disabled={isLoading}
+          />
         </View>
       </KeyboardAvoidingView>
 
