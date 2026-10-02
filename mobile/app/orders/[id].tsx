@@ -68,16 +68,18 @@ export default function OrderDetailScreen() {
         ) : null}
 
         {refund ? (
-          <View className="gap-2 rounded-12 border-1 border-border bg-surface p-4">
+          <View
+            accessibilityRole="summary"
+            className="gap-2 rounded-12 border-1 border-border bg-surface p-4">
             <View className="flex-row items-center justify-between">
               <Text className="type-label-lg text-primary">Refund Request</Text>
               <Badge
                 label={
                   refund.status === 'refunded'
-                    ? 'Refunded'
+                    ? 'Refund Completed'
                     : refund.status === 'failed'
-                      ? 'Refund failed'
-                      : 'Refund processing'
+                      ? 'Refund Failed'
+                      : 'Refund Processing'
                 }
                 variant={
                   refund.status === 'refunded'
@@ -95,6 +97,7 @@ export default function OrderDetailScreen() {
               variant="secondary"
               size="sm"
               label="View refund status"
+              hint="Navigates to the refund status tracking screen"
               onPress={() =>
                 router.push({
                   pathname: '/orders/[id]/refund-status' as any,
@@ -166,6 +169,7 @@ export default function OrderDetailScreen() {
               variant="secondary"
               size="md"
               label="Request refund"
+              hint="Opens the refund request form for this order"
               onPress={() =>
                 router.push({ pathname: '/orders/[id]/refund' as any, params: { id: order.id } })
               }

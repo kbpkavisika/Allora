@@ -1,6 +1,7 @@
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { AccessibilityInfo, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PaymentMethodOption } from '@/components/payment/PaymentMethodOption';
@@ -8,6 +9,7 @@ import { PaymentAuthentication } from '@/components/payment/PaymentAuthenticatio
 import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
 import { formatPaymentConfirmationSpeech } from '@/components/payment/paymentSpeech';
 import { Button } from '@/components/ui/Button';
+import { Callout } from '@/components/ui/Callout';
 import { FormError } from '@/components/ui/FormError';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TopBar } from '@/components/ui/TopBar';
@@ -130,16 +132,20 @@ export default function CheckoutScreen() {
           setIsSubmitting(false);
           setPaymentState('cancelled');
           console.info('[Checkout] PayHere checkout was cancelled by user');
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          AccessibilityInfo.announceForAccessibility('Payment was cancelled. No charges were made.');
           return;
         }
 
         if (outcome.status !== 'completed' || !outcome.paymentId) {
           setIsSubmitting(false);
           setPaymentState('failed');
-          if (outcome.status === 'failed' && outcome.error) {
-            setError(outcome.error);
-          }
-          goToResult({ variant: 'failure', total: String(total) });
+          const failureMessage =
+            outcome.status === 'failed' && outcome.error
+              ? outcome.error
+              : 'Payment could not be completed.';
+          setError(failureMessage);
+          goToResult({ variant: 'failure', total: String(total), message: failureMessage });
           return;
         }
 
@@ -277,6 +283,7 @@ export default function CheckoutScreen() {
     setIsAuthenticatingPayment(false);
     setPaymentState('idle');
     setError(null);
+    AccessibilityInfo.announceForAccessibility('Payment authentication cancelled.');
     console.info('[CheckoutOTP] authentication cancelled');
   }
 
@@ -383,6 +390,13 @@ export default function CheckoutScreen() {
           <PaymentAuthentication
             onVerified={handleOtpVerified}
             onCancel={handleAuthenticationCancel}
+          />
+        ) : null}
+
+        {paymentState === 'cancelled' ? (
+          <Callout
+            tone="info"
+            message="Payment was cancelled. You can review your details and try again whenever you are ready."
           />
         ) : null}
 
