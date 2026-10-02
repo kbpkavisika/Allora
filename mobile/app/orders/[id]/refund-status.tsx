@@ -1,6 +1,7 @@
+import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useMemo } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef } from 'react';
+import { AccessibilityInfo, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
@@ -31,7 +32,7 @@ const STATUS_CONFIG: Record<
     icon: 'orders',
     ring: 'border-accent bg-accent-tint',
     iconColor: 'text-accent-primary',
-    badgeLabel: 'Refund Requested',
+    badgeLabel: 'Refund Processing',
     badgeVariant: 'warning',
     title: 'Refund Request Submitted',
     description:
@@ -51,7 +52,7 @@ const STATUS_CONFIG: Record<
     icon: 'check',
     ring: 'border-success bg-success-tint',
     iconColor: 'text-success',
-    badgeLabel: 'Refunded',
+    badgeLabel: 'Refund Completed',
     badgeVariant: 'success',
     title: 'Refund Completed',
     description: 'The refund amount has been returned to your original payment method.',
@@ -72,6 +73,7 @@ export default function RefundStatusScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { getOrder } = useOrders();
+  const hasAnnouncedRef = useRef(false);
 
   const order = id ? getOrder(id) : undefined;
   const refund = id ? refundService.getRefund(id) : undefined;
@@ -86,8 +88,31 @@ export default function RefundStatusScreen() {
   }, [refund, order]);
 
   const refundRef = refund?.id ?? `REF-${id?.slice(0, 6).toUpperCase() ?? '000000'}`;
-  const paymentRef = refund?.paymentReference || order?.payment_reference || `ORDER-${order?.order_number ?? ''}`;
+  const paymentRef =
+    refund?.paymentReference || order?.payment_reference || `ORDER-${order?.order_number ?? ''}`;
   const reasonText = refund?.reasonLabel ?? 'General refund';
+
+  useEffect(() => {
+    if (hasAnnouncedRef.current) return;
+    hasAnnouncedRef.current = true;
+
+    if (status === 'refunded') {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      AccessibilityInfo.announceForAccessibility(
+        `Refund completed. ${formatMoney(refundAmount)} has been refunded. Reference ${refundRef}.`
+      );
+    } else if (status === 'failed') {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      AccessibilityInfo.announceForAccessibility(
+        `Refund request failed for ${formatMoney(refundAmount)}.`
+      );
+    } else {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      AccessibilityInfo.announceForAccessibility(
+        `Refund processing. Your refund request of ${formatMoney(refundAmount)} is being processed. Reference ${refundRef}.`
+      );
+    }
+  }, [status, refundAmount, refundRef]);
 
   if (!order) {
     return (
@@ -148,37 +173,63 @@ export default function RefundStatusScreen() {
         ) : null}
 
         {/* Refund Details Card */}
-        <View className="gap-3 rounded-12 border-1 border-border bg-surface p-4">
-          <Text className="type-mono text-secondary">
-            Order {order.order_number} · Reference {refundRef}
+        <View
+          accessibilityRole="summary"
+          className="gap-3 rounded-12 border-1 border-border bg-surface p-4">
+          <Text className="type-mono text-secondary" maxFontSizeMultiplier={2}>
+            Order #{order.order_number} · Reference {refundRef}
           </Text>
 
           <View className="flex-row items-baseline justify-between border-b-1 border-border pb-3">
-            <Text className="type-label-lg text-primary">Refund Amount</Text>
-            <Text className="type-h2 text-primary">{formatMoney(refundAmount)}</Text>
+            <Text className="type-label-lg text-primary" maxFontSizeMultiplier={2}>
+              Refund Amount
+            </Text>
+            <Text className="type-h2 text-primary" maxFontSizeMultiplier={2}>
+              {formatMoney(refundAmount)}
+            </Text>
           </View>
 
           <View className="gap-2 pt-1">
             <View className="flex-row items-center justify-between">
-              <Text className="type-text-secondary text-secondary">Original Payment Ref</Text>
-              <Text className="type-mono text-primary">{paymentRef}</Text>
+              <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
+                Original Payment Ref
+              </Text>
+              <Text className="type-mono text-primary" maxFontSizeMultiplier={2}>
+                {paymentRef}
+              </Text>
             </View>
 
             <View className="flex-row items-center justify-between">
-              <Text className="type-text-secondary text-secondary">Reason</Text>
-              <Text className="type-text-primary text-primary">{reasonText}</Text>
+              <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
+                Reason
+              </Text>
+              <Text className="type-text-primary text-primary" maxFontSizeMultiplier={2}>
+                {reasonText}
+              </Text>
             </View>
 
             {refund?.reasonDetails ? (
               <View className="gap-0.5">
-                <Text className="type-text-secondary text-secondary">Details</Text>
-                <Text className="type-text-primary text-primary">{refund.reasonDetails}</Text>
+                <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
+                  Details
+                </Text>
+                <Text className="type-text-primary text-primary" maxFontSizeMultiplier={2}>
+                  {refund.reasonDetails}
+                </Text>
               </View>
             ) : null}
 
             <View className="flex-row items-center justify-between">
-              <Text className="type-text-secondary text-secondary">Status</Text>
-              <Text className="type-label text-primary capitalize">{status}</Text>
+              <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
+                Status
+              </Text>
+              <Text className="type-label text-primary capitalize" maxFontSizeMultiplier={2}>
+                {status === 'requested' || status === 'processing'
+                  ? 'Processing'
+                  : status === 'refunded'
+                    ? 'Completed'
+                    : 'Failed'}
+              </Text>
             </View>
           </View>
 
@@ -199,6 +250,7 @@ export default function RefundStatusScreen() {
           {status === 'failed' ? (
             <Button
               label="Try Again"
+              hint="Re-opens the refund request form to retry"
               onPress={() =>
                 router.replace({ pathname: '/orders/[id]/refund' as any, params: { id: order.id } })
               }
@@ -207,6 +259,7 @@ export default function RefundStatusScreen() {
             <Button
               label="View Order Details"
               variant="secondary"
+              hint="Navigates to the full details for this order"
               onPress={() =>
                 router.replace({ pathname: '/orders/[id]' as any, params: { id: order.id } })
               }
@@ -216,6 +269,7 @@ export default function RefundStatusScreen() {
           <Button
             label="Back to Orders"
             variant="secondary"
+            hint="Navigates back to your complete list of orders"
             onPress={() => router.replace('/(tabs)/orders')}
           />
         </View>

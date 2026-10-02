@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { AccessibilityInfo, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
@@ -83,21 +83,39 @@ export default function RefundRequestScreen() {
     setFormError(null);
 
     if (refundType === 'partial') {
-      const parsed = parseFloat(partialAmountText.trim());
+      const trimmed = partialAmountText.trim();
+      if (!trimmed) {
+        const msg = 'Enter a valid refund amount.';
+        setFormError(msg);
+        AccessibilityInfo.announceForAccessibility(msg);
+        return false;
+      }
+      const parsed = parseFloat(trimmed);
       if (isNaN(parsed) || parsed <= 0) {
-        setFormError('Enter a valid refund amount greater than zero.');
+        const msg = 'Enter a valid refund amount greater than zero.';
+        setFormError(msg);
+        AccessibilityInfo.announceForAccessibility(msg);
         return false;
       }
       if (parsed > totalAmount) {
-        setFormError(
-          `Refund amount cannot exceed the order total of ${formatMoney(totalAmount)}.`
-        );
+        const msg = `Refund amount cannot exceed the order total of ${formatMoney(totalAmount)}.`;
+        setFormError(msg);
+        AccessibilityInfo.announceForAccessibility(msg);
         return false;
       }
     }
 
     if (!selectedReason) {
-      setFormError('Please select a reason for the refund.');
+      const msg = 'Please select a reason for the refund.';
+      setFormError(msg);
+      AccessibilityInfo.announceForAccessibility(msg);
+      return false;
+    }
+
+    if (selectedReason === 'other' && !details.trim()) {
+      const msg = 'Please enter details explaining your reason for the refund.';
+      setFormError(msg);
+      AccessibilityInfo.announceForAccessibility(msg);
       return false;
     }
 
@@ -108,6 +126,7 @@ export default function RefundRequestScreen() {
     if (!validateStep()) return;
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setIsConfirming(true);
+    AccessibilityInfo.announceForAccessibility('Review refund request details before confirming.');
   }
 
   async function handleSubmitRefund() {
@@ -129,17 +148,20 @@ export default function RefundRequestScreen() {
       refundAmount: selectedAmount,
       refundType,
       reason: selectedReason,
-      reasonDetails: details,
+      reasonDetails: details.trim() || undefined,
       currency: 'LKR',
     });
 
     setIsSubmitting(false);
 
     if (!outcome.success || !outcome.refund) {
-      setFormError(outcome.error || 'Unable to submit refund request. Please try again.');
+      const errorMsg = outcome.error || 'Unable to submit refund request. Please try again.';
+      setFormError(errorMsg);
+      AccessibilityInfo.announceForAccessibility(errorMsg);
       return;
     }
 
+    AccessibilityInfo.announceForAccessibility('Refund request submitted successfully.');
     router.replace({
       pathname: '/orders/[id]/refund-status' as any,
       params: { id: order!.id },
@@ -286,7 +308,11 @@ export default function RefundRequestScreen() {
 
               <FormError message={formError} />
 
-              <Button label="Review refund request" onPress={handleProceedToConfirm} />
+              <Button
+                label="Review refund request"
+                hint="Validates your refund options and opens the confirmation summary"
+                onPress={handleProceedToConfirm}
+              />
             </>
           ) : (
             /* Confirmation Step */
@@ -296,7 +322,9 @@ export default function RefundRequestScreen() {
                 message="This is a refund request. Submitting will send the request to be processed according to the payment provider's refund policies."
               />
 
-              <View className="gap-4 rounded-12 border-1 border-border bg-surface p-4">
+              <View
+                accessibilityRole="summary"
+                className="gap-4 rounded-12 border-1 border-border bg-surface p-4">
                 <SectionHeader title="Refund request details" />
                 <View className="flex-row items-center justify-between border-b-1 border-border pb-3">
                   <Text className="type-text-primary text-secondary">Refund amount</Text>
@@ -335,12 +363,14 @@ export default function RefundRequestScreen() {
                   label={`Confirm refund (${formatMoney(selectedAmount)})`}
                   loading={isSubmitting}
                   disabled={isSubmitting}
+                  hint="Submits the refund request for processing"
                   onPress={handleSubmitRefund}
                 />
                 <Button
                   variant="secondary"
                   label="Edit request"
                   disabled={isSubmitting}
+                  hint="Returns to the previous step to edit your refund choices"
                   onPress={() => setIsConfirming(false)}
                 />
               </View>
