@@ -1,5 +1,7 @@
+import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
-import { ScrollView, Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { AccessibilityInfo, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/Button';
@@ -10,7 +12,7 @@ import { formatCheckoutResultSpeech } from '@/components/payment/paymentSpeech';
 import { formatMoney } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 
-type ResultVariant = 'success' | 'failure' | 'cod';
+type ResultVariant = 'success' | 'failure' | 'cod' | 'cancelled' | 'pending';
 
 type ResultParams = {
   variant?: string;
@@ -18,29 +20,59 @@ type ResultParams = {
   count?: string;
   total?: string;
   reference?: string;
+  message?: string;
 };
 
 const PRESENTATION: Record<
   ResultVariant,
-  { icon: IconName; ring: string; iconColor: string; heading: string }
+  {
+    icon: IconName;
+    ring: string;
+    iconColor: string;
+    heading: string;
+    description: string;
+    haptic: () => Promise<void>;
+  }
 > = {
   success: {
     icon: 'check',
     ring: 'border-success bg-success-tint',
     iconColor: 'text-success',
     heading: 'Payment successful',
+    description: 'Your order is confirmed. The payment was successful.',
+    haptic: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
   },
   cod: {
     icon: 'orders',
     ring: 'border-success bg-success-tint',
     iconColor: 'text-success',
     heading: 'Order placed!',
+    description: 'Your order has been placed. Payment is due upon delivery.',
+    haptic: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
   },
   failure: {
     icon: 'close',
     ring: 'border-error bg-error-tint',
     iconColor: 'text-error',
     heading: 'Payment failed',
+    description: "The payment wasn't completed, so your order was not placed.",
+    haptic: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
+  },
+  cancelled: {
+    icon: 'close',
+    ring: 'border-border-strong bg-surface-sunken',
+    iconColor: 'text-secondary',
+    heading: 'Payment cancelled',
+    description: 'The payment process was cancelled before completion. No charges were made.',
+    haptic: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning),
+  },
+  pending: {
+    icon: 'orders',
+    ring: 'border-info bg-info-tint',
+    iconColor: 'text-info',
+    heading: 'Payment processing',
+    description: 'Your payment is being processed. Please wait while verification is finalized.',
+    haptic: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium),
   },
 };
 
@@ -48,15 +80,42 @@ export default function PaymentResultScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<ResultParams>();
   const { getOrder } = useOrders();
+  const hasAnnouncedRef = useRef(false);
 
+  const rawVariant = params.variant ?? 'success';
   const variant: ResultVariant =
-    params.variant === 'failure' ? 'failure' : params.variant === 'cod' ? 'cod' : 'success';
+    rawVariant === 'failure'
+      ? 'failure'
+      : rawVariant === 'cod'
+        ? 'cod'
+        : rawVariant === 'cancelled'
+          ? 'cancelled'
+          : rawVariant === 'pending'
+            ? 'pending'
+            : 'success';
+
   const total = Number(params.total ?? '0');
   const count = Number(params.count ?? '1');
   const order = params.orderId ? getOrder(params.orderId) : undefined;
   const orderNumber = order?.order_number;
-
   const presentation = PRESENTATION[variant];
+
+  useEffect(() => {
+    if (hasAnnouncedRef.current) return;
+    hasAnnouncedRef.current = true;
+
+    void presentation.haptic();
+
+    const announcements: Record<ResultVariant, string> = {
+      success: `Payment successful. Amount paid: ${formatMoney(total)}. Reference: ${params.reference ?? 'N/A'}.`,
+      cod: `Order placed. Total amount: ${formatMoney(total)} due on delivery.`,
+      failure: `Payment failed. ${params.message || 'No amount was charged.'}`,
+      cancelled: 'Payment cancelled. No charges were made.',
+      pending: `Payment is being processed for ${formatMoney(total)}.`,
+    };
+
+    AccessibilityInfo.announceForAccessibility(announcements[variant]);
+  }, [variant, total, params.reference, params.message, presentation]);
 
   function trackOrder() {
     if (count > 1 || !params.orderId) {
@@ -71,59 +130,110 @@ export default function PaymentResultScreen() {
       <ScrollView
         contentContainerStyle={{
           padding: 16,
-          paddingTop: insets.top + 48,
+          paddingTop: insets.top + 32,
           paddingBottom: insets.bottom + 32,
           gap: 24,
-        }}>
-        <View className="items-center gap-6">
+        }}
+        showsVerticalScrollIndicator={false}>
+        {/* Visual Icon & Status Heading */}
+        <View className="items-center gap-4">
           <View
+            accessibilityRole="image"
+            accessibilityLabel={`${presentation.heading} icon`}
             className={`h-16 w-16 items-center justify-center rounded-full border-1 ${presentation.ring}`}>
             <Icon name={presentation.icon} size="lg" className={presentation.iconColor} />
           </View>
-          <View className="gap-2">
+          <View className="items-center gap-2">
             <Text
               role="heading"
+              accessibilityRole="header"
               className="type-h1 text-center text-primary"
               maxFontSizeMultiplier={1.5}>
               {presentation.heading}
             </Text>
-            <Text className="type-text-lg text-center text-secondary">
-              {variant === 'success'
-                ? 'Your order is confirmed. The payment was successful.'
-                : variant === 'cod'
-                  ? `Pay ${formatMoney(total)} in cash when your order arrives.`
-                  : "The payment wasn't completed, so your order was not placed."}
+            <Text className="type-text-lg text-center text-secondary" maxFontSizeMultiplier={2}>
+              {presentation.description}
             </Text>
           </View>
         </View>
 
+        {/* Warning / Error / Notice Callouts */}
         {variant === 'failure' ? (
           <Callout
             tone="warning"
-            message="No amount was charged. Try the payment again, or choose a different method."
+            message={
+              params.message?.trim() ||
+              'No amount was charged. You can try the payment again, or choose a different payment method.'
+            }
           />
         ) : null}
 
-        <View className="gap-2 rounded-12 border-1 border-border bg-surface p-4">
+        {variant === 'cancelled' ? (
+          <Callout
+            tone="info"
+            message="Your order was not placed and no payment was deducted. You can resume checkout at any time."
+          />
+        ) : null}
+
+        {variant === 'pending' ? (
+          <Callout
+            tone="info"
+            message="Payment verification is taking a moment. If this does not update automatically, check your order status in a few minutes."
+          />
+        ) : null}
+
+        {/* Summary Details Card */}
+        <View
+          accessibilityRole="summary"
+          className="gap-3 rounded-12 border-1 border-border bg-surface p-4">
           {count > 1 ? (
-            <Text className="type-text-secondary text-secondary">
+            <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
               {count} orders placed · one per shop
             </Text>
           ) : orderNumber ? (
-            <Text className="type-mono text-secondary">Order {orderNumber}</Text>
+            <Text className="type-mono text-secondary" maxFontSizeMultiplier={2}>
+              Order #{orderNumber}
+            </Text>
           ) : null}
 
-          <Text className="type-h2 text-primary">
-            {variant === 'cod' ? `${formatMoney(total)} due on delivery` : formatMoney(total)}
-          </Text>
+          <View className="flex-row items-baseline justify-between border-b-1 border-border pb-3">
+            <Text className="type-label-lg text-primary" maxFontSizeMultiplier={2}>
+              {variant === 'cod' ? 'Amount Due' : 'Amount'}
+            </Text>
+            <Text className="type-h2 text-primary" maxFontSizeMultiplier={2}>
+              {formatMoney(total)}
+            </Text>
+          </View>
 
-          <Text className="type-text-secondary text-secondary">
-            {variant === 'success'
-              ? `Reference ${params.reference ?? 'N/A'} · Paid via PayHere`
-              : variant === 'cod'
-                ? 'Cash on delivery · Pay the courier directly'
-                : 'Payment not completed'}
-          </Text>
+          <View className="gap-2 pt-1">
+            <View className="flex-row items-center justify-between">
+              <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
+                Payment Method
+              </Text>
+              <Text className="type-text-primary text-primary" maxFontSizeMultiplier={2}>
+                {variant === 'cod' ? 'Cash on Delivery' : 'PayHere (Online)'}
+              </Text>
+            </View>
+
+            {params.reference ? (
+              <View className="flex-row items-center justify-between">
+                <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
+                  Payment Reference
+                </Text>
+                <Text className="type-mono text-primary" maxFontSizeMultiplier={2}>
+                  {params.reference}
+                </Text>
+              </View>
+            ) : null}
+
+            {variant === 'success' ? (
+              <View className="pt-1">
+                <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
+                  A confirmation receipt will be sent to your registered email address.
+                </Text>
+              </View>
+            ) : null}
+          </View>
 
           <ReadAloudButton
             text={formatCheckoutResultSpeech({
@@ -131,27 +241,40 @@ export default function PaymentResultScreen() {
               amount: total,
               currency: 'LKR',
               reference: params.reference,
+              message: params.message,
             })}
+            label="Read aloud summary"
           />
         </View>
 
-        {variant === 'failure' ? (
+        {/* Actions */}
+        {variant === 'failure' || variant === 'cancelled' ? (
           <View className="gap-3">
-            <Button label="Try again" onPress={() => router.replace('/payment/checkout')} />
-            <Text
-              className="type-label-lg text-center text-primary underline"
-              onPress={() => router.replace('/payment/checkout')}>
-              Choose a different method
-            </Text>
+            <Button
+              label="Try again"
+              hint="Returns to the checkout screen to re-attempt payment"
+              onPress={() => router.replace('/payment/checkout')}
+            />
+            <Button
+              variant="secondary"
+              label="Return to Shop"
+              hint="Navigates back to the main shopping catalogue"
+              onPress={() => router.replace('/(tabs)')}
+            />
           </View>
         ) : (
           <View className="gap-3">
-            <Button label="Track your order" onPress={trackOrder} />
-            <Text
-              className="type-label-lg text-center text-primary underline"
-              onPress={() => router.replace('/(tabs)')}>
-              Back to Shop
-            </Text>
+            <Button
+              label="Track your order"
+              hint="Navigates to your order tracking page"
+              onPress={trackOrder}
+            />
+            <Button
+              variant="secondary"
+              label="Back to Shop"
+              hint="Navigates back to the main shopping catalogue"
+              onPress={() => router.replace('/(tabs)')}
+            />
           </View>
         )}
       </ScrollView>

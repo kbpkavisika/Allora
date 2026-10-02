@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
 import type { TurboModule } from 'react-native';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   DeviceEventEmitter,
   NativeModules,
@@ -119,6 +120,17 @@ export function PaymentAuthentication({
     }
   }
 
+  const hasAnnouncedMountRef = useRef(false);
+
+  useEffect(() => {
+    if (!hasAnnouncedMountRef.current) {
+      hasAnnouncedMountRef.current = true;
+      AccessibilityInfo.announceForAccessibility(
+        'Payment authentication required. Enter the 6-digit verification code sent to your phone.'
+      );
+    }
+  }, []);
+
   useEffect(() => {
     if (secondsRemaining <= 0) return;
     const timer = setInterval(() => setSecondsRemaining((current) => Math.max(0, current - 1)), 1000);
@@ -146,11 +158,15 @@ export function PaymentAuthentication({
       maskedPhoneRef.current = result.maskedPhone;
       setMaskedPhone(result.maskedPhone);
       setSecondsRemaining(result.expiresInSeconds);
+      AccessibilityInfo.announceForAccessibility(`Verification code sent to ${result.maskedPhone}`);
       console.info('[PaymentOTP] request succeeded');
       inputRefs.current[0]?.focus();
     } catch (requestError) {
       stopSmsRetriever();
-      setError(requestError instanceof Error ? requestError.message : 'Unable to send verification code.');
+      const message =
+        requestError instanceof Error ? requestError.message : 'Unable to send verification code.';
+      setError(message);
+      AccessibilityInfo.announceForAccessibility(message);
     } finally {
       setIsRequesting(false);
     }
