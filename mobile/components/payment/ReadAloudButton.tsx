@@ -49,6 +49,13 @@ export function ReadAloudButton({ text, label = 'Read aloud', disabled = false }
   async function handlePress() {
     if (!text.trim() || disabled) return;
 
+    if (isSpeaking) {
+      clearPolling();
+      await Speech.stop();
+      setIsSpeaking(false);
+      return;
+    }
+
     try {
       await Speech.stop();
       setIsSpeaking(true);
@@ -58,23 +65,33 @@ export function ReadAloudButton({ text, label = 'Read aloud', disabled = false }
       });
       await waitForSpeechToFinish();
     } catch {
+      clearPolling();
       setIsSpeaking(false);
     }
   }
 
+  const currentLabel = isSpeaking ? 'Stop reading' : label;
+
   return (
     <Button
-      label={label}
+      label={currentLabel}
       variant="secondary"
       size="md"
       onPress={() => {
         void handlePress();
       }}
       disabled={disabled}
-      loading={isSpeaking}
-      accessibilityLabel={label}
-      accessibilityHint="Reads the payment information aloud"
-      hint="Reads the payment information aloud"
+      accessibilityLabel={currentLabel}
+      accessibilityHint={
+        isSpeaking
+          ? 'Stops reading aloud'
+          : 'Reads the payment or refund information aloud'
+      }
+      hint={
+        isSpeaking
+          ? 'Stops reading aloud'
+          : 'Reads the payment or refund information aloud'
+      }
       fullWidth={false}
       className="self-start"
     />
