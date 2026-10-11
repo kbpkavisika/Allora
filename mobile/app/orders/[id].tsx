@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -30,8 +31,20 @@ export default function OrderDetailScreen() {
   const { openSellerChat, isOpening } = useSellerChat();
 
   const order = id ? getOrder(id) : undefined;
-  const refunds = order ? refundService.getRefundsForOrder(order.id) : [];
+  const [refunds, setRefunds] = useState(order ? refundService.getRefundsForOrder(order.id) : []);
   const refund = refunds.length > 0 ? refunds[refunds.length - 1] : undefined;
+
+  useEffect(() => {
+    if (order?.id) {
+      void refundService
+        .fetchRefundsForOrder(order.id, order.order_number)
+        .then((loaded) => {
+          if (loaded.length > 0) {
+            setRefunds(loaded);
+          }
+        });
+    }
+  }, [order?.id, order?.order_number]);
 
   if (!order) {
     return (
@@ -71,9 +84,12 @@ export default function OrderDetailScreen() {
   let paymentBadgeLabel = 'Pending';
   let paymentBadgeVariant: 'success' | 'warning' | 'neutral' | 'dark' = 'neutral';
 
-  if (refund?.status === 'refunded') {
+  if (order.payment_status === 'refunded' || refund?.status === 'refunded') {
     paymentBadgeLabel = 'Refund Completed';
     paymentBadgeVariant = 'success';
+  } else if (order.payment_status === 'partially_refunded') {
+    paymentBadgeLabel = 'Partially Refunded';
+    paymentBadgeVariant = 'neutral';
   } else if (refund?.status === 'processing') {
     paymentBadgeLabel = 'Refund Processing';
     paymentBadgeVariant = 'neutral';

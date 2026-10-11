@@ -25,6 +25,14 @@ function getOrderPaymentBadge(order: Order): { label: string; variant: BadgeVari
     return { label: 'Refund Processing', variant: 'neutral', voice: 'Refund processing' };
   }
 
+  if (order.payment_status === 'refunded') {
+    return { label: 'Refund Completed', variant: 'success', voice: 'Refund completed' };
+  }
+
+  if (order.payment_status === 'partially_refunded') {
+    return { label: 'Partially Refunded', variant: 'neutral', voice: 'Order partially refunded' };
+  }
+
   if (order.status === ('cancelled' as any) || (order as any).cancelled_at) {
     return { label: 'Cancelled', variant: 'neutral', voice: 'Order cancelled' };
   }
