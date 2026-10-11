@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -71,14 +71,18 @@ const STATUS_CONFIG: Record<
 
 export default function RefundStatusScreen() {
   const insets = useSafeAreaInsets();
-  const { id } = useLocalSearchParams<{ id?: string }>();
+  const { id, status: statusParam } = useLocalSearchParams<{ id?: string; status?: RefundStatus }>();
   const { getOrder } = useOrders();
   const hasAnnouncedRef = useRef(false);
 
   const order = id ? getOrder(id) : undefined;
   const refund = id ? refundService.getRefund(id) : undefined;
 
-  const status: RefundStatus = refund?.status ?? 'processing';
+  const [simulatedStatus, setSimulatedStatus] = useState<RefundStatus | null>(
+    statusParam ?? null
+  );
+
+  const status: RefundStatus = simulatedStatus ?? refund?.status ?? 'processing';
   const config = STATUS_CONFIG[status];
 
   const refundAmount = useMemo(() => {
@@ -91,6 +95,29 @@ export default function RefundStatusScreen() {
   const paymentRef =
     refund?.paymentReference || order?.payment_reference || `ORDER-${order?.order_number ?? ''}`;
   const reasonText = refund?.reasonLabel ?? 'General refund';
+
+  function handleSimulateStatus(newStatus: RefundStatus) {
+    if (order) {
+      refundService.updateRefundStatus(order.id, newStatus);
+    }
+    setSimulatedStatus(newStatus);
+    if (newStatus === 'refunded') {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      AccessibilityInfo.announceForAccessibility(
+        `Refund completed. ${formatMoney(refundAmount)} has been refunded. Reference ${refundRef}.`
+      );
+    } else if (newStatus === 'failed') {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      AccessibilityInfo.announceForAccessibility(
+        `Refund request failed for ${formatMoney(refundAmount)}.`
+      );
+    } else {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      AccessibilityInfo.announceForAccessibility(
+        `Refund processing. Your refund request of ${formatMoney(refundAmount)} is being processed. Reference ${refundRef}.`
+      );
+    }
+  }
 
   useEffect(() => {
     if (hasAnnouncedRef.current) return;
@@ -243,6 +270,45 @@ export default function RefundStatusScreen() {
             })}
             label="Read aloud status"
           />
+        </View>
+
+        {/* Status Transition Simulation for Testing */}
+        <View
+          accessibilityRole="summary"
+          aria-label="Testing status simulation controls"
+          className="rounded-12 border-1 border-dashed border-border bg-surface-sunken p-3 gap-2">
+          <Text className="type-label text-secondary">
+            Simulate Status (Testing / Demonstration)
+          </Text>
+          <View className="flex-row gap-2">
+            <View className="flex-1">
+              <Button
+                variant={status === 'processing' || status === 'requested' ? 'primary' : 'secondary'}
+                size="sm"
+                label="Processing"
+                hint="Simulates refund in processing state"
+                onPress={() => handleSimulateStatus('processing')}
+              />
+            </View>
+            <View className="flex-1">
+              <Button
+                variant={status === 'refunded' ? 'primary' : 'secondary'}
+                size="sm"
+                label="Completed"
+                hint="Simulates refund completion"
+                onPress={() => handleSimulateStatus('refunded')}
+              />
+            </View>
+            <View className="flex-1">
+              <Button
+                variant={status === 'failed' ? 'primary' : 'secondary'}
+                size="sm"
+                label="Failed"
+                hint="Simulates refund failure"
+                onPress={() => handleSimulateStatus('failed')}
+              />
+            </View>
+          </View>
         </View>
 
         {/* Action Buttons */}

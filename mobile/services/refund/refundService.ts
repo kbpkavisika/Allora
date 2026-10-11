@@ -1,8 +1,8 @@
 import type { CreateRefundInput, RefundOutcome, RefundRequest, RefundStatus } from './refundTypes';
 import { REFUND_REASONS } from './refundTypes';
 
-// In-memory session store for refund requests
-const refundStore = new Map<string, RefundRequest>();
+// In-memory session store for refund requests per order
+const refundStore = new Map<string, RefundRequest[]>();
 
 export class RefundService {
   async requestRefund(input: CreateRefundInput): Promise<RefundOutcome> {
@@ -43,24 +43,50 @@ export class RefundService {
       currency: input.currency ?? 'LKR',
     };
 
-    refundStore.set(input.orderId, newRefund);
+    const existing = refundStore.get(input.orderId) ?? [];
+    refundStore.set(input.orderId, [...existing, newRefund]);
     return { success: true, refund: newRefund };
   }
 
-  getRefund(orderId: string): RefundRequest | undefined {
-    return refundStore.get(orderId);
+  getRefund(idOrOrderId: string): RefundRequest | undefined {
+    const list = refundStore.get(idOrOrderId);
+    if (list && list.length > 0) {
+      return list[list.length - 1];
+    }
+    for (const refunds of refundStore.values()) {
+      const match = refunds.find((r) => r.id === idOrOrderId);
+      if (match) return match;
+    }
+    return undefined;
+  }
+
+  getRefundsForOrder(orderId: string): RefundRequest[] {
+    return refundStore.get(orderId) ?? [];
   }
 
   getRefunds(): RefundRequest[] {
-    return Array.from(refundStore.values());
+    const all: RefundRequest[] = [];
+    for (const list of refundStore.values()) {
+      all.push(...list);
+    }
+    return all;
   }
 
-  updateRefundStatus(orderId: string, status: RefundStatus): RefundRequest | undefined {
-    const existing = refundStore.get(orderId);
-    if (!existing) return undefined;
-    const updated = { ...existing, status };
-    refundStore.set(orderId, updated);
-    return updated;
+  updateRefundStatus(idOrOrderId: string, status: RefundStatus): RefundRequest | undefined {
+    const list = refundStore.get(idOrOrderId);
+    if (list && list.length > 0) {
+      const latest = list[list.length - 1];
+      latest.status = status;
+      return latest;
+    }
+    for (const refunds of refundStore.values()) {
+      const match = refunds.find((r) => r.id === idOrOrderId);
+      if (match) {
+        match.status = status;
+        return match;
+      }
+    }
+    return undefined;
   }
 }
 
