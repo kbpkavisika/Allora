@@ -22,11 +22,11 @@ export function ToggleRow({
   return (
     <View className={`min-h-control-lg flex-row items-center justify-between gap-4 ${className}`}>
       <View className="flex-1 gap-0.5">
-        <Text className="type-label-lg text-primary" maxFontSizeMultiplier={2}>
+        <Text className={`type-label-lg ${disabled ? 'text-disabled' : 'text-primary'}`} maxFontSizeMultiplier={2}>
           {title}
         </Text>
         {description ? (
-          <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
+          <Text className={`type-text-secondary ${disabled ? 'text-disabled' : 'text-secondary'}`} maxFontSizeMultiplier={2}>
             {description}
           </Text>
         ) : null}
