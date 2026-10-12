@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -9,6 +10,7 @@ import { useCart } from '@/lib/CartProvider';
 import { formatMoney } from '@/lib/orders';
 
 export default function CartScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { lines, itemCount, subtotal, isLoading, updateQuantity, removeItem } = useCart();
 
@@ -16,7 +18,7 @@ export default function CartScreen() {
   // after every action when feedback is audio-only, so the count/total stay on screen.
   const bannerMessage =
     itemCount > 0
-      ? `Cart has ${itemCount} item${itemCount === 1 ? '' : 's'}, ${formatMoney(subtotal)} total.`
+      ? t('cart.banner', { count: itemCount, total: formatMoney(subtotal) })
       : null;
 
   if (isLoading) {
@@ -41,7 +43,7 @@ export default function CartScreen() {
         ListHeaderComponent={
           <View className="mb-6 gap-4">
             <Text role="heading" className="type-h1 text-primary" maxFontSizeMultiplier={1.5}>
-              Cart{itemCount > 0 ? ` · ${itemCount} item${itemCount === 1 ? '' : 's'}` : ''}
+              {itemCount > 0 ? t('cart.titleWithCount', { count: itemCount }) : t('tabs.cart')}
             </Text>
             <SuccessBanner message={bannerMessage} />
           </View>
@@ -55,20 +57,20 @@ export default function CartScreen() {
         )}
         ListEmptyComponent={
           <Text className="type-text-primary text-secondary">
-            Your cart is empty. Items you add will appear here.
+            {t('cart.empty')}
           </Text>
         }
         ListFooterComponent={
           lines.length > 0 ? (
             <View className="mt-6 gap-4 border-t-1 border-border pt-4">
               <View className="flex-row items-center justify-between">
-                <Text className="type-label-lg text-primary">Total</Text>
+                <Text className="type-label-lg text-primary">{t('cart.total')}</Text>
                 <Text className="type-h3 text-primary">{formatMoney(subtotal)}</Text>
               </View>
               <Button
-                label="Checkout"
+                label={t('cart.checkout')}
                 onPress={() => router.push('/payment/checkout')}
-                hint="Proceeds to payment for the items in your cart"
+                hint={t('cart.checkoutHint')}
               />
             </View>
           ) : null

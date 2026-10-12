@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Controller, useForm, type FieldErrors } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Text, TextInput, View } from 'react-native';
 
 import { SocialAuthButtons } from '@/components/auth/SocialAuthButtons';
@@ -16,6 +17,7 @@ import { signInSchema, type SignInValues } from '@/lib/schemas';
 import { supabase } from '@/lib/supabase';
 
 export default function SignInScreen() {
+  const { t } = useTranslation();
   const emailRef = useRef<TextInput>(null);
   const passwordRef = useRef<TextInput>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -53,7 +55,7 @@ export default function SignInScreen() {
 
   return (
     <KeyboardScreen>
-      <ScreenHeader title="Log in to Allora" className="mb-6" />
+      <ScreenHeader title={t('auth.signIn.title')} className="mb-6" />
 
       <View className="gap-5">
         <Controller
@@ -62,8 +64,8 @@ export default function SignInScreen() {
           render={({ field }) => (
             <InputField
               ref={emailRef}
-              label="Email"
-              placeholder="hello@company.com"
+              label={t('auth.email')}
+              placeholder={t('auth.emailPlaceholder')}
               value={field.value}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
@@ -87,8 +89,8 @@ export default function SignInScreen() {
           render={({ field }) => (
             <InputField
               ref={passwordRef}
-              label="Password"
-              placeholder="Your password"
+              label={t('auth.password')}
+              placeholder={t('auth.signIn.passwordPlaceholder')}
               value={field.value}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
@@ -107,8 +109,8 @@ export default function SignInScreen() {
 
         <Button
           variant="link"
-          label="Forgot password?"
-          hint="Opens password recovery"
+          label={t('auth.signIn.forgotPassword')}
+          hint={t('auth.signIn.forgotPasswordHint')}
           fullWidth={false}
           // TODO(auth)
           onPress={() => console.log('forgot password')}
@@ -116,17 +118,17 @@ export default function SignInScreen() {
 
         <FormError message={formError} />
 
-        <Button label="Log in" loading={isSubmitting} onPress={submit} />
+        <Button label={t('auth.logIn')} loading={isSubmitting} onPress={submit} />
       </View>
 
-      <Divider label="OR" className="my-6" />
+      <Divider label={t('auth.or')} className="my-6" />
 
       <SocialAuthButtons />
 
       <View className="mt-8 flex-row items-center justify-center gap-2">
-        <Text className="type-text-primary text-secondary">New to Allora?</Text>
+        <Text className="type-text-primary text-secondary">{t('auth.signIn.newTo')}</Text>
         <Link href="/sign-up" role="link" className="type-label-lg text-primary underline">
-          Create an account
+          {t('auth.signIn.createAccount')}
         </Link>
       </View>
     </KeyboardScreen>

@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { ReviewSummaryRow } from '@/components/reviews/ReviewSummaryRow';
 import { Badge } from '@/components/ui/Badge';
@@ -28,6 +29,7 @@ import { useShop } from '@/lib/ShopProvider';
 import { supabase } from '@/lib/supabase';
 
 export default function ProductDetailScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { addItem } = useCart();
@@ -64,7 +66,7 @@ export default function ProductDetailScreen() {
   if (isLoading) {
     return (
       <View className="flex-1 bg-surface">
-        <TopBar title="Product" />
+        <TopBar title={t('product.title')} />
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator className="text-secondary" />
         </View>
@@ -75,14 +77,14 @@ export default function ProductDetailScreen() {
   if (!product) {
     return (
       <View className="flex-1 bg-surface">
-        <TopBar title="Product" />
+        <TopBar title={t('product.title')} />
         <View className="items-center gap-3 p-4 pt-16">
           <Text role="heading" className="type-h3 text-primary">
-            Product not found
+            {t('product.notFound')}
           </Text>
           <Button
             variant="secondary"
-            label="Back to Shop"
+            label={t('common.backToShop')}
             fullWidth={false}
             onPress={() => router.replace('/(tabs)')}
           />
@@ -101,7 +103,7 @@ export default function ProductDetailScreen() {
     setIsAdding(true);
     const { error } = await addItem(product.id);
     setIsAdding(false);
-    setToast(error ? 'Could not add to cart. Try again.' : `${product.name} added to cart`);
+    setToast(error ? t('product.addError') : t('product.added', { name: product.name }));
   }
 
   return (
@@ -139,7 +141,7 @@ export default function ProductDetailScreen() {
                   role="heading"
                   className="type-h3 text-primary"
                   maxFontSizeMultiplier={1.5}>
-                  Description
+                  {t('product.description')}
                 </Text>
                 <Text className="type-text-primary text-primary" maxFontSizeMultiplier={2}>
                   {product.description}
@@ -162,10 +164,10 @@ export default function ProductDetailScreen() {
               <Divider />
               <Button
                 variant="secondary"
-                label="Chat with seller"
+                label={t('orders.chatWithSeller')}
                 loading={isOpening}
                 onPress={() => openSellerChat({ shopId: product.shop_id, productId: product.id })}
-                hint="Opens a conversation with the seller about this product"
+                hint={t('product.chatHint')}
               />
             </>
           ) : null}
@@ -176,18 +178,20 @@ export default function ProductDetailScreen() {
         className="absolute inset-x-0 bottom-0 border-t-1 border-border bg-surface px-4 pt-4"
         style={{ paddingBottom: insets.bottom + 16 }}>
         <Button
-          label={soldOut ? 'Sold out' : `Add to cart · ${formatMoney(product.price)}`}
+          label={
+            soldOut ? t('stock.soldOut') : t('product.addToCart', { price: formatMoney(product.price) })
+          }
           loading={isAdding}
           disabled={soldOut}
           onPress={handleAdd}
-          hint="Adds this item to your cart"
+          hint={t('product.addToCartHint')}
         />
       </View>
 
       <Toast
         message={toast}
         offset={72}
-        actionLabel="View cart"
+        actionLabel={t('product.viewCart')}
         onAction={() => {
           setToast(null);
           router.push('/(tabs)/cart');
@@ -199,6 +203,7 @@ export default function ProductDetailScreen() {
 }
 
 function PhotoCarousel({ photos, name }: { photos: string[]; name: string }) {
+  const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const [index, setIndex] = useState(0);
   // Explicit square viewport: a horizontal FlatList does not constrain its cross axis, so an
@@ -238,7 +243,7 @@ function PhotoCarousel({ photos, name }: { photos: string[]; name: string }) {
               style={{ width: '100%', height: '100%' }}
               contentFit="contain"
               transition={150}
-              alt={`${name}, photo ${i + 1} of ${photos.length}`}
+              alt={t('product.photoAlt', { name, index: i + 1, total: photos.length })}
             />
           </View>
         )}
@@ -247,7 +252,7 @@ function PhotoCarousel({ photos, name }: { photos: string[]; name: string }) {
       {photos.length > 1 ? (
         <View
           className="flex-row items-center justify-center gap-2 py-3"
-          aria-label={`Photo ${index + 1} of ${photos.length}`}>
+          aria-label={t('product.photoPosition', { index: index + 1, total: photos.length })}>
           {photos.map((_, i) => (
             <View
               key={i}

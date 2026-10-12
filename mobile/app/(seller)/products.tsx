@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,31 +13,26 @@ import { useListPosition } from '@/hooks/useListPosition';
 import { useProducts } from '@/hooks/useProducts';
 import { LOW_STOCK_THRESHOLD, type Product } from '@/lib/products';
 
-const SORT_OPTIONS = [
-  'Newest',
-  'Price: low to high',
-  'Price: high to low',
-  'Name: A to Z',
-  'Stock: low to high',
-] as const;
+const SORT_OPTIONS = ['newest', 'priceAsc', 'priceDesc', 'nameAsc', 'stockAsc'] as const;
 
 type SortOption = (typeof SORT_OPTIONS)[number];
 
 const COMPARE: Record<SortOption, (a: Product, b: Product) => number> = {
-  Newest: (a, b) => b.created_at.localeCompare(a.created_at),
-  'Price: low to high': (a, b) => a.price - b.price,
-  'Price: high to low': (a, b) => b.price - a.price,
-  'Name: A to Z': (a, b) => a.name.localeCompare(b.name),
-  'Stock: low to high': (a, b) => a.stock_quantity - b.stock_quantity,
+  newest: (a, b) => b.created_at.localeCompare(a.created_at),
+  priceAsc: (a, b) => a.price - b.price,
+  priceDesc: (a, b) => b.price - a.price,
+  nameAsc: (a, b) => a.name.localeCompare(b.name),
+  stockAsc: (a, b) => a.stock_quantity - b.stock_quantity,
 };
 
 export default function SellerProductsScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { products, isLoading } = useProducts();
   const positionOf = useListPosition();
 
   const [search, setSearch] = useState('');
-  const [sort, setSort] = useState<SortOption>('Newest');
+  const [sort, setSort] = useState<SortOption>('newest');
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [lowStockOnly, setLowStockOnly] = useState(false);
 
@@ -59,7 +55,7 @@ export default function SellerProductsScreen() {
 
   return (
     <View className="flex-1 bg-surface">
-      <TopBar title="My products" />
+      <TopBar title={t('tabs.myProducts')} />
 
       <FlatList
         data={visibleProducts}
@@ -75,8 +71,8 @@ export default function SellerProductsScreen() {
           <View className="mb-2 gap-4">
             <InputField
               variant="search"
-              label="Search your products"
-              placeholder="Search your products"
+              label={t('seller.products.search')}
+              placeholder={t('seller.products.search')}
               value={search}
               onChangeText={setSearch}
               onClear={() => setSearch('')}
@@ -87,21 +83,21 @@ export default function SellerProductsScreen() {
             <View className="flex-row items-start gap-2">
               <View className="flex-1">
                 <FilterChip
-                  label={`Sort: ${sort}`}
+                  label={t('sort.chip', { sort: t(`sort.${sort}`) })}
                   showChevron
                   onPress={() => setIsSortOpen((open) => !open)}
                 />
               </View>
 
               <FilterChip
-                label="Low stock"
+                label={t('stock.low')}
                 selected={lowStockOnly}
                 onPress={() => setLowStockOnly((only) => !only)}
               />
 
               <IconFilterChip
                 icon="filters"
-                label="More filters"
+                label={t('seller.products.moreFilters')}
                 disabled
                 onPress={() => {}}
               />
@@ -109,8 +105,9 @@ export default function SellerProductsScreen() {
 
             {isSortOpen ? (
               <OptionList
-                label="Sort products by"
+                label={t('seller.products.sortBy')}
                 options={SORT_OPTIONS}
+                formatOption={(option) => t(`sort.${option}`)}
                 value={sort}
                 onChange={(next) => {
                   setSort(next as SortOption);
@@ -134,9 +131,7 @@ export default function SellerProductsScreen() {
             <ActivityIndicator className="mt-16 text-secondary" />
           ) : (
             <Text className="type-text-primary mt-16 text-center text-secondary">
-              {hasProducts
-                ? 'No products match your search.'
-                : "You haven't added any products yet."}
+              {hasProducts ? t('seller.products.noMatch') : t('seller.products.none')}
             </Text>
           )
         }

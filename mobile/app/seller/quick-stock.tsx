@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView, Text, View } from 'react-native';
 
 import { BottomSheet } from '@/components/ui/BottomSheet';
@@ -9,6 +10,7 @@ import { QuantityStepper } from '@/components/ui/QuantityStepper';
 import { useProducts } from '@/hooks/useProducts';
 
 export default function QuickStockScreen() {
+  const { t } = useTranslation();
   const { products, updateStock } = useProducts();
 
   const [quantities, setQuantities] = useState<Record<string, number>>(() =>
@@ -36,7 +38,7 @@ export default function QuickStockScreen() {
     setIsSaving(false);
 
     if (error) {
-      setFormError('Something went wrong saving your stock. Please try again.');
+      setFormError(t('quickStock.saveError'));
       return;
     }
 
@@ -44,14 +46,14 @@ export default function QuickStockScreen() {
   }
 
   return (
-    <BottomSheet onDismiss={dismiss} label="Quick stock update">
+    <BottomSheet onDismiss={dismiss} label={t('seller.home.quickStock')}>
       <Text role="heading" className="type-h2 mb-4 text-primary" maxFontSizeMultiplier={1.5}>
-        Quick stock update
+        {t('seller.home.quickStock')}
       </Text>
 
       {products.length === 0 ? (
         <Text className="type-text-primary py-6 text-center text-secondary">
-          Add a product before updating stock.
+          {t('quickStock.empty')}
         </Text>
       ) : (
         <ScrollView
@@ -77,8 +79,8 @@ export default function QuickStockScreen() {
                   </Text>
                   <Text className="type-text-secondary text-secondary">
                     {isChanged
-                      ? `Was ${product.stock_quantity} in stock`
-                      : `${product.stock_quantity} in stock`}
+                      ? t('quickStock.was', { count: product.stock_quantity })
+                      : t('stock.countInStock', { count: product.stock_quantity })}
                   </Text>
                 </View>
 
@@ -99,7 +101,7 @@ export default function QuickStockScreen() {
       <FormError message={formError} className="mb-3" />
 
       <Button
-        label="Save changes"
+        label={t('common.saveChanges')}
         loading={isSaving}
         disabled={changed.length === 0}
         onPress={save}

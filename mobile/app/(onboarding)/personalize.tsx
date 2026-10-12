@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
 import { PreferenceRow } from '@/components/onboarding/PreferenceRow';
@@ -19,6 +20,7 @@ import {
 const ROLE_SELECT_ROUTE = '/(onboarding)/role-select' as const;
 
 export default function PersonalizeScreen() {
+  const { t } = useTranslation();
   const { updateProfile } = useProfile();
   const {
     control,
@@ -42,7 +44,7 @@ export default function PersonalizeScreen() {
     const { error } = await updateProfile(preferences);
 
     if (error) {
-      setFormError('Something went wrong saving your preferences. Please try again.');
+      setFormError(t('onboarding.personalize.saveError'));
       return;
     }
 
@@ -52,22 +54,22 @@ export default function PersonalizeScreen() {
   return (
     <KeyboardScreen>
       <ScreenHeader
-        title="How should Allora work for you?"
-        subtitle="Pick anything you want on from the start. Select as many as you like."
+        title={t('onboarding.personalize.title')}
+        subtitle={t('onboarding.personalize.subtitle')}
         showBack={false}
         className="mb-6"
       />
 
       <View className="gap-0.5">
-        {ACCESSIBILITY_FEATURES.map((preference) => (
+        {ACCESSIBILITY_FEATURES.map((key) => (
           <Controller
-            key={preference.key}
+            key={key}
             control={control}
-            name={preference.key}
+            name={key}
             render={({ field: { value, onChange } }) => (
               <PreferenceRow
-                title={preference.title}
-                description={preference.description}
+                title={t(`accessibility.features.${key}.title`)}
+                description={t(`accessibility.features.${key}.description`)}
                 checked={value}
                 onChange={onChange}
               />
@@ -79,14 +81,14 @@ export default function PersonalizeScreen() {
       <FormError message={formError} className="mt-4" />
 
       <Text className="type-text-secondary mt-5 text-center text-secondary">
-        You can change these later in the settings.
+        {t('onboarding.personalize.changeLater')}
       </Text>
 
-      <Button label="Continue" loading={isSubmitting} onPress={handleSubmit(onSubmit)} className="mt-4" />
+      <Button label={t('common.continue')} loading={isSubmitting} onPress={handleSubmit(onSubmit)} className="mt-4" />
 
       <Button
         variant="link"
-        label="Skip for now"
+        label={t('onboarding.personalize.skip')}
         className="mt-4 self-center"
         onPress={() => router.replace(ROLE_SELECT_ROUTE)}
       />

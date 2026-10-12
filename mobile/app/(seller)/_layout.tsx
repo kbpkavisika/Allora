@@ -1,18 +1,20 @@
+import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { Redirect, Tabs } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 import { BottomTabBar, type TabDefinition } from '@/components/ui/BottomTabBar';
 import { Header } from '@/components/ui/Header';
 import { useChat } from '@/hooks/useChat';
 import { useShop } from '@/hooks/useShop';
 
-const SELLER_TABS: Record<string, TabDefinition> = {
-  index: { label: 'Shop', icon: 'shop' },
-  'orders/index': { label: 'Orders', icon: 'orders' },
-  'chat/index': { label: 'Chat', icon: 'chat' },
-  'account/index': { label: 'Account', icon: 'account' },
-};
-
 export default function SellerTabLayout() {
+  const { t } = useTranslation();
+  const tabs: Record<string, TabDefinition> = {
+    index: { label: t('tabs.shop'), icon: 'shop' },
+    'orders/index': { label: t('tabs.orders'), icon: 'orders' },
+    'chat/index': { label: t('tabs.chat'), icon: 'chat' },
+    'account/index': { label: t('tabs.account'), icon: 'account' },
+  };
   const { shop, isLoading } = useShop();
   const { unreadCount } = useChat();
 
@@ -24,14 +26,18 @@ export default function SellerTabLayout() {
     <Tabs
       screenOptions={{ header: () => <Header /> }}
       tabBar={(props) => (
-        <BottomTabBar {...props} tabs={SELLER_TABS} badges={{ 'chat/index': unreadCount }} />
+        <BottomTabBar
+          {...(props as unknown as BottomTabBarProps)}
+          tabs={tabs}
+          badges={{ 'chat/index': unreadCount }}
+        />
       )}>
-      <Tabs.Screen name="index" options={{ title: 'Shop', headerShown: false }} />
-      <Tabs.Screen name="orders/index" options={{ title: 'Orders', headerShown: false }} />
-      <Tabs.Screen name="chat/index" options={{ title: 'Chat' }} />
-      <Tabs.Screen name="account/index" options={{ title: 'Account' }} />
+      <Tabs.Screen name="index" options={{ title: t('tabs.shop'), headerShown: false }} />
+      <Tabs.Screen name="orders/index" options={{ title: t('tabs.orders'), headerShown: false }} />
+      <Tabs.Screen name="chat/index" options={{ title: t('tabs.chat') }} />
+      <Tabs.Screen name="account/index" options={{ title: t('tabs.account') }} />
       {/* Reached from the dashboard, not the tab bar: BottomTabBar skips routes SELLER_TABS omits. */}
-      <Tabs.Screen name="products" options={{ title: 'My products', headerShown: false }} />
+      <Tabs.Screen name="products" options={{ title: t('tabs.myProducts'), headerShown: false }} />
     </Tabs>
   );
 }

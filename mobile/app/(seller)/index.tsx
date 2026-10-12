@@ -1,4 +1,5 @@
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,6 +13,7 @@ import { useShop } from '@/hooks/useShop';
 const UNREAD_MESSAGES: number = 0;
 
 export default function SellerShopScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { shop } = useShop();
   const { products } = useProducts();
@@ -30,25 +32,28 @@ export default function SellerShopScreen() {
         gap: 24,
       }}>
       <SectionHeader
-        title="My shop"
+        title={t('seller.home.title')}
         action={
           <Pressable
             onPress={() => router.push('/(seller)/account')}
             role="button"
-            aria-label="Profile"
+            aria-label={t('seller.home.profile')}
             hitSlop={8}>
-            <Text className="type-label-lg text-primary underline">Profile</Text>
+            <Text className="type-label-lg text-primary underline">{t('seller.home.profile')}</Text>
           </Pressable>
         }
       />
 
       <View className="gap-1">
         <Text className="type-text-primary text-primary" maxFontSizeMultiplier={1.5}>
-          Today · {ordersInProgress} {ordersInProgress === 1 ? 'order' : 'orders'} in progress ·{' '}
-          {UNREAD_MESSAGES} {UNREAD_MESSAGES === 1 ? 'message' : 'messages'}
+          {t('seller.home.today', {
+            orders: t('seller.home.ordersInProgress', { count: ordersInProgress }),
+            messages: t('seller.home.messages', { count: UNREAD_MESSAGES }),
+          })}
         </Text>
         <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={1.5}>
-          {shop?.name ? `${shop.name} · ` : ''}Add products, track orders and reply to buyers.
+          {shop?.name ? `${shop.name} · ` : ''}
+          {t('seller.home.tagline')}
         </Text>
       </View>
 
@@ -57,14 +62,14 @@ export default function SellerShopScreen() {
           <ActionCard
             className="flex-1"
             icon="plus"
-            title="Add a product"
+            title={t('seller.home.addProduct')}
             onPress={() => router.push('/seller/add-product')}
           />
           <ActionCard
             className="flex-1"
             icon="orders"
-            title="Orders"
-            caption={`${ordersInProgress} in progress`}
+            title={t('tabs.orders')}
+            caption={t('seller.home.inProgress', { count: ordersInProgress })}
             onPress={() => router.push('/(seller)/orders')}
           />
         </View>
@@ -73,15 +78,15 @@ export default function SellerShopScreen() {
           <ActionCard
             className="flex-1"
             icon="shop"
-            title="My products"
-            caption={`${productCount} ${productCount === 1 ? 'item' : 'items'}`}
+            title={t('tabs.myProducts')}
+            caption={t('seller.home.items', { count: productCount })}
             onPress={() => router.push('/(seller)/products')}
           />
           <ActionCard
             className="flex-1"
             icon="chat"
-            title="Messages"
-            caption={`${UNREAD_MESSAGES} unread`}
+            title={t('account.buyer.messages')}
+            caption={t('account.buyer.unread', { count: UNREAD_MESSAGES })}
             onPress={() => router.push('/(seller)/chat')}
           />
         </View>
@@ -89,7 +94,7 @@ export default function SellerShopScreen() {
 
       <Button
         variant="secondary"
-        label="Quick stock update"
+        label={t('seller.home.quickStock')}
         disabled={productCount === 0}
         onPress={() => router.push('/seller/quick-stock')}
       />

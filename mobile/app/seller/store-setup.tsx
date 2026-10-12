@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Alert, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -19,29 +20,12 @@ import { useShop } from '@/hooks/useShop';
 import { signOut } from '@/lib/AuthProvider';
 import { shopCategories } from '@/lib/shop';
 import { storeSetupSchema, storeSetupStepFields, type StoreSetupValues } from '@/lib/sellerSchemas';
+import { translateOption } from '@/lib/i18n';
 
 const TOTAL_STEPS = 4;
 
-const STEP_META = [
-  {
-    title: "What's your shop called?",
-    description: 'This is the name buyers see on your storefront.',
-  },
-  {
-    title: 'Where can buyers find you?',
-    description: 'Used for pickup, delivery estimates and order calls.',
-  },
-  {
-    title: 'Add a shop photo',
-    description: 'A clear photo builds trust — your stall, workshop, or a shot of you at work.',
-  },
-  {
-    title: 'Your shop is live!',
-    description: '',
-  },
-];
-
 export default function StoreSetupScreen() {
+  const { t } = useTranslation();
   const { saveShop } = useShop();
   const [step, setStep] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
@@ -101,7 +85,7 @@ export default function StoreSetupScreen() {
     setIsSaving(false);
 
     if (error) {
-      setFormError('Something went wrong creating your shop. Please try again.');
+      setFormError(t('storeSetup.createError'));
       return;
     }
 
@@ -113,9 +97,9 @@ export default function StoreSetupScreen() {
   }
 
   function confirmSignOut() {
-    Alert.alert('Sign out', 'You will need to sign in again to finish setting up your shop.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => signOut() },
+    Alert.alert(t('account.signOut'), t('storeSetup.signOutBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('account.signOut'), style: 'destructive', onPress: () => signOut() },
     ]);
   }
 
@@ -124,8 +108,6 @@ export default function StoreSetupScreen() {
     router.push('/seller/add-product');
   }
 
-  const meta = STEP_META[step - 1];
-
   return (
     <KeyboardScreen>
       {step > 1 && step < TOTAL_STEPS ? (
@@ -133,8 +115,8 @@ export default function StoreSetupScreen() {
           variant="outlined"
           diameter={44}
           icon={<Icon name="back" size="lg" className="text-primary" />}
-          label="Go back"
-          hint="Returns to the previous step"
+          label={t('common.goBack')}
+          hint={t('common.previousStepHint')}
           onPress={goBack}
           className="mb-6"
         />
@@ -143,19 +125,17 @@ export default function StoreSetupScreen() {
       <StepProgress current={step} total={TOTAL_STEPS} />
 
       <Text className="type-text-secondary mt-3 text-secondary" maxFontSizeMultiplier={2}>
-        Setting up your shop · Step {step} of {TOTAL_STEPS}
+        {t('storeSetup.progress', { current: step, total: TOTAL_STEPS })}
       </Text>
 
       {step < TOTAL_STEPS ? (
         <View className="mb-8 mt-2 gap-2">
           <Text role="heading" className="type-h1 text-primary" maxFontSizeMultiplier={1.5}>
-            {meta.title}
+            {t(`storeSetup.steps.${step}.title`)}
           </Text>
-          {meta.description ? (
-            <Text className="type-text-primary text-secondary" maxFontSizeMultiplier={1.5}>
-              {meta.description}
-            </Text>
-          ) : null}
+          <Text className="type-text-primary text-secondary" maxFontSizeMultiplier={1.5}>
+            {t(`storeSetup.steps.${step}.description`)}
+          </Text>
         </View>
       ) : null}
 
@@ -166,8 +146,8 @@ export default function StoreSetupScreen() {
             name="name"
             render={({ field }) => (
               <InputField
-                label="Shop name"
-                placeholder="e.g. Chamari's Teak Crafts"
+                label={t('store.name')}
+                placeholder={t('store.namePlaceholder')}
                 value={field.value}
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
@@ -184,20 +164,21 @@ export default function StoreSetupScreen() {
             name="category"
             render={({ field }) => (
               <Select
-                label="What do you sell?"
+                label={t('store.category')}
                 options={shopCategories}
+                formatOption={translateOption}
                 value={field.value}
                 onChange={field.onChange}
-                placeholder="Choose a category"
+                placeholder={t('store.categoryPlaceholder')}
                 error={errors.category?.message}
                 required
               />
             )}
           />
 
-          <Callout message="Pick the category buyers browse most — you can list in more than one category later." />
+          <Callout message={t('storeSetup.categoryTip')} />
 
-          <Button label="Continue" onPress={goNext} />
+          <Button label={t('common.continue')} onPress={goNext} />
         </View>
       ) : null}
 
@@ -208,8 +189,8 @@ export default function StoreSetupScreen() {
             name="city"
             render={({ field }) => (
               <InputField
-                label="Shop location"
-                placeholder="Town or city"
+                label={t('store.location')}
+                placeholder={t('store.locationPlaceholder')}
                 value={field.value}
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
@@ -228,8 +209,8 @@ export default function StoreSetupScreen() {
             render={({ field }) => (
               <InputField
                 ref={phoneRef}
-                label="Phone number"
-                placeholder="07X XXX XXXX"
+                label={t('store.phone')}
+                placeholder={t('store.phonePlaceholder')}
                 value={field.value}
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
@@ -249,8 +230,8 @@ export default function StoreSetupScreen() {
               name="pickupEnabled"
               render={({ field }) => (
                 <ToggleRow
-                  title="Enable pickup for buyers"
-                  description="Buyers nearby can collect orders directly"
+                  title={t('store.pickupTitle')}
+                  description={t('store.pickupDescription')}
                   value={field.value}
                   onValueChange={field.onChange}
                 />
@@ -262,8 +243,8 @@ export default function StoreSetupScreen() {
               name="deliveryEnabled"
               render={({ field }) => (
                 <ToggleRow
-                  title="Enable delivery"
-                  description="Show shipping options at checkout"
+                  title={t('store.deliveryTitle')}
+                  description={t('store.deliveryDescription')}
                   value={field.value}
                   onValueChange={field.onChange}
                 />
@@ -275,10 +256,10 @@ export default function StoreSetupScreen() {
 
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <Button variant="secondary" label="Back" onPress={goBack} />
+              <Button variant="secondary" label={t('common.back')} onPress={goBack} />
             </View>
             <View className="flex-1">
-              <Button label="Continue" onPress={goNext} />
+              <Button label={t('common.continue')} onPress={goNext} />
             </View>
           </View>
         </View>
@@ -291,10 +272,10 @@ export default function StoreSetupScreen() {
             name="photoUri"
             render={({ field }) => (
               <ImagePickerField
-                label="Shop photo"
+                label={t('store.photo')}
                 imageUri={field.value || null}
                 onChange={(uri) => field.onChange(uri ?? '')}
-                placeholder="Tap to take or upload a photo"
+                placeholder={t('store.photoPlaceholder')}
                 fullWidth
                 aspectRatio={4 / 3}
                 allowCamera
@@ -304,7 +285,7 @@ export default function StoreSetupScreen() {
 
           <Callout
             tone="warning"
-            message="Tip: natural light and a tidy background make your shop feel trustworthy."
+            message={t('storeSetup.photoTip')}
           />
 
           <FormError message={formError} />
@@ -313,13 +294,13 @@ export default function StoreSetupScreen() {
             <View className="flex-1">
               <Button
                 variant="secondary"
-                label="Skip for now"
+                label={t('onboarding.personalize.skip')}
                 loading={isSaving}
                 onPress={() => finishSetup(true)}
               />
             </View>
             <View className="flex-1">
-              <Button label="Continue" loading={isSaving} onPress={() => finishSetup(false)} />
+              <Button label={t('common.continue')} loading={isSaving} onPress={() => finishSetup(false)} />
             </View>
           </View>
         </View>
@@ -336,12 +317,12 @@ export default function StoreSetupScreen() {
               role="heading"
               className="type-h1 text-center text-primary"
               maxFontSizeMultiplier={1.5}>
-              Your shop is live!
+              {t('storeSetup.liveTitle')}
             </Text>
             <Text
               className="type-text-primary text-center text-secondary"
               maxFontSizeMultiplier={1.5}>
-              Buyers can find {getValues('name')} now
+              {t('storeSetup.liveBody', { name: getValues('name') })}
             </Text>
           </View>
 
@@ -352,7 +333,7 @@ export default function StoreSetupScreen() {
                 <Text className="type-h3 text-primary" numberOfLines={1}>
                   {getValues('name')}
                 </Text>
-                <Text className="type-text-secondary text-secondary">{getValues('category')}</Text>
+                <Text className="type-text-secondary text-secondary">{translateOption(getValues('category'))}</Text>
               </View>
             </View>
 
@@ -361,16 +342,16 @@ export default function StoreSetupScreen() {
             <Text className="type-text-secondary text-secondary">
               {getValues('city')} ·{' '}
               {getValues('pickupEnabled')
-                ? 'Pickup enabled'
+                ? t('storeSetup.pickupEnabled')
                 : getValues('deliveryEnabled')
-                  ? 'Delivery enabled'
-                  : 'Contact for orders'}
+                  ? t('storeSetup.deliveryEnabled')
+                  : t('storeSetup.contactForOrders')}
             </Text>
           </View>
 
           <View className="w-full gap-3">
-            <Button label="Add your first product" onPress={addFirstProduct} />
-            <Button variant="secondary" label="Go to My shop" onPress={goToShop} />
+            <Button label={t('storeSetup.addFirstProduct')} onPress={addFirstProduct} />
+            <Button variant="secondary" label={t('storeSetup.goToShop')} onPress={goToShop} />
           </View>
         </View>
       ) : null}
@@ -378,7 +359,7 @@ export default function StoreSetupScreen() {
       {step < TOTAL_STEPS ? (
         <Button
           variant="link"
-          label="Not your account? Sign out"
+          label={t('storeSetup.notYourAccount')}
           className="mt-8 self-center"
           onPress={confirmSignOut}
         />

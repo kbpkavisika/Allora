@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
 import { RoleOptionCard } from '@/components/onboarding/RoleOptionCard';
@@ -10,6 +11,7 @@ import { useProfile } from '@/hooks/useProfile';
 import type { UserRole } from '@/lib/profile';
 
 export default function RoleSelectScreen() {
+  const { t } = useTranslation();
   const { updateProfile } = useProfile();
   const [role, setRole] = useState<UserRole | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,7 +19,7 @@ export default function RoleSelectScreen() {
 
   async function submit() {
     if (!role) {
-      setFormError('Choose an option to continue.');
+      setFormError(t('onboarding.role.chooseOption'));
       return;
     }
 
@@ -29,26 +31,26 @@ export default function RoleSelectScreen() {
     setIsSubmitting(false);
 
     if (error) {
-      setFormError('Something went wrong saving your choice. Please try again.');
+      setFormError(t('onboarding.role.saveError'));
     }
   }
 
   return (
     <KeyboardScreen>
-      <ScreenHeader title="How will you use Allora?" showBack={false} className="mb-6" />
+      <ScreenHeader title={t('onboarding.role.title')} showBack={false} className="mb-6" />
 
-      <View className="gap-3" role="radiogroup" aria-label="How will you use Allora?">
+      <View className="gap-3" role="radiogroup" aria-label={t('onboarding.role.title')}>
         <RoleOptionCard
           icon="cart"
-          title="I want to buy"
-          description="Browse and order from local sellers"
+          title={t('onboarding.role.buyTitle')}
+          description={t('onboarding.role.buyDescription')}
           selected={role === 'user'}
           onPress={() => setRole('user')}
         />
         <RoleOptionCard
           icon="shop"
-          title="I want to sell"
-          description="List products by voice, manage a small shop"
+          title={t('onboarding.role.sellTitle')}
+          description={t('onboarding.role.sellDescription')}
           selected={role === 'seller'}
           onPress={() => setRole('seller')}
         />
@@ -57,10 +59,10 @@ export default function RoleSelectScreen() {
       <FormError message={formError} className="mt-4" />
 
       <Text className="type-text-secondary mt-6 text-center text-secondary">
-        You can switch roles any time from your profile.
+        {t('onboarding.role.switchLater')}
       </Text>
 
-      <Button label="Continue" loading={isSubmitting} onPress={submit} className="mt-4" />
+      <Button label={t('common.continue')} loading={isSubmitting} onPress={submit} className="mt-4" />
     </KeyboardScreen>
   );
 }

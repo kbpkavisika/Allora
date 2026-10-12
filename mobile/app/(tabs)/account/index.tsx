@@ -1,6 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -20,11 +21,10 @@ import { signOut, useAuth } from '@/lib/AuthProvider';
 import { getAuthErrorMessage } from '@/lib/authErrors';
 import { enabledAccessibilityFeatures, formatAddressLines } from '@/lib/profile';
 import { supabase } from '@/lib/supabase';
-
-const ACCESSIBILITY_SUMMARY =
-  'Large text, high contrast, dictation, screen reader support and reduce motion.';
+import { languageName } from '@/lib/i18n';
 
 export default function AccountScreen() {
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
   const { profile, addresses, refresh } = useProfile();
@@ -69,20 +69,20 @@ export default function AccountScreen() {
   }
 
   function confirmSignOut() {
-    Alert.alert('Sign out', 'Signing out keeps your saved items on this device.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => signOut() },
+    Alert.alert(t('account.signOut'), t('account.buyer.signOutBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('account.signOut'), style: 'destructive', onPress: () => signOut() },
     ]);
   }
 
   function confirmDeleteAccount() {
     Alert.alert(
-      'Delete account',
-      'This permanently removes your profile and saved addresses. This cannot be undone.',
+      t('account.deleteAccount'),
+      t('account.buyer.deleteBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete account',
+          text: t('account.deleteAccount'),
           style: 'destructive',
           onPress: async () => {
             await supabase.from('profiles').delete().eq('id', userId);
@@ -102,47 +102,49 @@ export default function AccountScreen() {
       <Card className="px-4">
         <ListRow
           icon="chat"
-          title="Messages"
-          subtitle={unreadCount > 0 ? `${unreadCount} unread` : 'Your chats with sellers'}
+          title={t('account.buyer.messages')}
+          subtitle={
+            unreadCount > 0 ? t('account.buyer.unread', { count: unreadCount }) : t('account.buyer.chatsWithSellers')
+          }
           trailing={<CountBadge count={unreadCount} />}
           showChevron
           onPress={() => router.push('/chat')}
-          hint="Opens your conversations with sellers"
+          hint={t('account.buyer.messagesHint')}
         />
       </Card>
 
       <View className="gap-3">
-        <SectionHeader title="Personal info" />
+        <SectionHeader title={t('account.personalInfo')} />
         <Card className="px-4">
           <ListRow
-            label="Name"
-            value={profile.full_name ?? 'Not set'}
+            label={t('account.name')}
+            value={profile.full_name ?? t('account.notSet')}
             className="border-b-1 border-border"
           />
-          <ListRow label="Email" value={email} className="border-b-1 border-border" />
+          <ListRow label={t('auth.email')} value={email} className="border-b-1 border-border" />
           <ListRow
-            label="Phone"
-            value={profile.phone ?? 'Not set'}
+            label={t('account.phone')}
+            value={profile.phone ?? t('account.notSet')}
             valueVariant={profile.phone ? 'mono' : 'text'}
             className="border-b-1 border-border"
           />
           <ListRow
-            title="Edit personal info"
+            title={t('account.editPersonalInfo')}
             showChevron
             onPress={() => router.push('/account/edit-profile')}
-            hint="Opens the personal info form"
+            hint={t('account.editPersonalInfoHint')}
           />
         </Card>
       </View>
 
       <View className="gap-3">
-        <SectionHeader title="Shipping details" />
+        <SectionHeader title={t('account.buyer.shippingDetails')} />
         <Card>
           {defaultAddress ? (
             <View className="gap-2 border-b-1 border-border p-4">
               <View className="flex-row items-center gap-2">
                 <Text className="type-label-lg text-primary">{defaultAddress.label}</Text>
-                {defaultAddress.is_default ? <Badge label="Default" /> : null}
+                {defaultAddress.is_default ? <Badge label={t('account.buyer.default')} /> : null}
               </View>
               <View>
                 {formatAddressLines(defaultAddress).map((line) => (
@@ -154,24 +156,26 @@ export default function AccountScreen() {
             </View>
           ) : (
             <View className="items-center gap-1 border-b-1 border-border p-4">
-              <Text className="type-label-lg text-primary">No saved addresses yet</Text>
+              <Text className="type-label-lg text-primary">{t('account.buyer.noAddresses')}</Text>
               <Text className="type-text-secondary text-center text-secondary">
-                Add one to speed up checkout.
+                {t('account.buyer.addAddress')}
               </Text>
             </View>
           )}
 
           <View className="px-4">
             <ListRow
-              label="Delivery preference"
-              value={profile.leave_at_door_default ? 'Leave at door' : 'Hand to me'}
+              label={t('address.deliveryPreference')}
+              value={
+                profile.leave_at_door_default ? t('address.leaveAtDoor') : t('address.handToMe')
+              }
               className="border-b-1 border-border"
             />
             <ListRow
-              title="Manage addresses"
+              title={t('account.buyer.manageAddresses')}
               showChevron
               onPress={() => router.push('/account/address')}
-              hint="Opens the shipping address form"
+              hint={t('account.buyer.manageAddressesHint')}
             />
           </View>
         </Card>
@@ -180,61 +184,78 @@ export default function AccountScreen() {
       <NotificationSettingsCard />
 
       <View className="gap-3">
-        <SectionHeader title="Accessibility" />
+        <SectionHeader title={t('accessibility.title')} />
         <Card>
           <View className="border-b-1 border-border p-4">
-            <Text className="type-text-primary text-secondary">{ACCESSIBILITY_SUMMARY}</Text>
+            <Text className="type-text-primary text-secondary">{t('account.accessibilitySummary')}</Text>
           </View>
 
           <View className="px-4">
             <ListRow
-              label="Features on"
+              label={t('account.featuresOn')}
               value={enabledAccessibilityFeatures(profile)}
               className="border-b-1 border-border"
             />
             <ListRow
-              title="Manage accessibility"
+              title={t('account.manageAccessibility')}
               showChevron
               onPress={() => router.push('/account/accessibility')}
-              hint="Opens the accessibility settings"
+              hint={t('account.manageAccessibilityHint')}
             />
           </View>
         </Card>
       </View>
 
       <View className="gap-3">
-        <SectionHeader title="Reset password" />
-        <Card className="gap-4 p-4">
-          <Text className="type-text-primary text-secondary">
-            {`We'll email a reset link to ${email}. The link stays valid for 30 minutes.`}
-          </Text>
-
-          <SuccessBanner message={resetSent ? 'Reset link sent. Check your inbox.' : null} />
-          <FormError message={resetError} />
-
-          <Button
-            variant="secondary"
-            size="md"
-            label="Send reset link"
-            fullWidth={false}
-            loading={isSendingReset}
-            onPress={sendResetLink}
-            hint="Emails you a link to choose a new password"
+        <SectionHeader title={t('language.title')} />
+        <Card className="px-4">
+          <ListRow
+            label={t('language.row')}
+            value={languageName(i18n.language)}
+            className="border-b-1 border-border"
+          />
+          <ListRow
+            title={t('language.manage')}
+            showChevron
+            onPress={() => router.push('/account/language')}
+            hint={t('language.manageHint')}
           />
         </Card>
       </View>
 
       <View className="gap-3">
-        <Button variant="secondary" label="Sign out" onPress={confirmSignOut} />
+        <SectionHeader title={t('account.resetPassword')} />
+        <Card className="gap-4 p-4">
+          <Text className="type-text-primary text-secondary">
+            {t('account.resetLinkInfo', { email })}
+          </Text>
+
+          <SuccessBanner message={resetSent ? t('account.resetLinkSent') : null} />
+          <FormError message={resetError} />
+
+          <Button
+            variant="secondary"
+            size="md"
+            label={t('account.sendResetLink')}
+            fullWidth={false}
+            loading={isSendingReset}
+            onPress={sendResetLink}
+            hint={t('account.sendResetLinkHint')}
+          />
+        </Card>
+      </View>
+
+      <View className="gap-3">
+        <Button variant="secondary" label={t('account.signOut')} onPress={confirmSignOut} />
         <Button
           variant="destructive"
           size="md"
-          label="Delete account"
+          label={t('account.deleteAccount')}
           onPress={confirmDeleteAccount}
-          hint="Permanently removes your profile and saved addresses"
+          hint={t('account.buyer.deleteHint')}
         />
         <Text className="type-text-secondary text-center text-secondary">
-          {`Deleting removes your orders, saved items and addresses. This can't be undone.`}
+          {t('account.buyer.deleteWarning')}
         </Text>
       </View>
     </ScrollView>

@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -17,8 +18,10 @@ import { useShop } from '@/hooks/useShop';
 import { uploadPhoto } from '@/lib/photoUpload';
 import { storeSetupSchema, type StoreSetupValues } from '@/lib/sellerSchemas';
 import { shopCategories } from '@/lib/shop';
+import { translateOption } from '@/lib/i18n';
 
 export default function StoreDetailsScreen() {
+  const { t } = useTranslation();
   const { shop, saveShop } = useShop();
   const cityRef = useRef<TextInput>(null);
   const phoneRef = useRef<TextInput>(null);
@@ -58,7 +61,7 @@ export default function StoreDetailsScreen() {
       try {
         photoUrl = await uploadPhoto(formValues.photoUri);
       } catch {
-        setFormError('Could not upload your shop photo. Try again.');
+        setFormError(t('store.uploadError'));
         return;
       }
     }
@@ -74,7 +77,7 @@ export default function StoreDetailsScreen() {
     });
 
     if (error) {
-      setFormError('Could not save your changes. Try again.');
+      setFormError(t('editProfile.saveError'));
       return;
     }
 
@@ -88,7 +91,7 @@ export default function StoreDetailsScreen() {
 
   return (
     <KeyboardScreen>
-      <ScreenHeader title="Store details" className="mb-5" />
+      <ScreenHeader title={t('account.seller.storeDetails')} className="mb-5" />
 
       <View className="gap-5">
         <Controller
@@ -96,8 +99,8 @@ export default function StoreDetailsScreen() {
           name="name"
           render={({ field }) => (
             <InputField
-              label="Shop name"
-              placeholder="e.g. Chamari's Teak Crafts"
+              label={t('store.name')}
+              placeholder={t('store.namePlaceholder')}
               value={field.value}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
@@ -116,11 +119,12 @@ export default function StoreDetailsScreen() {
           name="category"
           render={({ field }) => (
             <Select
-              label="What do you sell?"
+              label={t('store.category')}
               options={shopCategories}
+              formatOption={translateOption}
               value={field.value}
               onChange={field.onChange}
-              placeholder="Choose a category"
+              placeholder={t('store.categoryPlaceholder')}
               error={errors.category?.message}
               required
             />
@@ -133,8 +137,8 @@ export default function StoreDetailsScreen() {
           render={({ field }) => (
             <InputField
               ref={cityRef}
-              label="Shop location"
-              placeholder="Town or city"
+              label={t('store.location')}
+              placeholder={t('store.locationPlaceholder')}
               value={field.value}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
@@ -154,8 +158,8 @@ export default function StoreDetailsScreen() {
           render={({ field }) => (
             <InputField
               ref={phoneRef}
-              label="Phone number"
-              placeholder="07X XXX XXXX"
+              label={t('store.phone')}
+              placeholder={t('store.phonePlaceholder')}
               value={field.value}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
@@ -177,8 +181,8 @@ export default function StoreDetailsScreen() {
             name="pickupEnabled"
             render={({ field }) => (
               <ToggleRow
-                title="Enable pickup for buyers"
-                description="Buyers nearby can collect orders directly"
+                title={t('store.pickupTitle')}
+                description={t('store.pickupDescription')}
                 value={field.value}
                 onValueChange={field.onChange}
               />
@@ -190,8 +194,8 @@ export default function StoreDetailsScreen() {
             name="deliveryEnabled"
             render={({ field }) => (
               <ToggleRow
-                title="Enable delivery"
-                description="Show shipping options at checkout"
+                title={t('store.deliveryTitle')}
+                description={t('store.deliveryDescription')}
                 value={field.value}
                 onValueChange={field.onChange}
               />
@@ -208,10 +212,10 @@ export default function StoreDetailsScreen() {
           name="photoUri"
           render={({ field }) => (
             <ImagePickerField
-              label="Shop photo"
+              label={t('store.photo')}
               imageUri={field.value || null}
               onChange={(uri) => field.onChange(uri ?? '')}
-              placeholder="Tap to take or upload a photo"
+              placeholder={t('store.photoPlaceholder')}
               fullWidth
               aspectRatio={4 / 3}
               allowCamera
@@ -222,12 +226,12 @@ export default function StoreDetailsScreen() {
         <FormError message={formError} />
 
         <View className="gap-3">
-          <Button label="Save changes" loading={isSubmitting} onPress={submit} />
+          <Button label={t('common.saveChanges')} loading={isSubmitting} onPress={submit} />
           <Button
             variant="secondary"
-            label="Discard"
+            label={t('common.discard')}
             onPress={() => router.back()}
-            hint="Leaves without saving your changes"
+            hint={t('common.discardHint')}
           />
         </View>
       </View>

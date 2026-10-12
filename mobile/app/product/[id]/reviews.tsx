@@ -1,6 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Modal, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,6 +17,7 @@ import { TopBar } from '@/components/ui/TopBar';
 import type { Product } from '@/lib/products';
 import {
   fetchProductReviews,
+  reviewSortLabel,
   reviewSorts,
   summarizeReviews,
   type Review,
@@ -24,13 +26,14 @@ import {
 import { supabase } from '@/lib/supabase';
 
 export default function ProductReviewsScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [sort, setSort] = useState<ReviewSort>('Most recent');
+  const [sort, setSort] = useState<ReviewSort>('recent');
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [photosOnly, setPhotosOnly] = useState(false);
   const [fiveStarsOnly, setFiveStarsOnly] = useState(false);
@@ -69,7 +72,7 @@ export default function ProductReviewsScreen() {
   if (isLoading) {
     return (
       <View className="flex-1 bg-surface">
-        <TopBar title="Reviews" />
+        <TopBar title={t('reviews.title')} />
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator className="text-secondary" />
         </View>
@@ -80,14 +83,14 @@ export default function ProductReviewsScreen() {
   if (!product) {
     return (
       <View className="flex-1 bg-surface">
-        <TopBar title="Reviews" />
+        <TopBar title={t('reviews.title')} />
         <View className="items-center gap-3 p-4 pt-16">
           <Text role="heading" className="type-h3 text-primary">
-            Product not found
+            {t('product.notFound')}
           </Text>
           <Button
             variant="secondary"
-            label="Back to Shop"
+            label={t('common.backToShop')}
             fullWidth={false}
             onPress={() => router.replace('/(tabs)')}
           />
@@ -111,25 +114,25 @@ export default function ProductReviewsScreen() {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View className="gap-6 pb-6">
-            <ScreenHeader title="Reviews" subtitle={product.name} />
+            <ScreenHeader title={t('reviews.title')} subtitle={product.name} />
 
             {summary.total > 0 ? <RatingSummary summary={summary} /> : null}
 
             {summary.total > 0 ? (
               <View className="flex-row flex-wrap gap-2">
                 <FilterChip
-                  label={sort}
+                  label={reviewSortLabel(sort)}
                   selected
                   showChevron
                   onPress={() => setIsSortOpen(true)}
                 />
                 <FilterChip
-                  label="With photos"
+                  label={t('reviews.withPhotos')}
                   selected={photosOnly}
                   onPress={() => setPhotosOnly((current) => !current)}
                 />
                 <FilterChip
-                  label="5 stars"
+                  label={t('reviews.fiveStars')}
                   selected={fiveStarsOnly}
                   onPress={() => setFiveStarsOnly((current) => !current)}
                 />
@@ -141,14 +144,12 @@ export default function ProductReviewsScreen() {
         ListEmptyComponent={
           <View className="items-center gap-2 pt-16">
             <Text role="heading" className="type-h3 text-primary" maxFontSizeMultiplier={1.5}>
-              {isFiltered ? 'No reviews match those filters' : 'No reviews yet'}
+              {isFiltered ? t('reviews.noMatch') : t('reviews.none')}
             </Text>
             <Text
               className="type-text-primary text-center text-secondary"
               maxFontSizeMultiplier={2}>
-              {isFiltered
-                ? 'Clear a filter to see the rest of the reviews.'
-                : 'Be the first to tell other shoppers what you think.'}
+              {isFiltered ? t('reviews.clearFilter') : t('reviews.beFirst')}
             </Text>
           </View>
         }
@@ -160,8 +161,8 @@ export default function ProductReviewsScreen() {
         style={{ paddingBottom: insets.bottom + 16 }}>
         <Button
           variant="secondary"
-          label="Write a review"
-          hint="Opens the review form for this product"
+          label={t('reviews.write')}
+          hint={t('reviews.writeHint')}
           onPress={() =>
             router.push({ pathname: '/product/[id]/write-review', params: { id: product.id } })
           }
@@ -173,13 +174,14 @@ export default function ProductReviewsScreen() {
         transparent
         animationType="fade"
         onRequestClose={() => setIsSortOpen(false)}>
-        <BottomSheet label="Sort reviews" onDismiss={() => setIsSortOpen(false)}>
+        <BottomSheet label={t('reviews.sortLabel')} onDismiss={() => setIsSortOpen(false)}>
           <Text role="heading" className="type-h2 mb-4 text-primary" maxFontSizeMultiplier={1.5}>
-            Sort
+            {t('sort.title')}
           </Text>
           <OptionList
-            label="Sort reviews"
+            label={t('reviews.sortLabel')}
             options={reviewSorts}
+            formatOption={reviewSortLabel}
             value={sort}
             onChange={(next) => {
               setSort(next as ReviewSort);

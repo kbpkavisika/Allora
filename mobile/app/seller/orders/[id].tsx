@@ -1,5 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -14,6 +15,7 @@ import { formatMoney, formatPlacedAt, statusPresentation } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 
 export default function SellerOrderDetailScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { getOrder, advanceDelivery } = useOrders();
@@ -25,17 +27,17 @@ export default function SellerOrderDetailScreen() {
   if (!order) {
     return (
       <View className="flex-1 bg-surface">
-        <TopBar title="Order" />
+        <TopBar title={t('orders.order')} />
         <View className="items-center gap-3 p-4 pt-16">
           <Text role="heading" className="type-h3 text-primary">
-            Order not found
+            {t('orders.notFound')}
           </Text>
           <Text className="type-text-primary text-center text-secondary">
-            This order is no longer available.
+            {t('seller.orderDetail.unavailable')}
           </Text>
           <Button
             variant="secondary"
-            label="Back to orders"
+            label={t('orders.backToOrders')}
             fullWidth={false}
             onPress={() => router.replace('/(seller)/orders')}
           />
@@ -60,20 +62,20 @@ export default function SellerOrderDetailScreen() {
 
   return (
     <View className="flex-1 bg-surface">
-      <TopBar title={`Order ${order.order_number}`} />
+      <TopBar title={t('orders.orderNumber', { number: order.order_number })} />
 
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32, gap: 24 }}>
         <View className="gap-2">
           <Badge label={presentation.label} variant={presentation.variant} />
-          <Text className="type-h2 text-primary">{order.ship_name ?? 'Buyer'}</Text>
+          <Text className="type-h2 text-primary">{order.ship_name ?? t('account.seller.buyer')}</Text>
           <Text className="type-text-secondary text-secondary">
-            Placed {formatPlacedAt(order.placed_at)}
+            {t('orders.placed', { date: formatPlacedAt(order.placed_at) })}
           </Text>
         </View>
 
         <View className="gap-4">
-          <SectionHeader title="Items" />
+          <SectionHeader title={t('orders.items')} />
 
           <View className="rounded-12 border-1 border-border bg-surface px-4">
             {order.items.map((item, index) => (
@@ -99,7 +101,7 @@ export default function SellerOrderDetailScreen() {
           </View>
 
           <View className="flex-row items-center justify-between gap-3 px-4">
-            <Text className="type-label-lg text-primary">Total</Text>
+            <Text className="type-label-lg text-primary">{t('cart.total')}</Text>
             <Text className="type-label-lg text-primary">{formatMoney(itemsTotal)}</Text>
           </View>
         </View>
@@ -113,7 +115,7 @@ export default function SellerOrderDetailScreen() {
           <Button label={advanceLabel} loading={isAdvancing} onPress={advance} />
         ) : (
           <Text className="type-text-secondary text-center text-secondary">
-            This order is complete.
+            {t('seller.orderDetail.complete')}
           </Text>
         )}
       </ScrollView>

@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Text, View } from 'react-native';
 
 import { Card } from '@/components/ui/Card';
@@ -16,6 +17,7 @@ import {
 } from '@/lib/schemas';
 
 export default function EditAccessibilityScreen() {
+  const { t } = useTranslation();
   const { profile, updateProfile } = useProfile();
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -41,7 +43,7 @@ export default function EditAccessibilityScreen() {
   async function onSubmit(formValues: AccessibilityPreferencesValues) {
     setFormError(null);
     const { error } = await updateProfile(formValues);
-    if (error) setFormError('Could not save that setting. Try again.');
+    if (error) setFormError(t('accessibility.saveError'));
   }
 
   const save = handleSubmit(onSubmit);
@@ -57,22 +59,22 @@ export default function EditAccessibilityScreen() {
   return (
     <KeyboardScreen>
       <ScreenHeader
-        title="Accessibility"
-        subtitle="Turn on what helps. Changes apply everywhere in Allora straight away."
+        title={t('accessibility.title')}
+        subtitle={t('accessibility.subtitle')}
         className="mb-5"
       />
 
       <View className="gap-5">
         <Card>
-          {ACCESSIBILITY_FEATURES.map((feature, index) => (
+          {ACCESSIBILITY_FEATURES.map((key, index) => (
             <Controller
-              key={feature.key}
+              key={key}
               control={control}
-              name={feature.key}
+              name={key}
               render={({ field: { value, onChange } }) => (
                 <ToggleRow
-                  title={feature.title}
-                  description={feature.description}
+                  title={t(`accessibility.features.${key}.title`)}
+                  description={t(`accessibility.features.${key}.description`)}
                   value={value}
                   onValueChange={(next) => {
                     onChange(next);
@@ -90,10 +92,9 @@ export default function EditAccessibilityScreen() {
         <FormError message={formError} />
 
         <View className="gap-1 rounded-12 border-1 border-info-tint-border bg-info-tint p-4">
-          <Text className="type-label-lg text-primary">Using your device settings</Text>
+          <Text className="type-label-lg text-primary">{t('accessibility.deviceSettingsTitle')}</Text>
           <Text className="type-text-primary text-secondary">
-            Allora also follows the text size and motion settings from iOS, so you may already be
-            covered.
+            {t('accessibility.deviceSettingsBody')}
           </Text>
         </View>
       </View>

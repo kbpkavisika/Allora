@@ -1,5 +1,6 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -11,19 +12,8 @@ import { useListPosition } from '@/hooks/useListPosition';
 import { orderStatuses, type OrderStatus } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 
-const TAB_LABEL: Record<OrderStatus, string> = {
-  new: 'New',
-  processing: 'Processing',
-  completed: 'Completed',
-};
-
-const EMPTY_MESSAGE: Record<OrderStatus, string> = {
-  new: 'New orders from buyers will show up here.',
-  processing: 'Orders you have started preparing will show up here.',
-  completed: 'Orders you have finished will show up here.',
-};
-
 export default function SellerOrdersScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { orders, isLoading, advanceDelivery } = useOrders();
   const positionOf = useListPosition();
@@ -35,10 +25,10 @@ export default function SellerOrdersScreen() {
     () =>
       orderStatuses.map((status) => ({
         value: status,
-        label: TAB_LABEL[status],
+        label: t(`orders.status.${status}`),
         count: orders.filter((order) => order.status === status).length,
       })),
-    [orders]
+    [orders, t]
   );
 
   const visibleOrders = useMemo(
@@ -54,13 +44,13 @@ export default function SellerOrdersScreen() {
 
   return (
     <View className="flex-1 bg-surface">
-      <TopBar title="Orders" showBack={false} />
+      <TopBar title={t('tabs.orders')} showBack={false} />
 
       <ScrollTabs
         tabs={tabs}
         value={tab}
         onChange={(next) => setTab(next as OrderStatus)}
-        label="Filter orders by status"
+        label={t('seller.orders.filter')}
       />
 
       <FlatList
@@ -90,10 +80,10 @@ export default function SellerOrdersScreen() {
             <View className="items-center gap-3 pt-16">
               <Icon name="orders" size="lg" className="text-secondary" />
               <Text role="heading" className="type-h3 text-primary">
-                No {TAB_LABEL[tab].toLowerCase()} orders
+                {t(`seller.orders.emptyTitle.${tab}`)}
               </Text>
               <Text className="type-text-primary text-center text-secondary">
-                {EMPTY_MESSAGE[tab]}
+                {t(`seller.orders.emptyBody.${tab}`)}
               </Text>
             </View>
           )

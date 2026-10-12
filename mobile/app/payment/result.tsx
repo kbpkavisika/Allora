@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -20,29 +21,27 @@ type ResultParams = {
 
 const PRESENTATION: Record<
   ResultVariant,
-  { icon: IconName; ring: string; iconColor: string; heading: string }
+  { icon: IconName; ring: string; iconColor: string }
 > = {
   success: {
     icon: 'check',
     ring: 'border-success bg-success-tint',
     iconColor: 'text-success',
-    heading: 'Payment successful',
   },
   cod: {
     icon: 'orders',
     ring: 'border-success bg-success-tint',
     iconColor: 'text-success',
-    heading: 'Order placed!',
   },
   failure: {
     icon: 'close',
     ring: 'border-error bg-error-tint',
     iconColor: 'text-error',
-    heading: 'Payment failed',
   },
 };
 
 export default function PaymentResultScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<ResultParams>();
   const { getOrder } = useOrders();
@@ -83,14 +82,10 @@ export default function PaymentResultScreen() {
               role="heading"
               className="type-h1 text-center text-primary"
               maxFontSizeMultiplier={1.5}>
-              {presentation.heading}
+              {t(`paymentResult.heading.${variant}`)}
             </Text>
             <Text className="type-text-lg text-center text-secondary">
-              {variant === 'success'
-                ? 'Your order is confirmed. The payment was successful.'
-                : variant === 'cod'
-                  ? `Pay ${formatMoney(total)} in cash when your order arrives.`
-                  : "The payment wasn't completed, so your order was not placed."}
+              {t(`paymentResult.body.${variant}`, { amount: formatMoney(total) })}
             </Text>
           </View>
         </View>
@@ -98,48 +93,50 @@ export default function PaymentResultScreen() {
         {variant === 'failure' ? (
           <Callout
             tone="warning"
-            message="No amount was charged. Try the payment again, or choose a different method."
+            message={t('paymentResult.noCharge')}
           />
         ) : null}
 
         <View className="gap-2 rounded-12 border-1 border-border bg-surface p-4">
           {count > 1 ? (
             <Text className="type-text-secondary text-secondary">
-              {count} orders placed · one per shop
+              {t('paymentResult.multipleOrders', { count })}
             </Text>
           ) : orderNumber ? (
-            <Text className="type-mono text-secondary">Order {orderNumber}</Text>
+            <Text className="type-mono text-secondary">
+              {t('orders.orderNumber', { number: orderNumber })}
+            </Text>
           ) : null}
 
           <Text className="type-h2 text-primary">
-            {variant === 'cod' ? `${formatMoney(total)} due on delivery` : formatMoney(total)}
+            {variant === 'cod'
+              ? t('paymentResult.dueOnDelivery', { amount: formatMoney(total) })
+              : formatMoney(total)}
           </Text>
 
           <Text className="type-text-secondary text-secondary">
-            {variant === 'success'
-              ? `Reference ${params.reference ?? 'N/A'} · Paid via PayHere`
-              : variant === 'cod'
-                ? 'Cash on delivery · Pay the courier directly'
-                : 'Payment not completed'}
+            {t(`paymentResult.detail.${variant}`, {
+              reference: params.reference ?? t('paymentResult.notAvailable'),
+            })}
           </Text>
         </View>
 
         {variant === 'failure' ? (
           <View className="gap-3">
-            <Button label="Try again" onPress={() => router.replace('/payment/checkout')} />
+            <Button label={t('common.tryAgain')} onPress={() => router.replace('/payment/checkout')} />
             <Text
               className="type-label-lg text-center text-primary underline"
               onPress={() => router.replace('/payment/checkout')}>
-              Choose a different method
+              {t('paymentResult.differentMethod')}
             </Text>
           </View>
         ) : (
           <View className="gap-3">
-            <Button label="Track your order" onPress={trackOrder} />
+            <Button label={t('paymentResult.track')} onPress={trackOrder} />
             <Text
               className="type-label-lg text-center text-primary underline"
               onPress={() => router.replace('/(tabs)')}>
-              Back to Shop
+              {t('common.backToShop')}
             </Text>
           </View>
         )}
