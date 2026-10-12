@@ -98,3 +98,95 @@ test('missing catalog results cannot shift the numbered selection to another pro
 });
 
 
+test('provider configuration errors are diagnosable without leaking provider text or retrying', async () => {
+  const logs = [];
+  let calls = 0;
+  const response = await loadEndpoint({ logs, transport: async () => {
+    calls++;
+    return new Response(JSON.stringify({ error: { code: 'invalid_api_key', message: 'secret and private prompt' } }), { status: 401 });
+  } })(request(body));
+  assert.equal(response.status, 503);
+  const failure = await response.json();
+  assert.equal(failure.code, 'provider_configuration');
+  assert.equal(calls, 1);
+  assert.equal(failure.requestId, response.headers.get('x-request-id'));
+  assert.ok(logs.some(log => log.event === 'provider_failed' && log.providerStatus === 401));
+  assert.ok(logs.some(log => log.event === 'request_completed' && log.status === 503));
+  assert.doesNotMatch(JSON.stringify(logs), /secret and private prompt|Bearer token|Find milk/);
+});
+
+test('malformed provider output and timeouts have distinct stable errors', async () => {
+  const malformed = await loadEndpoint({ transport: async () => new Response('{broken') })(request(body));
+  assert.equal(malformed.status, 502);
+  assert.equal((await malformed.json()).code, 'invalid_provider_response');
+  const timedOut = await loadEndpoint({ transport: async () => { throw new DOMException('timeout', 'TimeoutError'); } })(request(body));
+  assert.equal(timedOut.status, 504);
+});
+
+test('auth service outages are not reported as invalid credentials', async () => {
+  const response = await loadEndpoint({ authError: { status: 503, name: 'AuthRetryableFetchError' } })(request(body));
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).code, 'auth_unavailable');
+});
+
+test('rate limits preserve bounded retry guidance without invoking the provider again', async () => {
+  const response = await loadEndpoint({ transport: async () => new Response('{}', { status: 429, headers: { 'Retry-After': '45' } }) })(request(body));
+  assert.equal(response.status, 429);
+  assert.equal(response.headers.get('Retry-After'), '45');
+  assert.equal((await response.json()).retryAfter, 45);
+});
+
+test('rejects duplicate product IDs and excessive total history before provider work', async () => {
+  const endpoint = loadEndpoint({ transport: async () => { throw new Error('Must not call provider'); } });
+  assert.equal((await endpoint(request({ ...body, productIds: ['milk', 'milk'] }))).status, 400);
+  assert.equal((await endpoint(request({ ...body, messages: Array.from({ length: 12 }, () => ({ role: 'user', content: 'a'.repeat(4000) })) }))).status, 400);
+});
+
+test('database errors identify the failed stage in logs', async () => {
+  const logs = [];
+  const response = await loadEndpoint({ logs, dbError: { code: '08006', message: 'private database details' } })(request({ ...body, productIds: ['milk'] }));
+  assert.equal(response.status, 503);
+  assert.ok(logs.some(log => log.event === 'request_failed' && log.stage === 'catalog_context' && log.errorCode === '08006'));
+  assert.doesNotMatch(JSON.stringify(logs), /private database details/);
+});
+
+
+test('client refreshes expiring sessions before exactly one invocation', async () => {
+  let refreshes = 0;
+  const calls = [];
+  const client = {
+    auth: {
+      getSession: async () => ({ data: { session: { access_token: 'old', expires_at: 1 } }, error: null }),
+      refreshSession: async () => { refreshes++; return { data: { session: { access_token: 'fresh', expires_at: Date.now() / 1000 + 3600 } }, error: null }; },
+    },
+    functions: { invoke: async (...args) => { calls.push(args); return { data: {}, error: null }; } },
+  };
+  await exportsUnderTest.invokeShoppingAssistant(client, body);
+  assert.equal(refreshes, 1);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0][1].headers.Authorization, 'Bearer fresh');
+  assert.equal(calls[0][1].timeout, 45000);
+});
+
+test('client skips the edge function when no valid session is available', async () => {
+  let calls = 0;
+  const client = {
+    auth: { getSession: async () => ({ data: { session: null }, error: null }) },
+    functions: { invoke: async () => { calls++; } },
+  };
+  await assert.rejects(() => exportsUnderTest.invokeShoppingAssistant(client, body), /sign in/i);
+  assert.equal(calls, 0);
+});
+
+test('client never automatically reinvokes a failed request', async () => {
+  let calls = 0;
+  const error = new Error('502');
+  const client = {
+    auth: { getSession: async () => ({ data: { session: { access_token: 'valid', expires_at: Date.now() / 1000 + 3600 } }, error: null }) },
+    functions: { invoke: async () => { calls++; return { data: null, error }; } },
+  };
+  assert.equal((await exportsUnderTest.invokeShoppingAssistant(client, body)).error, error);
+  assert.equal(calls, 1);
+});
+
+
