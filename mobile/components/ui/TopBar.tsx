@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -14,6 +15,7 @@ export interface TopBarProps {
 }
 
 export function TopBar({ title, subtitle, showBack = true, trailing }: TopBarProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const titleRef = useScreenTitleFocus();
@@ -25,8 +27,8 @@ export function TopBar({ title, subtitle, showBack = true, trailing }: TopBarPro
           {showBack ? (
             <IconButton
               icon={<Icon name="back" size="lg" className="text-primary" />}
-              label="Go back"
-              hint="Returns to the previous screen"
+              label={t('common.goBack')}
+              hint={t('common.previousScreenHint')}
               onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
             />
           ) : null}

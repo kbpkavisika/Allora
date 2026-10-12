@@ -1,6 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -28,6 +29,7 @@ import { startPayHereCheckout } from '@/lib/payments/payHere';
 import { sendPaymentReceipt } from '@/lib/payments/sendPaymentReceipt';
 
 export default function CheckoutScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { lines, subtotal, clear } = useCart();
   const { addresses, profile } = useProfile();
@@ -69,7 +71,7 @@ export default function CheckoutScreen() {
     }
 
     if (!address) {
-      setError('Add a delivery address before checking out.');
+      setError(t('checkout.addressRequired'));
       return;
     }
 
@@ -109,7 +111,7 @@ export default function CheckoutScreen() {
             setError(
               initializationError instanceof Error
                 ? initializationError.message
-                : 'Could not initialize PayHere payment.'
+                : t('checkout.initError')
             );
             return;
           }
@@ -160,7 +162,7 @@ export default function CheckoutScreen() {
         if (placeError) {
           setIsSubmitting(false);
           setPaymentState('failed');
-          setError('Payment went through but the order did not save. Contact support.');
+          setError(t('checkout.saveAfterPaymentError'));
           return;
         }
 
@@ -222,7 +224,7 @@ export default function CheckoutScreen() {
       if (placeError) {
         setIsSubmitting(false);
         setPaymentState('failed');
-        setError('Could not place the order. Please try again.');
+        setError(t('checkout.placeError'));
         return;
       }
 
@@ -248,7 +250,7 @@ export default function CheckoutScreen() {
     }
 
     if (!address) {
-      setError('Add a delivery address before checking out.');
+      setError(t('checkout.addressRequired'));
       return;
     }
 
@@ -290,14 +292,14 @@ export default function CheckoutScreen() {
   if (lines.length === 0) {
     return (
       <View className="flex-1 bg-surface">
-        <TopBar title="Checkout" />
+        <TopBar title={t('cart.checkout')} />
         <View className="items-center gap-3 p-4 pt-16">
           <Text role="heading" className="type-h3 text-primary">
-            Your cart is empty
+            {t('checkout.emptyCart')}
           </Text>
           <Button
             variant="secondary"
-            label="Back to Shop"
+            label={t('common.backToShop')}
             fullWidth={false}
             onPress={() => router.replace('/(tabs)')}
           />
@@ -308,13 +310,13 @@ export default function CheckoutScreen() {
 
   return (
     <View className="flex-1 bg-surface">
-      <TopBar title="Checkout" />
+      <TopBar title={t('cart.checkout')} />
 
       <ScrollView
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 140, gap: 24 }}
         showsVerticalScrollIndicator={false}>
         <View className="gap-4">
-          <SectionHeader title="Order summary" />
+          <SectionHeader title={t('checkout.orderSummary')} />
           <View className="gap-3 rounded-12 border-1 border-border bg-surface p-4">
             {lines.map((line) => (
               <View key={line.product.id} className="flex-row items-center justify-between gap-3">
@@ -328,18 +330,18 @@ export default function CheckoutScreen() {
             ))}
           </View>
           <View className="flex-row items-center justify-between px-1">
-            <Text className="type-label-lg text-primary">Total</Text>
+            <Text className="type-label-lg text-primary">{t('cart.total')}</Text>
             <Text className="type-label-lg text-primary">{formatMoney(total)}</Text>
           </View>
         </View>
 
         <View className="gap-4">
           <SectionHeader
-            title="Delivery address"
+            title={t('checkout.deliveryAddress')}
             action={
               <Button
                 variant="link"
-                label={address ? 'Change' : 'Add'}
+                label={address ? t('checkout.change') : t('checkout.add')}
                 fullWidth={false}
                 onPress={() => router.push('/account/address')}
               />
@@ -362,25 +364,25 @@ export default function CheckoutScreen() {
               </>
             ) : (
               <Text className="type-text-primary text-secondary">
-                No address yet. Add one to continue.
+                {t('checkout.noAddress')}
               </Text>
             )}
           </View>
         </View>
 
         <View className="gap-4" accessibilityRole="radiogroup">
-          <SectionHeader title="Payment method" />
+          <SectionHeader title={t('checkout.paymentMethod')} />
           <PaymentMethodOption
             method="payhere"
-            title="PayHere"
-            description="Secure card and wallet payments"
+            title={t('checkout.payHere')}
+            description={t('checkout.payHereDescription')}
             selected={method === 'payhere'}
             onPress={setMethod}
           />
           <PaymentMethodOption
             method="cod"
-            title="Cash on delivery"
-            description="Pay when your order arrives"
+            title={t('checkout.cod')}
+            description={t('checkout.codDescription')}
             selected={method === 'cod'}
             onPress={setMethod}
           />
@@ -407,7 +409,7 @@ export default function CheckoutScreen() {
         className="absolute inset-x-0 bottom-0 gap-3 border-t-1 border-border bg-surface px-4 pt-4"
         style={{ paddingBottom: insets.bottom + 16 }}>
         <View className="flex-row items-center justify-between">
-          <Text className="type-label-lg text-primary">Total</Text>
+          <Text className="type-label-lg text-primary">{t('cart.total')}</Text>
           <Text className="type-h3 text-primary">{formatMoney(total)}</Text>
         </View>
         <ReadAloudButton
@@ -420,14 +422,14 @@ export default function CheckoutScreen() {
           disabled={isSubmitting || isAuthenticatingPayment || paymentState === 'processing'}
         />
         <Button
-          label={method === 'payhere' ? `Pay ${formatMoney(total)}` : 'Place order'}
+          label={method === 'payhere' ? t('checkout.pay', { amount: formatMoney(total) }) : t('checkout.placeOrder')}
           loading={isSubmitting || paymentState === 'processing'}
           disabled={isSubmitting || isAuthenticatingPayment || paymentState === 'processing'}
           onPress={handlePayPress}
           hint={
             method === 'payhere'
-              ? 'Opens PayHere to complete payment'
-              : 'Places the order to pay on delivery'
+              ? t('checkout.payHint')
+              : t('checkout.placeOrderHint')
           }
         />
       </View>

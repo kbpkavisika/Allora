@@ -1,5 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -20,10 +21,12 @@ import { useSellerChat } from '@/hooks/useSellerChat';
 import { useAuth } from '@/lib/AuthProvider';
 import { deliveryTrackingStep } from '@/lib/deliveries';
 import { formatMoney, statusPresentation, type OrderItem } from '@/lib/orders';
+import { formatDate } from '@/lib/i18n';
 import { useOrders } from '@/lib/OrdersProvider';
 import { refundService } from '@/services/refund/refundService';
 
 export default function OrderDetailScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
   const { id, returned } = useLocalSearchParams<{ id?: string; returned?: string }>();
@@ -49,15 +52,15 @@ export default function OrderDetailScreen() {
   if (!order) {
     return (
       <View className="flex-1 bg-surface">
-        <TopBar title="Order" />
+        <TopBar title={t('orders.order')} />
         <View className="items-center gap-3 p-4 pt-16">
           <Text role="heading" className="type-h3 text-primary">
-            {isLoading ? 'Loading order…' : 'Order not found'}
+            {isLoading ? t('orders.loading') : t('orders.notFound')}
           </Text>
           {!isLoading ? (
             <Button
               variant="secondary"
-              label="Back to orders"
+              label={t('orders.backToOrders')}
               fullWidth={false}
               onPress={() => router.replace('/(tabs)/orders')}
             />
@@ -146,35 +149,33 @@ export default function OrderDetailScreen() {
         contentContainerStyle={{ padding: 16, paddingBottom: insets.bottom + 32, gap: 24 }}
         showsVerticalScrollIndicator={false}>
         {returned ? (
-          <SuccessBanner message="Return request sent. The seller will be in touch." />
+          <SuccessBanner message={t('orders.returnSent')} />
         ) : null}
 
         <View className="gap-2">
           <Badge label={presentation.label} variant={presentation.variant} />
           <Text role="heading" className="type-h2 text-primary">
-            {order.items[0]?.product_name ?? 'Order'}
+            {order.items[0]?.product_name ?? t('orders.order')}
           </Text>
           <Text className="type-text-secondary text-secondary">
-            Placed {new Date(order.placed_at).toLocaleDateString('en-US', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric',
+            {t('orders.placed', {
+              date: formatDate(order.placed_at, { day: 'numeric', month: 'short', year: 'numeric' }),
             })}
           </Text>
         </View>
 
         <View className="gap-4">
-          <SectionHeader title="Tracking" />
+          <SectionHeader title={t('orders.tracking')} />
           <StepProgress current={step.current} total={step.total} />
           <Text className="type-text-secondary text-secondary">
-            Step {step.current} of {step.total} · {step.label}
+            {t('orders.step', { current: step.current, total: step.total, label: step.label })}
           </Text>
         </View>
 
         <DeliverySummary delivery={order.delivery} />
 
         <View className="gap-4">
-          <SectionHeader title="Items" />
+          <SectionHeader title={t('orders.items')} />
           <View className="rounded-12 border-1 border-border bg-surface px-4">
             {order.items.map((item: OrderItem, index) => (
               <View
@@ -197,7 +198,7 @@ export default function OrderDetailScreen() {
             ))}
           </View>
           <View className="flex-row items-center justify-between px-1">
-            <Text className="type-label-lg text-primary">Total</Text>
+            <Text className="type-label-lg text-primary">{t('cart.total')}</Text>
             <Text className="type-label-lg text-primary">{formatMoney(orderTotal)}</Text>
           </View>
         </View>
@@ -453,7 +454,7 @@ export default function OrderDetailScreen() {
           </View>
         ) : null}
 
-        <Callout message="You'll get a visual and vibration alert on every status change." />
+        <Callout message={t('orders.alertCallout')} />
 
         <View className="gap-3">
           {canRequestRefund ? (
@@ -473,7 +474,7 @@ export default function OrderDetailScreen() {
               <Button
                 variant="secondary"
                 size="sm"
-                label="Return item"
+                label={t('orders.returnItem')}
                 onPress={() =>
                   router.push({ pathname: '/orders/[id]/return', params: { id: order.id } })
                 }
@@ -483,10 +484,10 @@ export default function OrderDetailScreen() {
               <Button
                 variant="secondary"
                 size="sm"
-                label="Chat with seller"
+                label={t('orders.chatWithSeller')}
                 loading={isOpening}
                 disabled={!order.shop_id}
-                hint="Opens a conversation with the seller about this order"
+                hint={t('orders.chatWithSellerHint')}
                 onPress={() =>
                   order.shop_id && openSellerChat({ shopId: order.shop_id, orderId: order.id })
                 }

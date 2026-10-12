@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -19,8 +20,10 @@ import {
   productDetailsSchema,
   type ProductDetailsValues,
 } from '@/lib/sellerSchemas';
+import { translateOption } from '@/lib/i18n';
 
 export default function EditProductScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { products, isLoading, updateProduct } = useProducts();
   const product = products.find((item) => item.id === id);
@@ -74,7 +77,7 @@ export default function EditProductScreen() {
     const { error } = await updateProduct(product.id, toProductInput(values));
 
     if (error) {
-      setFormError('Something went wrong saving your changes. Please try again.');
+      setFormError(t('editProduct.saveError'));
       return;
     }
 
@@ -89,10 +92,10 @@ export default function EditProductScreen() {
 
   return (
     <KeyboardScreen>
-      <ScreenHeader title="Edit product" className="mb-2" />
+      <ScreenHeader title={t('editProduct.title')} className="mb-2" />
 
       <Text className="type-text-primary mb-8 text-secondary">
-        Update the details, photo, or stock for {product.name}.
+        {t('editProduct.intro', { name: product.name })}
       </Text>
 
       <View className="gap-5">
@@ -101,7 +104,7 @@ export default function EditProductScreen() {
           name="photos"
           render={({ field }) => (
             <ProductPhotoGrid
-              label="Product photos"
+              label={t('productForm.photos')}
               photos={field.value}
               onChange={(photos) => {
                 setUpdated(false);
@@ -118,7 +121,7 @@ export default function EditProductScreen() {
           render={({ field }) => (
             <InputField
               ref={nameRef}
-              label="Product name"
+              label={t('productForm.name')}
               value={field.value}
               onChangeText={(text) => {
                 setUpdated(false);
@@ -140,7 +143,7 @@ export default function EditProductScreen() {
           render={({ field }) => (
             <InputField
               ref={descriptionRef}
-              label="Description"
+              label={t('product.description')}
               value={field.value}
               onChangeText={(text) => {
                 setUpdated(false);
@@ -162,7 +165,7 @@ export default function EditProductScreen() {
             render={({ field }) => (
               <InputField
                 ref={priceRef}
-                label="Price"
+                label={t('productForm.price')}
                 value={field.value}
                 onChangeText={(text) => {
                   setUpdated(false);
@@ -186,7 +189,7 @@ export default function EditProductScreen() {
             render={({ field }) => (
               <InputField
                 ref={stockQuantityRef}
-                label="Stock quantity"
+                label={t('productForm.stockQuantity')}
                 value={field.value}
                 onChangeText={(text) => {
                   setUpdated(false);
@@ -210,8 +213,9 @@ export default function EditProductScreen() {
           name="category"
           render={({ field }) => (
             <ChipSelect
-              label="Category"
+              label={t('productForm.category')}
               options={productCategories}
+              formatOption={translateOption}
               value={field.value}
               onChange={(value) => {
                 setUpdated(false);
@@ -225,9 +229,9 @@ export default function EditProductScreen() {
 
         <FormError message={formError} />
 
-        <SuccessBanner message={updated ? 'Changes saved.' : null} />
+        <SuccessBanner message={updated ? t('editProduct.saved') : null} />
 
-        <Button label="Save changes" loading={isSubmitting} onPress={submit} />
+        <Button label={t('common.saveChanges')} loading={isSubmitting} onPress={submit} />
       </View>
     </KeyboardScreen>
   );

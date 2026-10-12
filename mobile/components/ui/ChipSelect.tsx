@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 export interface ChipSelectProps {
@@ -5,6 +6,7 @@ export interface ChipSelectProps {
   options: readonly string[];
   value: string;
   onChange: (value: string) => void;
+  formatOption?: (option: string) => string;
   error?: string | null;
   required?: boolean;
   className?: string;
@@ -15,10 +17,12 @@ export function ChipSelect({
   options,
   value,
   onChange,
+  formatOption = (option) => option,
   error,
   required = false,
   className = '',
 }: ChipSelectProps) {
+  const { t } = useTranslation();
   const hasError = Boolean(error);
 
   return (
@@ -27,7 +31,7 @@ export function ChipSelect({
         <Text className={`type-label-lg ${hasError ? 'text-error' : 'text-primary'}`}>
           {label}
         </Text>
-        {required ? <Text className="type-text-primary text-secondary">Required</Text> : null}
+        {required ? <Text className="type-text-primary text-secondary">{t('common.required')}</Text> : null}
       </View>
 
       <View className="flex-row flex-wrap gap-2" role="radiogroup" aria-label={label}>
@@ -40,14 +44,14 @@ export function ChipSelect({
               onPress={() => onChange(option)}
               role="radio"
               aria-checked={selected}
-              aria-label={option}
+              aria-label={formatOption(option)}
               className={`min-h-control-md items-center justify-center rounded-8 px-4 ${
                 selected
                   ? 'border-1.5 border-primary bg-surface-sunken'
                   : 'border-1 border-border-strong bg-surface'
               }`}>
               <Text className={`type-label ${selected ? 'text-primary' : 'text-secondary'}`}>
-                {option}
+                {formatOption(option)}
               </Text>
             </Pressable>
           );

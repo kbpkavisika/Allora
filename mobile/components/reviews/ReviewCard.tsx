@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
 import { Avatar } from '@/components/ui/Avatar';
@@ -10,6 +11,7 @@ export interface ReviewCardProps {
 }
 
 export function ReviewCard({ review }: ReviewCardProps) {
+  const { t } = useTranslation();
   const name = reviewerName(review.author?.full_name ?? null);
 
   return (
@@ -27,7 +29,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
       </View>
 
       <View className="flex-row items-center gap-2">
-        <StarRating value={review.rating} label={`${name} rated this ${review.rating} out of 5`} />
+        <StarRating value={review.rating} label={t('reviews.rated', { name, rating: review.rating })} />
         <Text className="type-label-lg flex-1 text-primary" maxFontSizeMultiplier={2}>
           {review.headline}
         </Text>
@@ -47,7 +49,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
                 source={{ uri }}
                 style={{ width: '100%', height: '100%' }}
                 contentFit="cover"
-                alt={`Photo ${index + 1} from ${name}'s review`}
+                alt={t('reviews.photoAlt', { index: index + 1, name })}
               />
             </View>
           ))}
@@ -56,7 +58,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
 
       {review.helpful_count > 0 ? (
         <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
-          Helpful · {review.helpful_count}
+          {t('reviews.helpful', { count: review.helpful_count })}
         </Text>
       ) : null}
     </View>

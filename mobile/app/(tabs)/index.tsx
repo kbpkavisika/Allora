@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/Button';
@@ -26,15 +27,11 @@ import { BROWSE_PAGE_SIZE, fetchProducts, productSorts, type ProductSort } from 
 import { useCart } from '@/lib/CartProvider';
 import type { Product } from '@/lib/products';
 import { shopCategories } from '@/lib/shop';
+import { translateOption } from '@/lib/i18n';
 
 // design.md §03: "tiles 2-up, gap 2" — product tiles bleed to the screen edge with a 2px gap on
 // both axes. The 16px gutter is restored for the search field, category tabs, and filter row.
 const TILE_GAP = 2;
-
-const CATEGORY_TABS: ScrollTabItem[] = [
-  { value: 'all', label: 'All' },
-  ...shopCategories.map((category) => ({ value: category, label: category })),
-];
 
 type LoadMode = 'reset' | 'more' | 'refresh';
 
@@ -45,13 +42,18 @@ interface Query {
 }
 
 export default function ShopScreen() {
+  const { t } = useTranslation();
+  const categoryTabs: ScrollTabItem[] = [
+    { value: 'all', label: t('shop.all') },
+    ...shopCategories.map((category) => ({ value: category, label: translateOption(category) })),
+  ];
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const positionOf = useListPosition();
   const tileWidth = (width - TILE_GAP) / 2;
 
   const [searchText, setSearchText] = useState('');
-  const [query, setQuery] = useState<Query>({ search: '', category: 'all', sort: 'Newest' });
+  const [query, setQuery] = useState<Query>({ search: '', category: 'all', sort: 'newest' });
   const [isSortOpen, setIsSortOpen] = useState(false);
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -124,24 +126,24 @@ export default function ShopScreen() {
         value={searchText}
         onChangeText={setSearchText}
         onClear={() => setSearchText('')}
-        placeholder="Search Allora"
+        placeholder={t('shop.searchPlaceholder')}
         returnKeyType="search"
         className="px-4 pt-4"
       />
 
       <ScrollTabs
-        tabs={CATEGORY_TABS}
+        tabs={categoryTabs}
         value={query.category}
         onChange={(category) => setQuery((current) => ({ ...current, category }))}
-        label="Filter by category"
+        label={t('shop.filterByCategory')}
         className="mt-4"
       />
 
       <View className="flex-row items-center gap-2 px-4 py-3">
         <FilterChip
-          label={`Sort: ${query.sort}`}
+          label={t('sort.chip', { sort: t(`sort.${query.sort}`) })}
           showChevron
-          selected={query.sort !== 'Newest'}
+          selected={query.sort !== 'newest'}
           onPress={() => setIsSortOpen(true)}
         />
       </View>
@@ -186,7 +188,7 @@ export default function ShopScreen() {
               <Button
                 variant="secondary"
                 size="md"
-                label={`Load ${BROWSE_PAGE_SIZE} more`}
+                label={t('shop.loadMore', { count: BROWSE_PAGE_SIZE })}
                 fullWidth={false}
                 onPress={loadMore}
               />
@@ -200,13 +202,14 @@ export default function ShopScreen() {
         transparent
         animationType="fade"
         onRequestClose={() => setIsSortOpen(false)}>
-        <BottomSheet label="Sort products" onDismiss={() => setIsSortOpen(false)}>
+        <BottomSheet label={t('shop.sortProducts')} onDismiss={() => setIsSortOpen(false)}>
           <Text role="heading" className="type-h2 mb-4 text-primary" maxFontSizeMultiplier={1.5}>
-            Sort
+            {t('sort.title')}
           </Text>
           <OptionList
-            label="Sort products"
+            label={t('shop.sortProducts')}
             options={productSorts}
+            formatOption={(sort) => t(`sort.${sort}`)}
             value={query.sort}
             onChange={(sort) => {
               setQuery((current) => ({ ...current, sort: sort as ProductSort }));
@@ -220,6 +223,7 @@ export default function ShopScreen() {
 }
 
 function ShopTopBar() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { itemCount } = useCart();
 
@@ -233,8 +237,8 @@ function ShopTopBar() {
         <View>
           <IconButton
             icon={<Icon name="cart" size="lg" className="text-primary" />}
-            label={itemCount > 0 ? `Cart, ${itemCount} item${itemCount === 1 ? '' : 's'}` : 'Cart'}
-            hint="Opens your cart"
+            label={itemCount > 0 ? t('shop.cartLabel', { count: itemCount }) : t('tabs.cart')}
+            hint={t('shop.cartHint')}
             onPress={() => router.push('/(tabs)/cart')}
           />
           <CountBadge count={itemCount} size="sm" className="absolute right-0 top-0" />
@@ -257,21 +261,20 @@ function LoadingGrid({ tileWidth }: { tileWidth: number }) {
 }
 
 function EmptyState({ hasError, onRetry }: { hasError: boolean; onRetry: () => void }) {
+  const { t } = useTranslation();
   return (
     <View className="items-center gap-3 px-4 pt-16">
       <Text
         role="heading"
         className="type-h3 text-center text-primary"
         maxFontSizeMultiplier={1.5}>
-        {hasError ? 'Could not load products' : 'No products found'}
+        {hasError ? t('shop.loadError') : t('shop.noProducts')}
       </Text>
       <Text className="type-text-primary text-center text-secondary" maxFontSizeMultiplier={2}>
-        {hasError
-          ? 'Check your connection and try again.'
-          : 'Try a different search or category.'}
+        {hasError ? t('common.checkConnection') : t('shop.tryDifferentSearch')}
       </Text>
       {hasError ? (
-        <Button variant="secondary" size="md" label="Try again" fullWidth={false} onPress={onRetry} />
+        <Button variant="secondary" size="md" label={t('common.tryAgain')} fullWidth={false} onPress={onRetry} />
       ) : null}
     </View>
   );

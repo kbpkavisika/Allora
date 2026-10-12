@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { deliveryStatuses } from '@/lib/deliveries';
 import { shopCategories } from '@/lib/shop';
+import i18n from '@/lib/i18n';
 
 export const productCategories = [
   'Apparel',
@@ -15,39 +16,39 @@ export const productCategories = [
 const priceString = z
   .string()
   .trim()
-  .min(1, { error: 'Enter a price.' })
-  .regex(/^\d+(\.\d{1,2})?$/, { error: 'Enter a valid price, like 24.99.' })
-  .refine((value) => Number(value) > 0, { error: 'Price must be greater than 0.' });
+  .min(1, { error: () => i18n.t('validation.priceRequired') })
+  .regex(/^\d+(\.\d{1,2})?$/, { error: () => i18n.t('validation.priceInvalid') })
+  .refine((value) => Number(value) > 0, { error: () => i18n.t('validation.priceNotPositive') });
 
 const stockQuantityString = z
   .string()
   .trim()
-  .min(1, { error: 'Enter a stock quantity.' })
-  .regex(/^\d+$/, { error: 'Enter a whole number, like 25.' })
-  .refine((value) => Number(value) <= 100000, { error: 'Keep stock under 100,000 units.' });
+  .min(1, { error: () => i18n.t('validation.stockRequired') })
+  .regex(/^\d+$/, { error: () => i18n.t('validation.stockInvalid') })
+  .refine((value) => Number(value) <= 100000, { error: () => i18n.t('validation.stockTooHigh') });
 
 const categoryString = z
   .string()
-  .min(1, { error: 'Choose a category.' })
+  .min(1, { error: () => i18n.t('validation.categoryRequired') })
   .refine((value) => (productCategories as readonly string[]).includes(value), {
-    error: 'Choose a valid category.',
+    error: () => i18n.t('validation.categoryInvalid'),
   });
 
 export const productDetailsSchema = z.object({
   name: z
     .string()
     .trim()
-    .min(2, { error: 'Enter a product name.' })
-    .max(80, { error: 'Keep the product name under 80 characters.' }),
+    .min(2, { error: () => i18n.t('validation.productNameRequired') })
+    .max(80, { error: () => i18n.t('validation.productNameTooLong') }),
   description: z
     .string()
     .trim()
-    .min(10, { error: 'Describe the product in at least 10 characters.' })
-    .max(1000, { error: 'Keep the description under 1000 characters.' }),
+    .min(10, { error: () => i18n.t('validation.descriptionTooShort') })
+    .max(1000, { error: () => i18n.t('validation.descriptionTooLong') }),
   price: priceString,
   stockQuantity: stockQuantityString,
   category: categoryString,
-  photos: z.array(z.string()).max(6, { error: 'Add up to 6 photos.' }),
+  photos: z.array(z.string()).max(6, { error: () => i18n.t('validation.tooManyPhotos') }),
 });
 
 export type ProductDetailsValues = z.infer<typeof productDetailsSchema>;
@@ -60,9 +61,9 @@ export const productStepFields: readonly (readonly (keyof ProductDetailsValues)[
 
 const shopCategoryString = z
   .string()
-  .min(1, { error: 'Choose what you sell.' })
+  .min(1, { error: () => i18n.t('validation.shopCategoryRequired') })
   .refine((value) => (shopCategories as readonly string[]).includes(value), {
-    error: 'Choose a valid category.',
+    error: () => i18n.t('validation.categoryInvalid'),
   });
 
 export const storeSetupSchema = z
@@ -70,25 +71,25 @@ export const storeSetupSchema = z
     name: z
       .string()
       .trim()
-      .min(2, { error: 'Enter your shop name.' })
-      .max(60, { error: 'Keep the shop name under 60 characters.' }),
+      .min(2, { error: () => i18n.t('validation.shopNameRequired') })
+      .max(60, { error: () => i18n.t('validation.shopNameTooLong') }),
     category: shopCategoryString,
     city: z
       .string()
       .trim()
-      .min(2, { error: 'Enter your town or city.' })
-      .max(80, { error: 'Keep the location under 80 characters.' }),
+      .min(2, { error: () => i18n.t('validation.shopCityRequired') })
+      .max(80, { error: () => i18n.t('validation.shopCityTooLong') }),
     phone: z
       .string()
       .trim()
-      .min(7, { error: 'Enter a phone number.' })
-      .regex(/^[0-9+()\-\s]+$/, { error: 'Use only numbers and phone symbols like + ( ) -.' }),
+      .min(7, { error: () => i18n.t('validation.shopPhoneRequired') })
+      .regex(/^[0-9+()\-\s]+$/, { error: () => i18n.t('validation.shopPhoneInvalid') }),
     pickupEnabled: z.boolean(),
     deliveryEnabled: z.boolean(),
     photoUri: z.string().optional(),
   })
   .refine((values) => values.pickupEnabled || values.deliveryEnabled, {
-    error: 'Turn on pickup or delivery so buyers can receive orders.',
+    error: () => i18n.t('validation.fulfilmentRequired'),
     path: ['pickupEnabled'],
   });
 
@@ -102,23 +103,23 @@ export const storeSetupStepFields: readonly (readonly (keyof StoreSetupValues)[]
 
 const deliveryStatusString = z
   .string()
-  .min(1, { error: 'Choose a delivery status.' })
+  .min(1, { error: () => i18n.t('validation.deliveryStatusRequired') })
   .refine((value) => (deliveryStatuses as readonly string[]).includes(value), {
-    error: 'Choose a valid delivery status.',
+    error: () => i18n.t('validation.deliveryStatusInvalid'),
   });
 
 export const deliveryUpdateSchema = z.object({
   courierName: z
     .string()
     .trim()
-    .min(2, { error: 'Enter the courier name.' })
-    .max(60, { error: 'Keep the courier name under 60 characters.' }),
+    .min(2, { error: () => i18n.t('validation.courierRequired') })
+    .max(60, { error: () => i18n.t('validation.courierTooLong') }),
   trackingNumber: z
     .string()
     .trim()
-    .min(3, { error: 'Enter the tracking number.' })
-    .max(40, { error: 'Keep the tracking number under 40 characters.' })
-    .regex(/^[A-Za-z0-9-]+$/, { error: 'Use only letters, numbers and dashes.' }),
+    .min(3, { error: () => i18n.t('validation.trackingRequired') })
+    .max(40, { error: () => i18n.t('validation.trackingTooLong') })
+    .regex(/^[A-Za-z0-9-]+$/, { error: () => i18n.t('validation.trackingInvalid') }),
   status: deliveryStatusString,
 });
 

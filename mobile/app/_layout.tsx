@@ -25,6 +25,7 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { AuthProvider, useAuth } from '@/lib/AuthProvider';
 import { CartProvider } from '@/lib/CartProvider';
 import { ChatProvider } from '@/lib/ChatProvider';
+import '@/lib/i18n';
 import { OrdersProvider } from '@/lib/OrdersProvider';
 import { ProductsProvider } from '@/lib/ProductsProvider';
 import { ProfileProvider, useProfile } from '@/lib/ProfileProvider';
@@ -169,6 +170,10 @@ function RootNavigator() {
             />
             <Stack.Screen
               name="account/reset-password"
+              options={{ presentation: 'modal', headerShown: false }}
+            />
+            <Stack.Screen
+              name="account/language"
               options={{ presentation: 'modal', headerShown: false }}
             />
           </Stack.Protected>

@@ -1,6 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { router } from 'expo-router';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -19,14 +20,10 @@ import { signOut, useAuth } from '@/lib/AuthProvider';
 import { getAuthErrorMessage } from '@/lib/authErrors';
 import { enabledAccessibilityFeatures, memberSince } from '@/lib/profile';
 import { supabase } from '@/lib/supabase';
-
-const ACCESSIBILITY_SUMMARY =
-  'Large text, high contrast, dictation, screen reader support and reduce motion.';
-
-const LAST_FULFILMENT_ERROR =
-  'Keep pickup or delivery on so buyers can still receive orders.';
+import { languageName } from '@/lib/i18n';
 
 export default function SellerAccountScreen() {
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const { session } = useAuth();
   const { profile, refresh } = useProfile();
@@ -65,7 +62,7 @@ export default function SellerAccountScreen() {
     };
 
     if (!next.pickup_enabled && !next.delivery_enabled) {
-      setShopError(LAST_FULFILMENT_ERROR);
+      setShopError(t('account.seller.lastFulfilment'));
       return;
     }
 
@@ -80,7 +77,7 @@ export default function SellerAccountScreen() {
       ...next,
     });
 
-    if (error) setShopError('Could not save that change. Try again.');
+    if (error) setShopError(t('account.seller.saveError'));
   }
 
   async function sendResetLink() {
@@ -101,20 +98,20 @@ export default function SellerAccountScreen() {
   }
 
   function confirmSignOut() {
-    Alert.alert('Sign out', 'Signing out keeps your shop and listings.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign out', style: 'destructive', onPress: () => signOut() },
+    Alert.alert(t('account.signOut'), t('account.seller.signOutBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('account.signOut'), style: 'destructive', onPress: () => signOut() },
     ]);
   }
 
   function confirmDeleteAccount() {
     Alert.alert(
-      'Delete account',
-      'This permanently removes your profile, your shop and every listing. This cannot be undone.',
+      t('account.deleteAccount'),
+      t('account.seller.deleteBody'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete account',
+          text: t('account.deleteAccount'),
           style: 'destructive',
           onPress: async () => {
             await supabase.from('profiles').delete().eq('id', userId);
@@ -132,35 +129,35 @@ export default function SellerAccountScreen() {
       <ProfileHeader name={profile.full_name} email={email} />
 
       <View className="gap-3">
-        <SectionHeader title="Personal info" />
+        <SectionHeader title={t('account.personalInfo')} />
         <Card className="px-4">
           <ListRow
-            label="Name"
-            value={profile.full_name ?? 'Not set'}
+            label={t('account.name')}
+            value={profile.full_name ?? t('account.notSet')}
             className="border-b-1 border-border"
           />
-          <ListRow label="Email" value={email} className="border-b-1 border-border" />
+          <ListRow label={t('auth.email')} value={email} className="border-b-1 border-border" />
           <ListRow
-            label="Phone"
-            value={profile.phone ?? 'Not set'}
+            label={t('account.phone')}
+            value={profile.phone ?? t('account.notSet')}
             valueVariant={profile.phone ? 'mono' : 'text'}
             className="border-b-1 border-border"
           />
           <ListRow
-            label="Account type"
-            value={profile.role === 'seller' ? 'Seller' : 'Buyer'}
+            label={t('account.seller.accountType')}
+            value={profile.role === 'seller' ? t('account.seller.seller') : t('account.seller.buyer')}
             className="border-b-1 border-border"
           />
           <ListRow
-            label="Member since"
+            label={t('account.seller.memberSince')}
             value={memberSince(profile.created_at)}
             className="border-b-1 border-border"
           />
           <ListRow
-            title="Edit personal info"
+            title={t('account.editPersonalInfo')}
             showChevron
             onPress={() => router.push('/account/edit-profile')}
-            hint="Opens the personal info form"
+            hint={t('account.editPersonalInfoHint')}
           />
         </Card>
       </View>
@@ -168,30 +165,47 @@ export default function SellerAccountScreen() {
       <NotificationSettingsCard />
 
       <View className="gap-3">
-        <SectionHeader title="Accessibility" />
+        <SectionHeader title={t('accessibility.title')} />
         <Card>
           <View className="border-b-1 border-border p-4">
-            <Text className="type-text-primary text-secondary">{ACCESSIBILITY_SUMMARY}</Text>
+            <Text className="type-text-primary text-secondary">{t('account.accessibilitySummary')}</Text>
           </View>
 
           <View className="px-4">
             <ListRow
-              label="Features on"
+              label={t('account.featuresOn')}
               value={enabledAccessibilityFeatures(profile)}
               className="border-b-1 border-border"
             />
             <ListRow
-              title="Manage accessibility"
+              title={t('account.manageAccessibility')}
               showChevron
               onPress={() => router.push('/account/accessibility')}
-              hint="Opens the accessibility settings"
+              hint={t('account.manageAccessibilityHint')}
             />
           </View>
         </Card>
       </View>
 
       <View className="gap-3">
-        <SectionHeader title="Store details" />
+        <SectionHeader title={t('language.title')} />
+        <Card className="px-4">
+          <ListRow
+            label={t('language.row')}
+            value={languageName(i18n.language)}
+            className="border-b-1 border-border"
+          />
+          <ListRow
+            title={t('language.manage')}
+            showChevron
+            onPress={() => router.push('/account/language')}
+            hint={t('language.manageHint')}
+          />
+        </Card>
+      </View>
+
+      <View className="gap-3">
+        <SectionHeader title={t('account.seller.storeDetails')} />
 
         {shop ? (
           <StoreDetailsCard
@@ -202,9 +216,9 @@ export default function SellerAccountScreen() {
           />
         ) : (
           <Card className="items-center gap-1 p-4">
-            <Text className="type-label-lg text-primary">No shop yet</Text>
+            <Text className="type-label-lg text-primary">{t('account.seller.noShop')}</Text>
             <Text className="type-text-secondary text-center text-secondary">
-              Set one up to start listing products.
+              {t('account.seller.setUpShop')}
             </Text>
           </Card>
         )}
@@ -213,38 +227,38 @@ export default function SellerAccountScreen() {
       </View>
 
       <View className="gap-3">
-        <SectionHeader title="Reset password" />
+        <SectionHeader title={t('account.resetPassword')} />
         <Card className="gap-4 p-4">
           <Text className="type-text-primary text-secondary">
-            {`We'll email a reset link to ${email}. The link stays valid for 30 minutes.`}
+            {t('account.resetLinkInfo', { email })}
           </Text>
 
-          <SuccessBanner message={resetSent ? 'Reset link sent. Check your inbox.' : null} />
+          <SuccessBanner message={resetSent ? t('account.resetLinkSent') : null} />
           <FormError message={resetError} />
 
           <Button
             variant="secondary"
             size="md"
-            label="Send reset link"
+            label={t('account.sendResetLink')}
             fullWidth={false}
             loading={isSendingReset}
             onPress={sendResetLink}
-            hint="Emails you a link to choose a new password"
+            hint={t('account.sendResetLinkHint')}
           />
         </Card>
       </View>
 
       <View className="gap-3">
-        <Button variant="secondary" label="Sign out" onPress={confirmSignOut} />
+        <Button variant="secondary" label={t('account.signOut')} onPress={confirmSignOut} />
         <Button
           variant="destructive"
           size="md"
-          label="Delete account"
+          label={t('account.deleteAccount')}
           onPress={confirmDeleteAccount}
-          hint="Permanently removes your profile, shop and listings"
+          hint={t('account.seller.deleteHint')}
         />
         <Text className="type-text-secondary text-center text-secondary">
-          {`Deleting removes your shop, every listing and your profile. This can't be undone.`}
+          {t('account.seller.deleteWarning')}
         </Text>
       </View>
     </ScrollView>

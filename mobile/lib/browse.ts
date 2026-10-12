@@ -1,7 +1,7 @@
 import type { Product } from '@/lib/products';
 import { supabase } from '@/lib/supabase';
 
-export const productSorts = ['Newest', 'Price: low to high', 'Price: high to low'] as const;
+export const productSorts = ['newest', 'priceAsc', 'priceDesc'] as const;
 
 export type ProductSort = (typeof productSorts)[number];
 
@@ -37,9 +37,9 @@ export async function fetchProducts({
   }
 
   const ordered =
-    sort === 'Price: low to high'
+    sort === 'priceAsc'
       ? query.order('price', { ascending: true })
-      : sort === 'Price: high to low'
+      : sort === 'priceDesc'
         ? query.order('price', { ascending: false })
         : query.order('created_at', { ascending: false });
 

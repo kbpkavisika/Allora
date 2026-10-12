@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { ListRow } from '@/components/account/ListRow';
@@ -20,41 +21,43 @@ export function AccountDetailsCard({
   onEditPhone,
   onToggleSms,
 }: AccountDetailsCardProps) {
+  const { t } = useTranslation();
+
   return (
     <View className="rounded-12 border-1 border-border bg-surface px-4">
       <ListRow
-        label="Name"
-        value={profile.full_name ?? 'Add your name'}
+        label={t('account.name')}
+        value={profile.full_name ?? t('accountDetails.addName')}
         showChevron
         onPress={onEditName}
-        hint="Edits your name"
+        hint={t('accountDetails.editNameHint')}
         className="border-b-1 border-border"
       />
       <ListRow
-        label="Email"
+        label={t('auth.email')}
         value={email}
-        trailing={<Badge label="Verified" variant="success" />}
+        trailing={<Badge label={t('accountDetails.verified')} variant="success" />}
         className="border-b-1 border-border"
       />
       <ListRow
-        label="Phone"
-        value={profile.phone ?? 'Add a phone number'}
+        label={t('account.phone')}
+        value={profile.phone ?? t('accountDetails.addPhone')}
         showChevron
         onPress={onEditPhone}
-        hint="Edits your phone number"
+        hint={t('accountDetails.editPhoneHint')}
         className="border-b-1 border-border"
       />
       <ListRow
-        label="Member since"
+        label={t('account.seller.memberSince')}
         value={memberSince(profile.created_at)}
         className="border-b-1 border-border"
       />
       <ListRow
-        title="Order updates by SMS"
-        subtitle="Shipping and delivery only"
+        title={t('accountDetails.sms')}
+        subtitle={t('accountDetails.smsSubtitle')}
         trailing={
           <Toggle
-            label="Order updates by SMS"
+            label={t('accountDetails.sms')}
             value={profile.sms_order_updates}
             onValueChange={onToggleSms}
           />

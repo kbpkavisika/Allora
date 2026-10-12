@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { Badge, type BadgeVariant } from '@/components/ui/Badge';
@@ -56,11 +57,12 @@ function getOrderPaymentBadge(order: Order): { label: string; variant: BadgeVari
 }
 
 export function OrderListCard({ order, position }: OrderListCardProps) {
+  const { t } = useTranslation();
   const status = statusPresentation(order.status);
   const cover = order.items[0]?.product_photo;
   const delivery = deliveryCaption(order.delivery);
   const caption = `${status.label} · ${
-    delivery ?? `Order placed ${formatPlacedAt(order.placed_at)}`
+    delivery ?? t('orders.placedCaption', { date: formatPlacedAt(order.placed_at) })
   }`;
   const paymentBadge = getOrderPaymentBadge(order);
 
@@ -68,8 +70,8 @@ export function OrderListCard({ order, position }: OrderListCardProps) {
     <Pressable
       onPress={() => router.push({ pathname: '/orders/[id]', params: { id: order.id } })}
       role="button"
-      aria-label={`Order ${order.order_number}, ${itemSummary(order.items)}, ${formatMoney(order.total)}, Status: ${status.label}, Payment: ${paymentBadge.voice}${position ? `, ${position}` : ''}`}
-      accessibilityHint="Opens the order details"
+      aria-label={`${t('orders.orderNumber', { number: order.order_number })}, ${itemSummary(order.items)}, ${formatMoney(order.total)}, Status: ${status.label}, Payment: ${paymentBadge.voice}${position ? `, ${position}` : ''}`}
+      accessibilityHint={t('orders.openHint')}
       className="flex-row items-center gap-3 rounded-12 border-1 border-border bg-surface p-3 active:bg-surface-muted">
       <View className="h-14 w-14 items-center justify-center overflow-hidden rounded-8 bg-surface-sunken">
         {cover ? (
@@ -86,7 +88,7 @@ export function OrderListCard({ order, position }: OrderListCardProps) {
       <View className="flex-1 gap-1">
         <View className="flex-row items-center justify-between gap-2">
           <Text className="type-mono text-secondary" numberOfLines={1}>
-            Order #{order.order_number}
+            {t('orders.orderNumber', { number: order.order_number })}
           </Text>
           <Badge label={paymentBadge.label} variant={paymentBadge.variant} />
         </View>

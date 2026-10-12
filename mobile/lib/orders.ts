@@ -1,5 +1,6 @@
 import type { BadgeVariant } from '@/components/ui/Badge';
 import type { Delivery } from '@/lib/deliveries';
+import i18n, { formatDate } from '@/lib/i18n';
 
 export const orderStatuses = ['new', 'processing', 'completed'] as const;
 
@@ -58,12 +59,9 @@ export const returnReasons = ['damaged', 'wrong_item', 'changed_mind', 'other'] 
 
 export type ReturnReason = (typeof returnReasons)[number];
 
-export const RETURN_REASONS: readonly { value: ReturnReason; label: string }[] = [
-  { value: 'damaged', label: 'Damaged item' },
-  { value: 'wrong_item', label: 'Wrong item' },
-  { value: 'changed_mind', label: 'Changed my mind' },
-  { value: 'other', label: 'Other' },
-];
+export function returnReasonLabel(reason: string): string {
+  return i18n.t(`orders.returnReason.${reason}`);
+}
 
 export interface OrderReturn {
   id: string;
@@ -81,25 +79,27 @@ interface StatusPresentation {
   variant: BadgeVariant;
 }
 
-const STATUS: Record<OrderStatus, StatusPresentation> = {
-  new: { label: 'New', tone: 'bg-accent', variant: 'warning' },
-  processing: { label: 'Processing', tone: 'bg-info', variant: 'neutral' },
-  completed: { label: 'Completed', tone: 'bg-success', variant: 'success' },
+const STATUS: Record<OrderStatus, Omit<StatusPresentation, 'label'>> = {
+  new: { tone: 'bg-accent', variant: 'warning' },
+  processing: { tone: 'bg-info', variant: 'neutral' },
+  completed: { tone: 'bg-success', variant: 'success' },
 };
 
 export function statusPresentation(status: OrderStatus): StatusPresentation {
-  return STATUS[status];
+  return { ...STATUS[status], label: i18n.t(`orders.status.${status}`) };
 }
 
 export function itemSummary(items: OrderItem[]): string {
   const [first, ...rest] = items;
 
   if (!first) {
-    return 'No items';
+    return i18n.t('orders.noItems');
   }
 
   const restCount = rest.reduce((sum, item) => sum + item.quantity, 0);
-  return restCount > 0 ? `${first.product_name} and ${restCount} more` : first.product_name;
+  return restCount > 0
+    ? i18n.t('orders.itemSummary', { name: first.product_name, count: restCount })
+    : first.product_name;
 }
 
 export function orderItemCount(items: OrderItem[]): number {
@@ -115,9 +115,7 @@ export function formatPlacedAt(placedAt: string): string {
     placed.getMonth() === today.getMonth() &&
     placed.getDate() === today.getDate();
 
-  return isToday
-    ? 'today'
-    : placed.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return isToday ? i18n.t('orders.today') : formatDate(placed, { month: 'short', day: 'numeric' });
 }
 
 export function formatMoney(amount: number): string {

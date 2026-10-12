@@ -8,6 +8,7 @@ import {
   View,
   type TextInputProps,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
@@ -40,8 +41,6 @@ const TONE = {
   error: 'text-error',
 } as const;
 
-const SEARCH_FALLBACK_LABEL = 'Search Allora';
-const DICTATION_HINT = 'Tap the microphone on your keyboard to start speaking';
 
 type BaseProps = Omit<
   TextInputProps,
@@ -173,6 +172,7 @@ export function InputField({
   ref,
   ...rest
 }: Readonly<InputFieldProps>) {
+  const { t } = useTranslation();
   const [isFocused, setIsFocused] = useState(false);
   const [isRevealedInternal, setIsRevealedInternal] = useState(false);
   const [isDictationHintShown, setIsDictationHintShown] = useState(false);
@@ -188,14 +188,15 @@ export function InputField({
   const caretColor = useThemeColor({}, 'info');
   const placeholderColor = useThemeColor({}, isDisabled ? 'disabled' : 'secondary');
 
-  const resolvedLabel = label ?? SEARCH_FALLBACK_LABEL;
+  const resolvedLabel = label ?? t('shop.searchPlaceholder');
+  const dictationHint = t('input.dictationHint');
 
   // React Native exposes no aria-invalid, aria-required, or native aria-describedby, so the
   // required/error state can only reach a screen reader through the accessible name. Never pair
   // this with aria-labelledby — the label element would replace the composed name on Android.
   const nameParts = [resolvedLabel];
-  if (isRequired) nameParts.push('required');
-  if (error) nameParts.push(`error, ${error}`);
+  if (isRequired) nameParts.push(t('common.requiredLower'));
+  if (error) nameParts.push(t('common.errorAnnouncement', { error }));
   const accessibleName = nameParts.join(', ');
 
   useEffect(() => {
@@ -213,7 +214,7 @@ export function InputField({
   function handleMicPress() {
     inputRef.current?.focus();
     setIsDictationHintShown(true);
-    AccessibilityInfo.announceForAccessibility(DICTATION_HINT);
+    AccessibilityInfo.announceForAccessibility(dictationHint);
   }
 
   function handleRevealToggle() {
@@ -237,8 +238,8 @@ export function InputField({
               className={TONE.secondary}
             />
           }
-          label={isPasswordRevealed ? 'Hide password' : 'Show password'}
-          hint={isPasswordRevealed ? 'Conceals the password' : 'Reveals the password as plain text'}
+          label={isPasswordRevealed ? t('input.hidePassword') : t('input.showPassword')}
+          hint={isPasswordRevealed ? t('input.hidePasswordHint') : t('input.showPasswordHint')}
           disabled={isDisabled}
           onPress={handleRevealToggle}
         />
@@ -250,11 +251,11 @@ export function InputField({
         <Pressable
           onPress={onClear}
           role="button"
-          aria-label="Clear search"
+          aria-label={t('input.clearSearch')}
           hitSlop={12}
           className="justify-center">
           <Text className={`type-label-sm ${TONE.secondary}`} maxFontSizeMultiplier={2}>
-            Clear
+            {t('input.clear')}
           </Text>
         </Pressable>
       );
@@ -271,8 +272,8 @@ export function InputField({
         icon={
           <Icon name="dictate" size="md" className={isDisabled ? TONE.disabled : TONE.primary} />
         }
-        label={`Dictate ${resolvedLabel.toLowerCase()}`}
-        hint="Opens the keyboard so you can dictate"
+        label={t('input.dictate', { label: resolvedLabel.toLowerCase() })}
+        hint={t('input.dictateHint')}
         disabled={isDisabled}
         onPress={handleMicPress}
       />
@@ -290,7 +291,7 @@ export function InputField({
             <Text
               className={`type-text-primary ${isDisabled ? TONE.disabled : TONE.secondary}`}
               maxFontSizeMultiplier={2}>
-              Required
+              {t('common.required')}
             </Text>
           ) : null}
         </View>
@@ -352,7 +353,7 @@ export function InputField({
         <Text
           className={`type-text-secondary mt-1 ${isDisabled ? TONE.disabled : TONE.secondary}`}
           maxFontSizeMultiplier={2}>
-          {isDictationHintShown ? DICTATION_HINT : helperText}
+          {isDictationHintShown ? dictationHint : helperText}
         </Text>
       ) : null}
     </View>

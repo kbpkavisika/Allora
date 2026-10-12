@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -12,6 +13,7 @@ type OrderFilter = 'active' | 'past';
 const isActive = (status: string) => status === 'new' || status === 'processing';
 
 export default function OrdersScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { orders, isLoading } = useOrders();
   const positionOf = useListPosition();
@@ -29,15 +31,15 @@ export default function OrdersScreen() {
   );
 
   const tabs: ScrollTabItem[] = [
-    { value: 'active', label: 'Active', count: activeCount },
-    { value: 'past', label: 'Past', count: pastCount },
+    { value: 'active', label: t('orders.active'), count: activeCount },
+    { value: 'past', label: t('orders.past'), count: pastCount },
   ];
 
   return (
     <View className="flex-1 bg-surface">
       <View className="px-4 pb-2 pt-4">
         <Text role="heading" className="type-h1 text-primary" maxFontSizeMultiplier={1.5}>
-          Orders
+          {t('tabs.orders')}
         </Text>
       </View>
 
@@ -45,7 +47,7 @@ export default function OrdersScreen() {
         tabs={tabs}
         value={filter}
         onChange={(next) => setFilter(next as OrderFilter)}
-        label="Filter orders"
+        label={t('orders.filter')}
       />
 
       <FlatList
@@ -65,7 +67,7 @@ export default function OrdersScreen() {
             <ActivityIndicator className="mt-16 text-secondary" />
           ) : (
             <Text className="type-text-primary mt-16 text-center text-secondary">
-              {filter === 'active' ? 'No active orders right now.' : 'No past orders yet.'}
+              {filter === 'active' ? t('orders.noActive') : t('orders.noPast')}
             </Text>
           )
         }

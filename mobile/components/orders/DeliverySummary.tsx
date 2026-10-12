@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
 import { Badge } from '@/components/ui/Badge';
@@ -15,22 +16,23 @@ export interface DeliverySummaryProps {
 }
 
 export function DeliverySummary({ delivery, onEdit }: DeliverySummaryProps) {
+  const { t } = useTranslation();
   const presentation = deliveryStatusPresentation(delivery?.status ?? 'pending');
 
   const rows = [
-    { label: 'Courier', value: delivery?.courier_name },
-    { label: 'Tracking number', value: delivery?.tracking_number },
+    { label: t('delivery.courier'), value: delivery?.courier_name },
+    { label: t('delivery.trackingNumber'), value: delivery?.tracking_number },
   ].filter((row): row is { label: string; value: string } => Boolean(row.value));
 
   const caption = delivery?.delivered_at
-    ? `Delivered ${formatDeliveryDate(delivery.delivered_at)}`
+    ? t('delivery.deliveredOn', { date: formatDeliveryDate(delivery.delivered_at) })
     : delivery?.estimated_at
-      ? `Arriving ${formatDeliveryDate(delivery.estimated_at)}`
+      ? t('delivery.arriving', { date: formatDeliveryDate(delivery.estimated_at) })
       : null;
 
   return (
     <View className="gap-4">
-      <SectionHeader title="Delivery" />
+      <SectionHeader title={t('delivery.title')} />
 
       <View className="gap-3 rounded-12 border-1 border-border bg-surface p-4">
         <Badge label={presentation.label} variant={presentation.variant} />
@@ -45,11 +47,11 @@ export function DeliverySummary({ delivery, onEdit }: DeliverySummaryProps) {
         ))}
 
         <Text className="type-text-secondary text-secondary">
-          {caption ?? 'Delivery details will appear here once the order is dispatched.'}
+          {caption ?? t('delivery.pending')}
         </Text>
 
         {onEdit ? (
-          <Button variant="secondary" size="sm" label="Update delivery" onPress={onEdit} />
+          <Button variant="secondary" size="sm" label={t('delivery.update')} onPress={onEdit} />
         ) : null}
       </View>
     </View>

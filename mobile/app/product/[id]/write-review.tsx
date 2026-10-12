@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -17,6 +18,7 @@ import { findPurchaseOrderId, submitReview } from '@/lib/reviews';
 import { reviewSchema, type ReviewValues } from '@/lib/schemas';
 
 export default function WriteReviewScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { session } = useAuth();
@@ -57,13 +59,13 @@ export default function WriteReviewScreen() {
       });
 
       if (error) {
-        setFormError('Could not post your review. Please try again.');
+        setFormError(t('reviews.postError'));
         return;
       }
 
       router.back();
     } catch {
-      setFormError('Could not upload your photos. Please try again.');
+      setFormError(t('reviews.uploadError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -72,10 +74,10 @@ export default function WriteReviewScreen() {
   if (!id) {
     return (
       <View className="flex-1 bg-surface">
-        <TopBar title="Write a review" />
+        <TopBar title={t('reviews.write')} />
         <View className="items-center gap-3 p-4 pt-16">
           <Text role="heading" className="type-h3 text-primary">
-            Product not found
+            {t('product.notFound')}
           </Text>
         </View>
       </View>
@@ -84,7 +86,7 @@ export default function WriteReviewScreen() {
 
   return (
     <View className="flex-1 bg-surface">
-      <TopBar title="Write a review" />
+      <TopBar title={t('reviews.write')} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -99,13 +101,13 @@ export default function WriteReviewScreen() {
             render={({ field }) => (
               <View className="gap-1">
                 <Text className="type-label-lg text-primary" maxFontSizeMultiplier={2}>
-                  Your rating
+                  {t('reviews.yourRating')}
                 </Text>
                 <StarRating
                   value={field.value}
                   size="lg"
                   onChange={field.onChange}
-                  label="Your rating"
+                  label={t('reviews.yourRating')}
                 />
                 <FormError message={errors.rating?.message} />
               </View>
@@ -117,8 +119,8 @@ export default function WriteReviewScreen() {
             name="headline"
             render={({ field }) => (
               <InputField
-                label="Headline"
-                placeholder="Sum up your experience in a few words."
+                label={t('reviews.headline')}
+                placeholder={t('reviews.headlinePlaceholder')}
                 value={field.value}
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
@@ -133,8 +135,8 @@ export default function WriteReviewScreen() {
             name="body"
             render={({ field }) => (
               <InputField
-                label="Your review"
-                placeholder="What worked well, and what would you tell another shopper?"
+                label={t('reviews.body')}
+                placeholder={t('reviews.bodyPlaceholder')}
                 value={field.value}
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
@@ -150,7 +152,7 @@ export default function WriteReviewScreen() {
             name="photos"
             render={({ field }) => (
               <ProductPhotoGrid
-                label="Photos"
+                label={t('reviews.photos')}
                 photos={field.value}
                 onChange={field.onChange}
                 error={errors.photos?.message}
@@ -160,7 +162,7 @@ export default function WriteReviewScreen() {
 
           <FormError message={formError} />
 
-          <Button label="Post review" loading={isSubmitting} onPress={handleSubmit(onSubmit)} />
+          <Button label={t('reviews.post')} loading={isSubmitting} onPress={handleSubmit(onSubmit)} />
         </ScrollView>
       </KeyboardAvoidingView>
     </View>

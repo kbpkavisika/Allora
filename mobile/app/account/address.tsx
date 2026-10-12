@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -17,15 +18,17 @@ import { Select } from '@/components/ui/Select';
 import { useProfile } from '@/hooks/useProfile';
 import { ADDRESS_LABELS, COUNTRY_OPTIONS, PROVINCE_OPTIONS } from '@/lib/profile';
 import { shippingAddressSchema, type ShippingAddressValues } from '@/lib/schemas';
+import { translateOption } from '@/lib/i18n';
 
 const noop = () => {};
 
 const DELIVERY_OPTIONS = [
-  { label: 'Leave at door', leaveAtDoor: true },
-  { label: 'Hand to me', leaveAtDoor: false },
+  { labelKey: 'address.leaveAtDoor', leaveAtDoor: true },
+  { labelKey: 'address.handToMe', leaveAtDoor: false },
 ] as const;
 
 export default function ShippingAddressScreen() {
+  const { t } = useTranslation();
   const { profile, addresses, saveAddress, updateProfile } = useProfile();
   const existing = addresses.find((address) => address.is_default) ?? addresses[0];
   const [formError, setFormError] = useState<string | null>(null);
@@ -80,7 +83,7 @@ export default function ShippingAddressScreen() {
     );
 
     if (addressError) {
-      setFormError('Could not save this address. Try again.');
+      setFormError(t('address.saveError'));
       return;
     }
 
@@ -89,7 +92,7 @@ export default function ShippingAddressScreen() {
     });
 
     if (profileError) {
-      setFormError('Could not save this address. Try again.');
+      setFormError(t('address.saveError'));
       return;
     }
 
@@ -102,7 +105,7 @@ export default function ShippingAddressScreen() {
 
   return (
     <KeyboardScreen>
-      <ScreenHeader title="Shipping address" className="mb-5" />
+      <ScreenHeader title={t('address.title')} className="mb-5" />
 
       <View className="gap-4">
         <Controller
@@ -110,9 +113,10 @@ export default function ShippingAddressScreen() {
           name="label"
           render={({ field }) => (
             <ChipSelect
-              label="Address name"
+              label={t('address.addressName')}
               required
               options={ADDRESS_LABELS}
+              formatOption={translateOption}
               value={field.value}
               onChange={field.onChange}
               error={errors.label?.message}
@@ -125,9 +129,9 @@ export default function ShippingAddressScreen() {
           name="line1"
           render={({ field }) => (
             <InputField
-              label="Street address"
+              label={t('address.street')}
               isRequired
-              placeholder="1180 Cedar Street"
+              placeholder={t('address.streetPlaceholder')}
               value={field.value}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
@@ -146,8 +150,8 @@ export default function ShippingAddressScreen() {
           render={({ field }) => (
             <InputField
               ref={lineTwoRef}
-              label="Apartment or unit"
-              placeholder="Apt 4"
+              label={t('address.unit')}
+              placeholder={t('address.unitPlaceholder')}
               value={field.value ?? ''}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
@@ -166,8 +170,8 @@ export default function ShippingAddressScreen() {
             render={({ field }) => (
               <InputField
                 ref={cityRef}
-                label="City"
-                placeholder="Vancouver"
+                label={t('address.city')}
+                placeholder={t('address.cityPlaceholder')}
                 value={field.value}
                 onChangeText={field.onChange}
                 onBlur={field.onBlur}
@@ -185,7 +189,7 @@ export default function ShippingAddressScreen() {
             name="region"
             render={({ field }) => (
               <Select
-                label="Province"
+                label={t('address.province')}
                 options={PROVINCE_OPTIONS}
                 value={field.value}
                 onChange={field.onChange}
@@ -203,7 +207,7 @@ export default function ShippingAddressScreen() {
           render={({ field }) => (
             <InputField
               ref={postalRef}
-              label="Postal code"
+              label={t('address.postalCode')}
               isRequired
               placeholder="V5T 2H9"
               value={field.value}
@@ -224,11 +228,12 @@ export default function ShippingAddressScreen() {
           name="country"
           render={({ field }) => (
             <Select
-              label="Country"
+              label={t('address.country')}
               options={COUNTRY_OPTIONS}
+              formatOption={translateOption}
               value={field.value}
               onChange={field.onChange}
-              placeholder="Canada"
+              placeholder={translateOption('Canada')}
               error={errors.country?.message}
             />
           )}
@@ -239,13 +244,13 @@ export default function ShippingAddressScreen() {
           name="deliveryNote"
           render={({ field }) => (
             <InputField
-              label="Delivery note"
-              placeholder="Gate code, landmark, or where to leave it"
+              label={t('address.deliveryNote')}
+              placeholder={t('address.deliveryNotePlaceholder')}
               value={field.value ?? ''}
               onChangeText={field.onChange}
               onBlur={field.onBlur}
               error={errors.deliveryNote?.message}
-              helperText="Shared with the courier on every order."
+              helperText={t('address.deliveryNoteHelper')}
               multiline
             />
           )}
@@ -253,30 +258,31 @@ export default function ShippingAddressScreen() {
       </View>
 
       <View className="mt-8 gap-3">
-        <SectionHeader title="Delivery preference" />
+        <SectionHeader title={t('address.deliveryPreference')} />
 
         <Controller
           control={control}
           name="leaveAtDoor"
           render={({ field }) => (
             <Card>
-              <View role="radiogroup" aria-label="Delivery preference">
+              <View role="radiogroup" aria-label={t('address.deliveryPreference')}>
                 {DELIVERY_OPTIONS.map((option, index) => {
                   const selected = field.value === option.leaveAtDoor;
+                  const label = t(option.labelKey);
 
                   return (
                     <Pressable
-                      key={option.label}
+                      key={option.labelKey}
                       onPress={() => field.onChange(option.leaveAtDoor)}
                       role="radio"
                       aria-checked={selected}
-                      aria-label={option.label}
+                      aria-label={label}
                       className={`min-h-control-lg flex-row items-center justify-between gap-3 px-4 py-3 active:bg-surface-muted ${
                         index < DELIVERY_OPTIONS.length - 1 ? 'border-b-1 border-border' : ''
                       }`}>
-                      <Text className="type-text-primary text-primary">{option.label}</Text>
+                      <Text className="type-text-primary text-primary">{label}</Text>
                       <View pointerEvents="none" aria-hidden>
-                        <Checkbox checked={selected} onChange={noop} label={option.label} />
+                        <Checkbox checked={selected} onChange={noop} label={label} />
                       </View>
                     </Pressable>
                   );
@@ -289,7 +295,7 @@ export default function ShippingAddressScreen() {
 
       <View className="mt-5 gap-3">
         <FormError message={formError} />
-        <Button label="Save address" loading={isSubmitting} onPress={submit} />
+        <Button label={t('address.save')} loading={isSubmitting} onPress={submit} />
       </View>
     </KeyboardScreen>
   );

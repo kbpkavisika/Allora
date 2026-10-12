@@ -1,6 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -29,8 +30,6 @@ const PRESENTATION: Record<
     icon: IconName;
     ring: string;
     iconColor: string;
-    heading: string;
-    description: string;
     haptic: () => Promise<void>;
   }
 > = {
@@ -38,45 +37,36 @@ const PRESENTATION: Record<
     icon: 'check',
     ring: 'border-success bg-success-tint',
     iconColor: 'text-success',
-    heading: 'Payment successful',
-    description: 'Your order is confirmed. The payment was successful.',
     haptic: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
   },
   cod: {
     icon: 'orders',
     ring: 'border-success bg-success-tint',
     iconColor: 'text-success',
-    heading: 'Order placed!',
-    description: 'Your order has been placed. Payment is due upon delivery.',
     haptic: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
   },
   failure: {
     icon: 'close',
     ring: 'border-error bg-error-tint',
     iconColor: 'text-error',
-    heading: 'Payment failed',
-    description: "The payment wasn't completed, so your order was not placed.",
     haptic: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
   },
   cancelled: {
     icon: 'close',
     ring: 'border-border-strong bg-surface-sunken',
     iconColor: 'text-secondary',
-    heading: 'Payment cancelled',
-    description: 'The payment process was cancelled before completion. No charges were made.',
     haptic: () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning),
   },
   pending: {
     icon: 'orders',
     ring: 'border-info bg-info-tint',
     iconColor: 'text-info',
-    heading: 'Payment processing',
-    description: 'Your payment is being processed. Please wait while verification is finalized.',
     haptic: () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium),
   },
 };
 
 export default function PaymentResultScreen() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<ResultParams>();
   const { getOrder } = useOrders();
@@ -115,7 +105,7 @@ export default function PaymentResultScreen() {
     };
 
     AccessibilityInfo.announceForAccessibility(announcements[variant]);
-  }, [variant, total, params.reference, params.message, presentation]);
+  }, [variant, total, presentation, t]);
 
   function trackOrder() {
     if (count > 1 || !params.orderId) {
@@ -139,7 +129,7 @@ export default function PaymentResultScreen() {
         <View className="items-center gap-4">
           <View
             accessibilityRole="image"
-            accessibilityLabel={`${presentation.heading} icon`}
+            accessibilityLabel={`${t(`paymentResult.heading.${variant}`)} icon`}
             className={`h-16 w-16 items-center justify-center rounded-full border-1 ${presentation.ring}`}>
             <Icon name={presentation.icon} size="lg" className={presentation.iconColor} />
           </View>
@@ -149,10 +139,10 @@ export default function PaymentResultScreen() {
               accessibilityRole="header"
               className="type-h1 text-center text-primary"
               maxFontSizeMultiplier={1.5}>
-              {presentation.heading}
+              {t(`paymentResult.heading.${variant}`)}
             </Text>
             <Text className="type-text-lg text-center text-secondary" maxFontSizeMultiplier={2}>
-              {presentation.description}
+              {t(`paymentResult.body.${variant}`, { amount: formatMoney(total) })}
             </Text>
           </View>
         </View>
@@ -163,7 +153,7 @@ export default function PaymentResultScreen() {
             tone="warning"
             message={
               params.message?.trim() ||
-              'No amount was charged. You can try the payment again, or choose a different payment method.'
+              t('paymentResult.noCharge')
             }
           />
         ) : null}
@@ -171,14 +161,14 @@ export default function PaymentResultScreen() {
         {variant === 'cancelled' ? (
           <Callout
             tone="info"
-            message="Your order was not placed and no payment was deducted. You can resume checkout at any time."
+            message={t('paymentResult.cancelledNote')}
           />
         ) : null}
 
         {variant === 'pending' ? (
           <Callout
             tone="info"
-            message="Payment verification is taking a moment. If this does not update automatically, check your order status in a few minutes."
+            message={t('paymentResult.pendingNote')}
           />
         ) : null}
 
@@ -188,17 +178,17 @@ export default function PaymentResultScreen() {
           className="gap-3 rounded-12 border-1 border-border bg-surface p-4">
           {count > 1 ? (
             <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
-              {count} orders placed · one per shop
+              {t('paymentResult.multipleOrders', { count })}
             </Text>
           ) : orderNumber ? (
             <Text className="type-mono text-secondary" maxFontSizeMultiplier={2}>
-              Order #{orderNumber}
+              {t('orders.orderNumber', { number: orderNumber })}
             </Text>
           ) : null}
 
           <View className="flex-row items-baseline justify-between border-b-1 border-border pb-3">
             <Text className="type-label-lg text-primary" maxFontSizeMultiplier={2}>
-              {variant === 'cod' ? 'Amount Due' : 'Amount'}
+              {variant === 'cod' ? t('paymentResult.amountDue') : t('paymentResult.amount')}
             </Text>
             <Text className="type-h2 text-primary" maxFontSizeMultiplier={2}>
               {formatMoney(total)}
@@ -208,17 +198,17 @@ export default function PaymentResultScreen() {
           <View className="gap-2 pt-1">
             <View className="flex-row items-center justify-between">
               <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
-                Payment Method
+                {t('paymentResult.paymentMethod')}
               </Text>
               <Text className="type-text-primary text-primary" maxFontSizeMultiplier={2}>
-                {variant === 'cod' ? 'Cash on Delivery' : 'PayHere (Online)'}
+                {variant === 'cod' ? t('checkout.cod') : t('paymentResult.payHereOnline')}
               </Text>
             </View>
 
             {params.reference ? (
               <View className="flex-row items-center justify-between">
                 <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
-                  Payment Reference
+                  {t('paymentResult.paymentReference')}
                 </Text>
                 <Text className="type-mono text-primary" maxFontSizeMultiplier={2}>
                   {params.reference}
@@ -229,7 +219,7 @@ export default function PaymentResultScreen() {
             {variant === 'success' ? (
               <View className="pt-1">
                 <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
-                  A confirmation receipt will be sent to your registered email address.
+                  {t('paymentResult.receiptNote')}
                 </Text>
               </View>
             ) : null}
@@ -243,7 +233,7 @@ export default function PaymentResultScreen() {
               reference: params.reference,
               message: params.message,
             })}
-            label="Read aloud summary"
+            label={t('paymentResult.readAloud')}
           />
         </View>
 
@@ -251,13 +241,13 @@ export default function PaymentResultScreen() {
         {variant === 'failure' || variant === 'cancelled' ? (
           <View className="gap-3">
             <Button
-              label="Try again"
+              label={t('common.tryAgain')}
               hint="Returns to the checkout screen to re-attempt payment"
               onPress={() => router.replace('/payment/checkout')}
             />
             <Button
               variant="secondary"
-              label="Return to Shop"
+              label={t('common.backToShop')}
               hint="Navigates back to the main shopping catalogue"
               onPress={() => router.replace('/(tabs)')}
             />
@@ -265,13 +255,13 @@ export default function PaymentResultScreen() {
         ) : (
           <View className="gap-3">
             <Button
-              label="Track your order"
+              label={t('paymentResult.track')}
               hint="Navigates to your order tracking page"
               onPress={trackOrder}
             />
             <Button
               variant="secondary"
-              label="Back to Shop"
+              label={t('common.backToShop')}
               hint="Navigates back to the main shopping catalogue"
               onPress={() => router.replace('/(tabs)')}
             />

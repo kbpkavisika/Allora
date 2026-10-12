@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/ui/Avatar';
@@ -12,6 +13,7 @@ export interface ConversationRowProps {
 }
 
 export function ConversationRow({ conversation, userId, onPress }: ConversationRowProps) {
+  const { t } = useTranslation();
   const isUnread = conversation.unread_count > 0;
   const preview = conversationPreview(conversation, userId);
   const time = conversation.last_message_at
@@ -20,8 +22,8 @@ export function ConversationRow({ conversation, userId, onPress }: ConversationR
 
   const accessibleName = [
     conversation.counterpart_name,
-    conversation.muted ? 'muted' : null,
-    isUnread ? `${conversation.unread_count} unread` : null,
+    conversation.muted ? t('chat.mutedLabel') : null,
+    isUnread ? t('account.buyer.unread', { count: conversation.unread_count }) : null,
     preview,
     time,
   ]
@@ -33,7 +35,7 @@ export function ConversationRow({ conversation, userId, onPress }: ConversationR
       onPress={onPress}
       role="button"
       aria-label={accessibleName}
-      accessibilityHint="Opens the conversation"
+      accessibilityHint={t('chat.openHint')}
       className="min-h-tap flex-row items-center gap-3 px-4 py-3 active:bg-surface-muted">
       <Avatar name={conversation.counterpart_name} />
 

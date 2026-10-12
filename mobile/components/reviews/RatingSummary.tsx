@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
 import { MeterBar } from '@/components/ui/MeterBar';
@@ -16,6 +17,7 @@ export interface RatingSummaryProps {
 }
 
 export function RatingSummary({ summary, className = '' }: RatingSummaryProps) {
+  const { t } = useTranslation();
   return (
     <View className={`flex-row items-center gap-5 ${className}`}>
       <View className="gap-1">
@@ -39,7 +41,7 @@ export function RatingSummary({ summary, className = '' }: RatingSummaryProps) {
               </Text>
               <MeterBar
                 value={share}
-                label={`${star} ${star === 1 ? 'star' : 'stars'}`}
+                label={t('reviews.stars', { count: star })}
                 className="flex-1"
               />
               <Text

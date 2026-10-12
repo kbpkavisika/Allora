@@ -1,5 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import { Alert } from 'react-native';
+import i18n from '@/lib/i18n';
 
 export interface PickImageOptions {
   aspect?: [number, number];
@@ -41,7 +42,7 @@ async function pickFromCamera(aspect: [number, number]) {
 export function pickImage({
   aspect = [3, 4],
   allowCamera = false,
-  title = 'Add photo',
+  title = i18n.t('imagePicker.addPhoto'),
 }: PickImageOptions = {}): Promise<string | null> {
   if (!allowCamera) {
     return pickFromLibrary(aspect);
@@ -52,9 +53,12 @@ export function pickImage({
       title,
       undefined,
       [
-        { text: 'Take photo', onPress: () => pickFromCamera(aspect).then(resolve) },
-        { text: 'Choose from library', onPress: () => pickFromLibrary(aspect).then(resolve) },
-        { text: 'Cancel', style: 'cancel', onPress: () => resolve(null) },
+        { text: i18n.t('imagePicker.takePhoto'), onPress: () => pickFromCamera(aspect).then(resolve) },
+        {
+          text: i18n.t('imagePicker.chooseFromLibrary'),
+          onPress: () => pickFromLibrary(aspect).then(resolve),
+        },
+        { text: i18n.t('common.cancel'), style: 'cancel', onPress: () => resolve(null) },
       ],
       { onDismiss: () => resolve(null) }
     );

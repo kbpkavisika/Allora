@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { Card } from '@/components/ui/Card';
@@ -14,6 +15,7 @@ import {
 } from '@/lib/schemas';
 
 export function NotificationSettingsCard() {
+  const { t } = useTranslation();
   const { profile, updateProfile } = useProfile();
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -30,22 +32,22 @@ export function NotificationSettingsCard() {
   async function onSubmit(formValues: NotificationPreferencesValues) {
     setFormError(null);
     const { error } = await updateProfile(formValues);
-    if (error) setFormError('Could not save that setting. Try again.');
+    if (error) setFormError(t('accessibility.saveError'));
   }
 
   const save = handleSubmit(onSubmit);
 
   return (
     <View className="gap-3">
-      <SectionHeader title="Notifications" />
+      <SectionHeader title={t('notifications.title')} />
       <Card>
         <Controller
           control={control}
           name="message_notifications"
           render={({ field: { value, onChange } }) => (
             <ToggleRow
-              title="Message notifications"
-              description="Get notified about new messages. Mute a single chat from its screen."
+              title={t('notifications.messages')}
+              description={t('notifications.messagesDescription')}
               value={value}
               onValueChange={(next) => {
                 onChange(next);
