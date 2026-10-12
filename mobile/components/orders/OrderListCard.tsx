@@ -1,5 +1,6 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { Icon } from '@/components/ui/Icon';
@@ -12,19 +13,21 @@ export interface OrderListCardProps {
 }
 
 export function OrderListCard({ order, position }: OrderListCardProps) {
+  const { t } = useTranslation();
   const status = statusPresentation(order.status);
   const cover = order.items[0]?.product_photo;
   const delivery = deliveryCaption(order.delivery);
   const caption = `${status.label} · ${
-    delivery ?? `Order placed ${formatPlacedAt(order.placed_at)}`
+    delivery ?? t('orders.placedCaption', { date: formatPlacedAt(order.placed_at) })
   }`;
+  const orderNumber = t('orders.orderNumber', { number: order.order_number });
 
   return (
     <Pressable
       onPress={() => router.push({ pathname: '/orders/[id]', params: { id: order.id } })}
       role="button"
-      aria-label={`Order ${order.order_number}, ${status.label}${position ? `, ${position}` : ''}`}
-      accessibilityHint="Opens the order"
+      aria-label={`${orderNumber}, ${status.label}${position ? `, ${position}` : ''}`}
+      accessibilityHint={t('orders.openHint')}
       className="flex-row items-center gap-3 rounded-12 border-1 border-border bg-surface p-3 active:bg-surface-muted">
       <View className="h-14 w-14 items-center justify-center overflow-hidden rounded-8 bg-surface-sunken">
         {cover ? (
@@ -40,7 +43,7 @@ export function OrderListCard({ order, position }: OrderListCardProps) {
 
       <View className="flex-1 gap-1">
         <Text className="type-mono text-secondary" numberOfLines={1}>
-          Order {order.order_number}
+          {orderNumber}
         </Text>
         <Text className="type-label-lg text-primary" numberOfLines={1}>
           {itemSummary(order.items)}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { Icon, type IconName } from '@/components/ui/Icon';
@@ -18,6 +19,7 @@ export function MessageContextLine({
   onRemove,
   className = '',
 }: MessageContextLineProps) {
+  const { t } = useTranslation();
   const body = (
     <View className="flex-row items-center gap-1">
       <Icon name={icon} size="sm" className="text-secondary" />
@@ -46,8 +48,8 @@ export function MessageContextLine({
         <IconButton
           diameter={32}
           icon={<Icon name="close" size="sm" className="text-secondary" />}
-          label="Remove reference"
-          hint="Sends the message without this reference"
+          label={t('composer.removeReference')}
+          hint={t('composer.removeReferenceHint')}
           onPress={onRemove}
         />
       ) : null}

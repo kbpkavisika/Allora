@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -20,17 +21,20 @@ export function SellerOrderCard({
   isAdvancing = false,
   position,
 }: SellerOrderCardProps) {
+  const { t } = useTranslation();
   const status = statusPresentation(order.status);
   const advanceLabel = nextDeliveryStatusLabel(order.delivery?.status ?? 'pending');
   const delivery = deliveryCaption(order.delivery);
+  const orderNumber = t('orders.orderNumber', { number: order.order_number });
+  const buyer = order.ship_name ?? t('account.seller.buyer');
 
   return (
     <View className="gap-3 rounded-12 border-1 border-border bg-surface p-3">
       <Pressable
         onPress={onPress}
         role="button"
-        aria-label={`Order ${order.order_number}, ${order.ship_name ?? 'Buyer'}, ${status.label}${position ? `, ${position}` : ''}`}
-        accessibilityHint="Opens the order details"
+        aria-label={`${orderNumber}, ${buyer}, ${status.label}${position ? `, ${position}` : ''}`}
+        accessibilityHint={t('seller.orders.openHint')}
         className="flex-row items-center gap-3 active:bg-surface-muted">
         <View className="h-14 w-14 items-center justify-center rounded-8 bg-surface-sunken">
           <Icon name="orders" size="md" className="text-secondary" />
@@ -38,13 +42,13 @@ export function SellerOrderCard({
 
         <View className="flex-1 gap-1">
           <Text className="type-mono text-secondary" numberOfLines={1}>
-            Order {order.order_number}
+            {orderNumber}
           </Text>
           <Text
             className="type-label-lg text-primary"
             numberOfLines={1}
             maxFontSizeMultiplier={1.5}>
-            {order.ship_name ?? 'Buyer'}
+            {buyer}
           </Text>
           <Text className="type-text-secondary text-secondary" numberOfLines={1}>
             {itemSummary(order.items)}

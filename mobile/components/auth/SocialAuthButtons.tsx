@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -14,19 +15,21 @@ export function SocialAuthButtons({
   onGooglePress,
   className = '',
 }: SocialAuthButtonsProps) {
+  const { t } = useTranslation();
+
   return (
     <View className={`gap-3 ${className}`}>
       <Button
         variant="social"
-        label="Continue with Apple"
-        hint="Opens Apple sign-in"
+        label={t('auth.social.apple')}
+        hint={t('auth.social.appleHint')}
         leadingIcon={<BrandMark name="apple" className="text-primary" />}
         onPress={onApplePress}
       />
       <Button
         variant="social"
-        label="Continue with Google"
-        hint="Opens Google sign-in"
+        label={t('auth.social.google')}
+        hint={t('auth.social.googleHint')}
         leadingIcon={<BrandMark name="google" className="text-primary" />}
         onPress={onGooglePress}
       />

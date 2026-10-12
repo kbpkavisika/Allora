@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { Icon } from '@/components/ui/Icon';
@@ -10,21 +11,22 @@ export interface ReviewSummaryRowProps {
 }
 
 export function ReviewSummaryRow({ summary, onPress }: ReviewSummaryRowProps) {
+  const { t } = useTranslation();
   const hasReviews = summary.total > 0;
   const caption = hasReviews
     ? `${formatAverage(summary.average)} · ${formatReviewCount(summary.total)}`
-    : 'Be the first to review this product';
+    : t('reviews.beFirstProduct');
 
   return (
     <Pressable
       onPress={onPress}
       role="button"
-      aria-label={hasReviews ? `Reviews, ${caption}` : 'Reviews, no reviews yet'}
-      accessibilityHint="Opens every review for this product"
+      aria-label={hasReviews ? t('reviews.summaryLabel', { caption }) : t('reviews.summaryLabelEmpty')}
+      accessibilityHint={t('reviews.summaryHint')}
       className="min-h-tap flex-row items-center gap-3 active:bg-surface-muted">
       <View className="flex-1 gap-1">
         <Text role="heading" className="type-h3 text-primary" maxFontSizeMultiplier={1.5}>
-          Reviews
+          {t('reviews.title')}
         </Text>
         <View className="flex-row items-center gap-2">
           {hasReviews ? <StarRating value={summary.average} /> : null}

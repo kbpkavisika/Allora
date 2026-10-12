@@ -1,8 +1,10 @@
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { ListRow } from '@/components/account/ListRow';
 import { Toggle } from '@/components/ui/Toggle';
 import type { Shop } from '@/lib/shop';
+import { translateOption } from '@/lib/i18n';
 
 export interface StoreDetailsCardProps {
   shop: Shop;
@@ -17,56 +19,58 @@ export function StoreDetailsCard({
   onTogglePickup,
   onToggleDelivery,
 }: StoreDetailsCardProps) {
+  const { t } = useTranslation();
+
   return (
     <View className="rounded-12 border-1 border-border bg-surface px-4">
       <ListRow
-        label="Shop name"
+        label={t('store.name')}
         value={shop.name}
         showChevron
         onPress={onEdit}
-        hint="Edits your shop name"
+        hint={t('storeCard.nameHint')}
         className="border-b-1 border-border"
       />
       <ListRow
-        label="Category"
-        value={shop.category}
+        label={t('productForm.category')}
+        value={translateOption(shop.category)}
         showChevron
         onPress={onEdit}
-        hint="Edits what your shop sells"
+        hint={t('storeCard.categoryHint')}
         className="border-b-1 border-border"
       />
       <ListRow
-        label="Location"
+        label={t('storeCard.location')}
         value={shop.city}
         showChevron
         onPress={onEdit}
-        hint="Edits your shop location"
+        hint={t('storeCard.locationHint')}
         className="border-b-1 border-border"
       />
       <ListRow
-        label="Phone"
+        label={t('account.phone')}
         value={shop.phone}
         valueVariant="mono"
         showChevron
         onPress={onEdit}
-        hint="Edits your shop phone number"
+        hint={t('storeCard.phoneHint')}
         className="border-b-1 border-border"
       />
       <ListRow
-        label="Shop photo"
-        value={shop.photo_url ? 'Added' : 'Not set'}
+        label={t('store.photo')}
+        value={shop.photo_url ? t('storeCard.added') : t('account.notSet')}
         showChevron
         onPress={onEdit}
-        hint="Changes your shop photo"
+        hint={t('storeCard.photoHint')}
         className="border-b-1 border-border"
       />
 
       <ListRow
-        title="Pickup for buyers"
-        subtitle="Buyers nearby can collect orders directly"
+        title={t('storeCard.pickup')}
+        subtitle={t('store.pickupDescription')}
         trailing={
           <Toggle
-            label="Pickup for buyers"
+            label={t('storeCard.pickup')}
             value={shop.pickup_enabled}
             onValueChange={onTogglePickup}
           />
@@ -74,11 +78,11 @@ export function StoreDetailsCard({
         className="border-b-1 border-border"
       />
       <ListRow
-        title="Delivery"
-        subtitle="Show shipping options at checkout"
+        title={t('delivery.title')}
+        subtitle={t('store.deliveryDescription')}
         trailing={
           <Toggle
-            label="Delivery"
+            label={t('delivery.title')}
             value={shop.delivery_enabled}
             onValueChange={onToggleDelivery}
           />

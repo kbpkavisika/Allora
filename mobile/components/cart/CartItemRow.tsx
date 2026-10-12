@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
 import { QuantityStepper } from '@/components/ui/QuantityStepper';
@@ -14,6 +15,7 @@ export interface CartItemRowProps {
 }
 
 export function CartItemRow({ line, onChangeQuantity, onRemove }: CartItemRowProps) {
+  const { t } = useTranslation();
   const { product, quantity } = line;
 
   return (
@@ -36,7 +38,7 @@ export function CartItemRow({ line, onChangeQuantity, onRemove }: CartItemRowPro
             {product.name}
           </Text>
           <Text className="type-text-secondary text-secondary">
-            {formatMoney(product.price)} each
+            {t('cart.each', { price: formatMoney(product.price) })}
           </Text>
         </View>
       </View>
@@ -47,8 +49,8 @@ export function CartItemRow({ line, onChangeQuantity, onRemove }: CartItemRowPro
           variant="outlined"
           diameter={44}
           icon={<Icon name="trash" size="md" className="text-error" />}
-          label={`Remove ${product.name} from cart`}
-          hint="Removes this item from your cart"
+          label={t('cart.remove', { name: product.name })}
+          hint={t('cart.removeHint')}
           onPress={onRemove}
         />
       </View>

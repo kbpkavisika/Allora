@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { Badge } from '@/components/ui/Badge';
@@ -12,6 +13,7 @@ export interface ProductListRowProps {
 }
 
 export function ProductListRow({ product, onPress, position }: ProductListRowProps) {
+  const { t } = useTranslation();
   const stock = getStockStatus(product.stock_quantity);
   const cover = product.photos[0];
 
@@ -20,7 +22,7 @@ export function ProductListRow({ product, onPress, position }: ProductListRowPro
       onPress={onPress}
       role="button"
       aria-label={`${product.name}, ${formatPrice(product.price)}, ${stock.detailLabel}${position ? `, ${position}` : ''}`}
-      accessibilityHint="Opens the product to edit it"
+      accessibilityHint={t('seller.products.openHint')}
       className="min-h-tap flex-row items-center gap-3 py-3 active:bg-surface-muted">
       <View className="h-14 w-14 items-center justify-center overflow-hidden rounded-8 bg-surface-sunken">
         {cover ? (

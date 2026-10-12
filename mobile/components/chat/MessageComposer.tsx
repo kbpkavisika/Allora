@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Controller, useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -12,6 +13,7 @@ export interface MessageComposerProps {
 }
 
 export function MessageComposer({ onSend, disabled = false }: MessageComposerProps) {
+  const { t } = useTranslation();
   const {
     control,
     handleSubmit,
@@ -33,10 +35,10 @@ export function MessageComposer({ onSend, disabled = false }: MessageComposerPro
         name="body"
         render={({ field, fieldState }) => (
           <InputField
-            label="Message"
+            label={t('composer.label')}
             isLabelHidden
             width="half"
-            placeholder="Write a message"
+            placeholder={t('composer.placeholder')}
             value={field.value}
             onChangeText={field.onChange}
             onBlur={field.onBlur}
@@ -51,13 +53,13 @@ export function MessageComposer({ onSend, disabled = false }: MessageComposerPro
 
       <View className="min-h-control-field justify-center">
         <Button
-          label="Send"
+          label={t('composer.send')}
           size="md"
           fullWidth={false}
           loading={isSubmitting}
           disabled={disabled}
           onPress={submit}
-          hint="Sends your message"
+          hint={t('composer.sendHint')}
         />
       </View>
     </View>

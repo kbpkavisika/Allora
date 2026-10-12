@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
@@ -9,12 +10,10 @@ export interface ProfileHeaderProps {
   onEdit?: () => void;
 }
 
-function greeting(name: string | null) {
-  const firstName = name?.trim().split(/\s+/)[0];
-  return firstName ? `Hi ${firstName}` : 'Hi there';
-}
-
 export function ProfileHeader({ name, email, onEdit }: Readonly<ProfileHeaderProps>) {
+  const { t } = useTranslation();
+  const firstName = name?.trim().split(/\s+/)[0];
+
   return (
     <View className="flex-row items-center gap-4">
       <View className="h-[56px] w-[56px] items-center justify-center rounded-full bg-surface-sunken">
@@ -27,7 +26,7 @@ export function ProfileHeader({ name, email, onEdit }: Readonly<ProfileHeaderPro
           className="type-h1 text-primary"
           numberOfLines={1}
           maxFontSizeMultiplier={1.5}>
-          {greeting(name)}
+          {firstName ? t('profileHeader.greeting', { name: firstName }) : t('profileHeader.greetingAnonymous')}
         </Text>
         <Text className="type-text-secondary text-secondary" numberOfLines={1}>
           {email}
@@ -38,10 +37,10 @@ export function ProfileHeader({ name, email, onEdit }: Readonly<ProfileHeaderPro
         <Button
           variant="secondary"
           size="sm"
-          label="Edit"
+          label={t('common.edit')}
           fullWidth={false}
           onPress={onEdit}
-          hint="Edits your name and phone number"
+          hint={t('profileHeader.editHint')}
           className="self-center"
         />
       ) : null}
