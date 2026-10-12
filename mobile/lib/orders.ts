@@ -1,6 +1,7 @@
 import type { BadgeVariant } from '@/components/ui/Badge';
 import type { Delivery } from '@/lib/deliveries';
 import i18n, { formatDate } from '@/lib/i18n';
+import { formatPrice } from '@/lib/products';
 
 export const orderStatuses = ['new', 'processing', 'completed'] as const;
 
@@ -119,7 +120,5 @@ export function formatPlacedAt(placedAt: string): string {
 }
 
 export function formatMoney(amount: number): string {
-  const [whole, fraction] = Number(amount).toFixed(2).split('.');
-  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  return `$${grouped}.${fraction}`;
+  return formatPrice(amount);
 }
