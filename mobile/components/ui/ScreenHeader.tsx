@@ -1,4 +1,5 @@
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
 import { Icon } from '@/components/ui/Icon';
@@ -18,6 +19,7 @@ export function ScreenHeader({
   showBack = true,
   className = '',
 }: ScreenHeaderProps) {
+  const { t } = useTranslation();
   const router = useRouter();
   const titleRef = useScreenTitleFocus();
 
@@ -28,8 +30,8 @@ export function ScreenHeader({
           variant="outlined"
           diameter={44}
           icon={<Icon name="back" size="lg" className="text-primary" />}
-          label="Go back"
-          hint="Returns to the previous screen"
+          label={t('common.goBack')}
+          hint={t('common.previousScreenHint')}
           onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
         />
       ) : null}

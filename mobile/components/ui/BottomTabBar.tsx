@@ -1,6 +1,7 @@
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { PlatformPressable } from '@react-navigation/elements';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -25,6 +26,7 @@ export function BottomTabBar({
   tabs,
   badges = {},
 }: BottomTabBarComponentProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const surface = useThemeColor({}, 'surface');
   const border = useThemeColor({}, 'border');
@@ -51,7 +53,7 @@ export function BottomTabBar({
             key={route.key}
             accessibilityRole="tab"
             accessibilityState={{ selected: focused }}
-            accessibilityLabel={badge > 0 ? `${label}, ${badge} unread` : label}
+            accessibilityLabel={badge > 0 ? t('tabs.unreadLabel', { label, count: badge }) : label}
             style={styles.tab}
             onPress={() => navigation.navigate(route.name)}
             onPressIn={() => {

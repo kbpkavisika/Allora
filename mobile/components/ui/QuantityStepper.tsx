@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Text, View } from 'react-native';
 
 import { Icon } from '@/components/ui/Icon';
@@ -13,14 +14,16 @@ export interface QuantityStepperProps {
 // Standalone ± control, deliberately kept away from destructive actions (design.md §08,
 // wireframe S11 note: "Remove is a labelled button... far from ±" avoids wrong-item removal).
 export function QuantityStepper({ quantity, productName, onChange, min = 1 }: QuantityStepperProps) {
+  const { t } = useTranslation();
+
   return (
     <View className="flex-row items-center gap-3">
       <IconButton
         variant="outlined"
         diameter={44}
         icon={<Icon name="minus" size="md" className="text-primary" />}
-        label={`Decrease quantity of ${productName}`}
-        hint={`Currently ${quantity}`}
+        label={t('quantity.decrease', { name: productName })}
+        hint={t('quantity.current', { quantity })}
         onPress={() => onChange(quantity - 1)}
         disabled={quantity <= min}
       />
@@ -31,8 +34,8 @@ export function QuantityStepper({ quantity, productName, onChange, min = 1 }: Qu
         variant="outlined"
         diameter={44}
         icon={<Icon name="plus" size="md" className="text-primary" />}
-        label={`Increase quantity of ${productName}`}
-        hint={`Currently ${quantity}`}
+        label={t('quantity.increase', { name: productName })}
+        hint={t('quantity.current', { quantity })}
         onPress={() => onChange(quantity + 1)}
       />
     </View>

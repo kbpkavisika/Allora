@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 export interface StepProgressProps {
@@ -7,10 +8,12 @@ export interface StepProgressProps {
 }
 
 export function StepProgress({ current, total, className = '' }: StepProgressProps) {
+  const { t } = useTranslation();
+
   return (
     <View
       role="progressbar"
-      aria-label={`Step ${current} of ${total}`}
+      aria-label={t('a11y.step', { current, total })}
       aria-valuemin={1}
       aria-valuemax={total}
       aria-valuenow={current}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -10,6 +11,7 @@ export interface BottomSheetProps {
 const SCRIM = 'rgba(16, 17, 18, 0.45)';
 
 export function BottomSheet({ onDismiss, label, children }: BottomSheetProps) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
   return (
@@ -17,7 +19,7 @@ export function BottomSheet({ onDismiss, label, children }: BottomSheetProps) {
       <Pressable
         onPress={onDismiss}
         role="button"
-        aria-label={`Close ${label.toLowerCase()}`}
+        aria-label={t('sheet.close', { label: label.toLowerCase() })}
         className="flex-1"
       />
 

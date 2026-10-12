@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { Badge } from '@/components/ui/Badge';
@@ -24,6 +25,7 @@ export function ProductPhotoGrid({
   error,
   className = '',
 }: ProductPhotoGridProps) {
+  const { t } = useTranslation();
   const hasError = Boolean(error);
   const isFull = photos.length >= max;
 
@@ -38,7 +40,7 @@ export function ProductPhotoGrid({
       return;
     }
 
-    const uri = await pickImage({ allowCamera: true, title: 'Add product photo' });
+    const uri = await pickImage({ allowCamera: true, title: t('photoGrid.addProductPhoto') });
     if (uri) {
       onChange([...photos, uri]);
     }
@@ -80,7 +82,7 @@ export function ProductPhotoGrid({
                     <Pressable
                       onPress={() => removePhoto(index)}
                       role="button"
-                      aria-label={`Remove photo ${index + 1}`}
+                      aria-label={t('photoGrid.remove', { index: index + 1 })}
                       hitSlop={8}
                       className="absolute right-1 top-1 h-5 w-5 items-center justify-center rounded-full bg-error">
                       <Icon name="close" size="sm" className="text-surface" />
@@ -97,7 +99,7 @@ export function ProductPhotoGrid({
                   onPress={addPhoto}
                   disabled={isFull}
                   role="button"
-                  aria-label={isCover ? 'Add cover photo' : `Add photo ${index + 1}`}
+                  aria-label={isCover ? t('photoGrid.addCover') : t('photoGrid.add', { index: index + 1 })}
                   style={{ aspectRatio: 1 }}
                   className={`flex-1 items-center justify-center gap-1 rounded-8 bg-surface-sunken ${
                     hasError ? 'border-1.5 border-error' : 'border-1 border-border-strong'
@@ -105,7 +107,7 @@ export function ProductPhotoGrid({
                   <Icon name="plus" size="md" className="text-secondary" />
                   {isCover ? (
                     <Text className="type-label-sm text-secondary" maxFontSizeMultiplier={1.5}>
-                      Cover
+                      {t('photoGrid.cover')}
                     </Text>
                   ) : null}
                 </Pressable>
