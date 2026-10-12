@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OrderListCard } from '@/components/orders/OrderListCard';
 import { ScrollTabs, type ScrollTabItem } from '@/components/ui/ScrollTabs';
 import { useListPosition } from '@/hooks/useListPosition';
+import { useOrdersRefresh } from '@/hooks/useOrdersRefresh';
 import { useOrders } from '@/lib/OrdersProvider';
 
 type OrderFilter = 'active' | 'past';
@@ -16,6 +17,7 @@ export default function OrdersScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { orders, isLoading } = useOrders();
+  const { isRefreshing, pullToRefresh } = useOrdersRefresh();
   const positionOf = useListPosition();
   const [filter, setFilter] = useState<OrderFilter>('active');
 
@@ -53,6 +55,8 @@ export default function OrdersScreen() {
       <FlatList
         data={visibleOrders}
         keyExtractor={(item) => item.id}
+        refreshing={isRefreshing}
+        onRefresh={pullToRefresh}
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 16,

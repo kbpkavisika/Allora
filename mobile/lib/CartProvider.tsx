@@ -9,7 +9,7 @@ import {
 } from 'react';
 
 import { useAuth } from '@/lib/AuthProvider';
-import { cartItemCount, cartSubtotal, type CartLine } from '@/lib/cart';
+import { cartItemCount, CartStockLimitError, cartSubtotal, type CartLine } from '@/lib/cart';
 import type { Product } from '@/lib/products';
 import { supabase } from '@/lib/supabase';
 
@@ -77,8 +77,19 @@ export function CartProvider({ children }: CartProviderProps) {
     async (productId: string, quantity = 1) => {
       if (!userId) return { error: new Error('Not signed in.') };
 
+      const { data: product, error: stockError } = await supabase
+        .from('products')
+        .select('stock_quantity')
+        .eq('id', productId)
+        .single();
+      if (stockError) return { error: stockError };
+
       const existing = lines.find((line) => line.product.id === productId);
       const nextQuantity = (existing?.quantity ?? 0) + quantity;
+
+      if (nextQuantity > product.stock_quantity) {
+        return { error: new CartStockLimitError(product.stock_quantity) };
+      }
 
       const { error } = await supabase
         .from('cart_items')
@@ -97,6 +108,11 @@ export function CartProvider({ children }: CartProviderProps) {
     async (productId: string, quantity: number) => {
       if (!userId) return { error: new Error('Not signed in.') };
 
+      const stock = lines.find((line) => line.product.id === productId)?.product.stock_quantity;
+      if (stock !== undefined && quantity > 0 && quantity > stock) {
+        return { error: new CartStockLimitError(stock) };
+      }
+
       const { error } =
         quantity <= 0
           ? await supabase
@@ -113,7 +129,7 @@ export function CartProvider({ children }: CartProviderProps) {
       if (!error) await load();
       return { error };
     },
-    [userId, load]
+    [userId, lines, load]
   );
 
   const removeItem = useCallback(

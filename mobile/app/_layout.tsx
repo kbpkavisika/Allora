@@ -148,7 +148,7 @@ function RootNavigator() {
               options={{ presentation: 'modal', headerShown: false }}
             />
             <Stack.Screen name="orders/[id]" options={{ headerShown: false }} />
-            <Stack.Screen name="chat/index" options={{ headerShown: false }} />
+            <Stack.Screen name="messages" options={{ headerShown: false }} />
             <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
             <Stack.Screen name="orders/[id]/return" options={{ headerShown: false }} />
             <Stack.Screen name="orders/[id]/refund" options={{ headerShown: false }} />

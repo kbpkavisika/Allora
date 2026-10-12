@@ -50,9 +50,10 @@ type ContextLine = Omit<MessageContextLineProps, 'onRemove' | 'className'>;
 export default function ChatThreadScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { id, shopId, productId, orderId } = useLocalSearchParams<{
+  const { id, shopId, buyerId, productId, orderId } = useLocalSearchParams<{
     id?: string;
     shopId?: string;
+    buyerId?: string;
     productId?: string;
     orderId?: string;
   }>();
@@ -165,7 +166,9 @@ export default function ChatThreadScreen() {
     );
   }, [messages, pendingContext, productNames]);
 
-  const title = conversation?.counterpart_name ?? shopName ?? t('tabs.chat');
+  const buyerName = buyerId && orderId ? getOrder(orderId)?.ship_name ?? null : null;
+  const counterpartName = buyerId ? buyerName : shopName;
+  const title = conversation?.counterpart_name ?? counterpartName ?? t('tabs.chat');
 
   function contextLine({ productId: product, orderId: order }: MessageContext): ContextLine | null {
     if (order) {
@@ -215,6 +218,7 @@ export default function ChatThreadScreen() {
       body,
       conversationId: conversationId ?? undefined,
       shopId: conversationId ? undefined : shopId,
+      buyerId: conversationId ? undefined : buyerId,
       productId: pendingContext?.productId,
       orderId: pendingContext?.orderId,
     });
@@ -288,7 +292,9 @@ export default function ChatThreadScreen() {
               {t('chat.startTitle')}
             </Text>
             <Text className="type-text-primary text-center text-secondary">
-              {t('chat.startBody', { name: shopName ?? t('chat.theSeller') })}
+              {buyerId
+                ? t('chat.sellerStartBody', { name: counterpartName ?? t('account.seller.buyer') })
+                : t('chat.startBody', { name: counterpartName ?? t('chat.theSeller') })}
             </Text>
           </View>
         ) : (

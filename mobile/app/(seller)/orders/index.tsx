@@ -9,6 +9,7 @@ import { Icon } from '@/components/ui/Icon';
 import { ScrollTabs, type ScrollTabItem } from '@/components/ui/ScrollTabs';
 import { TopBar } from '@/components/ui/TopBar';
 import { useListPosition } from '@/hooks/useListPosition';
+import { useOrdersRefresh } from '@/hooks/useOrdersRefresh';
 import { orderStatuses, type OrderStatus } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 
@@ -16,6 +17,7 @@ export default function SellerOrdersScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { orders, isLoading, advanceDelivery } = useOrders();
+  const { isRefreshing, pullToRefresh } = useOrdersRefresh();
   const positionOf = useListPosition();
 
   const [tab, setTab] = useState<OrderStatus>('new');
@@ -56,6 +58,8 @@ export default function SellerOrdersScreen() {
       <FlatList
         data={visibleOrders}
         keyExtractor={(item) => item.id}
+        refreshing={isRefreshing}
+        onRefresh={pullToRefresh}
         contentContainerStyle={{
           paddingHorizontal: 16,
           paddingTop: 16,

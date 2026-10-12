@@ -1,8 +1,9 @@
 import type { BadgeVariant } from '@/components/ui/Badge';
 import type { Delivery } from '@/lib/deliveries';
 import i18n, { formatDate } from '@/lib/i18n';
+import { formatPrice } from '@/lib/products';
 
-export const orderStatuses = ['new', 'processing', 'completed'] as const;
+export const orderStatuses = ['new', 'processing', 'completed', 'cancelled'] as const;
 
 export type OrderStatus = (typeof orderStatuses)[number];
 
@@ -23,6 +24,11 @@ export interface OrderItem {
   product_photo: string | null;
   unit_price: number;
   quantity: number;
+  product?: { photos: string[] } | null;
+}
+
+export function orderItemPhoto(item: OrderItem | undefined): string | null {
+  return item?.product_photo || item?.product?.photos?.[0] || null;
 }
 
 export interface Order {
@@ -45,10 +51,14 @@ export interface Order {
   ship_country: string | null;
   ship_note: string | null;
   placed_at: string;
+  cancelled_at: string | null;
+  cancelled_by: 'buyer' | 'seller' | null;
+  cancel_reason: string | null;
   created_at: string;
   updated_at: string;
   items: OrderItem[];
   delivery: Delivery | null;
+  returns: OrderReturn[];
 }
 
 // Kept as aliases so the seller screens that imported the old names keep compiling.
@@ -63,14 +73,41 @@ export function returnReasonLabel(reason: string): string {
   return i18n.t(`orders.returnReason.${reason}`);
 }
 
+export type ReturnStatus = 'requested' | 'approved' | 'rejected' | 'completed';
+
 export interface OrderReturn {
   id: string;
   order_id: string;
   buyer_id: string;
   reason: ReturnReason;
   details: string | null;
-  status: 'open' | 'resolved';
+  status: ReturnStatus;
+  seller_note: string | null;
   created_at: string;
+  updated_at: string;
+}
+
+const RETURN_VARIANT: Record<ReturnStatus, BadgeVariant> = {
+  requested: 'warning',
+  approved: 'dark',
+  rejected: 'neutral',
+  completed: 'success',
+};
+
+export function returnStatusPresentation(status: ReturnStatus): { label: string; variant: BadgeVariant } {
+  return { label: i18n.t(`returns.status.${status}`), variant: RETURN_VARIANT[status] };
+}
+
+export function latestReturn(order: Order): OrderReturn | undefined {
+  return [...order.returns].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
+}
+
+export function hasOpenReturn(order: Order): boolean {
+  return order.returns.some((item) => item.status === 'requested' || item.status === 'approved');
+}
+
+export function canRequestReturn(order: Order): boolean {
+  return order.status === 'completed' && !hasOpenReturn(order);
 }
 
 interface StatusPresentation {
@@ -83,10 +120,26 @@ const STATUS: Record<OrderStatus, Omit<StatusPresentation, 'label'>> = {
   new: { tone: 'bg-accent', variant: 'warning' },
   processing: { tone: 'bg-info', variant: 'neutral' },
   completed: { tone: 'bg-success', variant: 'success' },
+  cancelled: { tone: 'bg-error', variant: 'neutral' },
 };
 
 export function statusPresentation(status: OrderStatus): StatusPresentation {
   return { ...STATUS[status], label: i18n.t(`orders.status.${status}`) };
+}
+
+export const CANCEL_REASON_MAX_LENGTH = 500;
+
+export const RETURN_NOTE_MAX_LENGTH = 500;
+
+export function canBuyerCancel(order: Order): boolean {
+  return (
+    order.status === 'new' &&
+    !(order.payment_method === 'payhere' && order.payment_status === 'paid')
+  );
+}
+
+export function canSellerCancel(order: Order): boolean {
+  return order.status === 'new' || order.status === 'processing';
 }
 
 export function itemSummary(items: OrderItem[]): string {
@@ -119,7 +172,5 @@ export function formatPlacedAt(placedAt: string): string {
 }
 
 export function formatMoney(amount: number): string {
-  const [whole, fraction] = Number(amount).toFixed(2).split('.');
-  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  return `$${grouped}.${fraction}`;
+  return formatPrice(amount);
 }

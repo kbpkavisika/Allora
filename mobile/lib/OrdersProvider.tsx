@@ -43,6 +43,14 @@ export interface ReturnInput {
   details?: string;
 }
 
+export type ReturnDecision = 'approved' | 'rejected' | 'complete';
+
+export interface ReturnResponseInput {
+  returnId: string;
+  decision: ReturnDecision;
+  note?: string;
+}
+
 export interface OrdersContextValue {
   orders: Order[];
   isLoading: boolean;
@@ -51,6 +59,8 @@ export interface OrdersContextValue {
   updateDelivery: (input: DeliveryInput) => Promise<{ error: unknown }>;
   advanceDelivery: (orderId: string) => Promise<{ error: unknown }>;
   submitReturn: (input: ReturnInput) => Promise<{ error: unknown }>;
+  respondToReturn: (input: ReturnResponseInput) => Promise<{ error: unknown }>;
+  cancelOrder: (orderId: string, reason?: string) => Promise<{ error: unknown }>;
   refresh: () => Promise<void>;
 }
 
@@ -96,7 +106,9 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
 
     const query = supabase
       .from('orders')
-      .select('*, items:order_items(*), delivery:deliveries(*)')
+      .select(
+        '*, items:order_items(*, product:products(photos)), delivery:deliveries(*), returns:order_returns(*)'
+      )
       .order('placed_at', { ascending: false });
 
     const { data } = isSeller
@@ -121,61 +133,21 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
       if (!userId) return { orders: [], error: new Error('Not signed in.') };
       if (lines.length === 0) return { orders: [], error: new Error('Your cart is empty.') };
 
-      const byShop = new Map<string, CartLine[]>();
-      for (const line of lines) {
-        const key = line.product.shop_id;
-        byShop.set(key, [...(byShop.get(key) ?? []), line]);
-      }
-
-      const created: Order[] = [];
-
-      for (const [shopKey, shopLines] of byShop) {
-        const subtotal = shopLines.reduce(
-          (sum, line) => sum + line.product.price * line.quantity,
-          0
-        );
-
-        const { data: order, error: orderError } = await supabase
-          .from('orders')
-          .insert({
-            buyer_id: userId,
-            shop_id: shopKey,
-            status: 'new',
-            payment_method: paymentMethod,
-            payment_status: paymentStatus,
-            payment_reference: paymentReference ?? null,
-            subtotal,
-            total: subtotal,
-            ...addressSnapshot(address, profile?.full_name ?? null),
-          })
-          .select()
-          .single();
-
-        if (orderError || !order) {
-          await load();
-          return { orders: created, error: orderError ?? new Error('Could not place the order.') };
-        }
-
-        const { error: itemsError } = await supabase.from('order_items').insert(
-          shopLines.map((line) => ({
-            order_id: order.id,
-            product_id: line.product.id,
-            product_name: line.product.name,
-            product_photo: line.product.photos[0] ?? null,
-            unit_price: line.product.price,
-            quantity: line.quantity,
-          }))
-        );
-
-        if (itemsError) {
-          await load();
-          return { orders: created, error: itemsError };
-        }
-
-        created.push({ ...(order as unknown as Order), items: [], delivery: null });
-      }
+      const { data, error } = await supabase.rpc('place_order', {
+        p_items: lines.map((line) => ({ product_id: line.product.id, quantity: line.quantity })),
+        p_payment_method: paymentMethod,
+        p_payment_status: paymentStatus,
+        p_payment_reference: paymentReference ?? null,
+        p_shipping: addressSnapshot(address, profile?.full_name ?? null),
+      });
 
       await load();
+
+      if (error) return { orders: [], error };
+
+      const created = ((data ?? []) as Omit<Order, 'items' | 'delivery' | 'returns'>[]).map(
+        (order) => ({ ...order, items: [], delivery: null, returns: [] })
+      );
       return { orders: created, error: null };
     },
     [userId, profile?.full_name, load]
@@ -225,18 +197,43 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
 
   const submitReturn = useCallback(
     async ({ orderId, reason, details }: ReturnInput) => {
-      if (!userId) return { error: new Error('Not signed in.') };
-
-      const { error } = await supabase.from('order_returns').insert({
-        order_id: orderId,
-        buyer_id: userId,
-        reason,
-        details: details?.trim() ? details.trim() : null,
+      const { error } = await supabase.rpc('request_return', {
+        p_order_id: orderId,
+        p_reason: reason,
+        p_details: details?.trim() ? details.trim() : null,
       });
 
+      await load();
       return { error };
     },
-    [userId]
+    [load]
+  );
+
+  const respondToReturn = useCallback(
+    async ({ returnId, decision, note }: ReturnResponseInput) => {
+      const { error } = await supabase.rpc('respond_to_return', {
+        p_return_id: returnId,
+        p_decision: decision,
+        p_note: note?.trim() ? note.trim() : null,
+      });
+
+      await load();
+      return { error };
+    },
+    [load]
+  );
+
+  const cancelOrder = useCallback(
+    async (orderId: string, reason?: string) => {
+      const { error } = await supabase.rpc('cancel_order', {
+        p_order_id: orderId,
+        p_reason: reason?.trim() ? reason.trim() : null,
+      });
+
+      await load();
+      return { error };
+    },
+    [load]
   );
 
   const value = useMemo<OrdersContextValue>(
@@ -248,6 +245,8 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
       updateDelivery,
       advanceDelivery,
       submitReturn,
+      respondToReturn,
+      cancelOrder,
       refresh: load,
     }),
     [
@@ -258,6 +257,8 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
       updateDelivery,
       advanceDelivery,
       submitReturn,
+      respondToReturn,
+      cancelOrder,
       load,
     ]
   );

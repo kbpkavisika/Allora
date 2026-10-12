@@ -53,7 +53,8 @@
     "you": "You",
     "buyerEmpty": "Tap Chat with seller on a product or order to ask a question.",
     "mutedLabel": "muted",
-    "openHint": "Opens the conversation"
+    "openHint": "Opens the conversation",
+    "sellerStartBody": "Send {{name}} a message about their order."
   },
   "orders": {
     "returnReason": {
@@ -65,7 +66,8 @@
     "status": {
       "new": "New",
       "processing": "Processing",
-      "completed": "Completed"
+      "completed": "Completed",
+      "cancelled": "Cancelled"
     },
     "noItems": "No items",
     "itemSummary": "{{name}} and {{count}} more",
@@ -90,7 +92,26 @@
     "chatWithSeller": "Chat with seller",
     "chatWithSellerHint": "Opens a conversation with the seller about this order",
     "placedCaption": "Order placed {{date}}",
-    "openHint": "Opens the order"
+    "openHint": "Opens the order",
+    "cancel": {
+      "action": "Cancel order",
+      "buyerHint": "Opens a confirmation to cancel this order",
+      "sellerHint": "Opens a form to cancel this order with a reason for the buyer",
+      "title": "Cancel this order?",
+      "buyerBody": "The seller will be told, and nothing will be sent to you.",
+      "sellerBody": "The buyer will see your reason. The items go back into your stock.",
+      "reason": "Reason",
+      "reasonOptional": "Reason (optional)",
+      "reasonPlaceholder": "Tell the other side why",
+      "confirm": "Cancel order",
+      "keep": "Keep order",
+      "error": "Could not cancel the order. Try again.",
+      "cancelledByYou": "You cancelled this order on {{date}}.",
+      "cancelledByBuyer": "The buyer cancelled this order on {{date}}.",
+      "cancelledBySeller": "The seller cancelled this order on {{date}}.",
+      "reasonLine": "Reason: {{reason}}",
+      "paidUseRefund": "This order is paid, so it can't be cancelled here. Request a refund instead."
+    }
   },
   "deliveries": {
     "status": {
@@ -303,7 +324,11 @@
     "trackingRequired": "Enter the tracking number.",
     "trackingTooLong": "Keep the tracking number under 40 characters.",
     "trackingInvalid": "Use only letters, numbers and dashes.",
-    "messageTooLong": "Keep your message under {{max}} characters."
+    "messageTooLong": "Keep your message under {{max}} characters.",
+    "cancelReasonRequired": "Give the buyer a reason.",
+    "cancelReasonTooLong": "Keep the reason under 500 characters.",
+    "returnNoteRequired": "Tell the buyer why.",
+    "returnNoteTooLong": "Keep the note under 500 characters."
   },
   "auth": {
     "email": "Email",
@@ -491,7 +516,14 @@
     "checkoutHint": "Proceeds to payment for the items in your cart",
     "each": "{{price}} each",
     "remove": "Remove {{name}} from cart",
-    "removeHint": "Removes this item from your cart"
+    "removeHint": "Removes this item from your cart",
+    "soldOut": "Sold out. Remove it to check out.",
+    "overStock_one": "Only {{count}} left. Lower the quantity to check out.",
+    "overStock_other": "Only {{count}} left. Lower the quantity to check out.",
+    "limitReached_one": "Only {{count}} is available, and it's already in your cart.",
+    "limitReached_other": "Only {{count}} are available, and they're already in your cart.",
+    "updateError": "Could not update your cart. Try again.",
+    "fixStock": "Some items are sold out or over the available stock. Update them to check out."
   },
   "seller": {
     "home": {
@@ -514,12 +546,14 @@
       "emptyTitle": {
         "new": "No new orders",
         "processing": "No processing orders",
-        "completed": "No completed orders"
+        "completed": "No completed orders",
+        "cancelled": "No cancelled orders"
       },
       "emptyBody": {
         "new": "New orders from buyers will show up here.",
         "processing": "Orders you have started preparing will show up here.",
-        "completed": "Orders you have finished will show up here."
+        "completed": "Orders you have finished will show up here.",
+        "cancelled": "Orders you or your buyers cancel will show up here."
       },
       "openHint": "Opens the order details"
     },
@@ -536,7 +570,9 @@
     },
     "orderDetail": {
       "unavailable": "This order is no longer available.",
-      "complete": "This order is complete."
+      "complete": "This order is complete.",
+      "messageBuyer": "Message buyer",
+      "messageBuyerHint": "Opens a conversation with the buyer about this order"
     }
   },
   "returns": {
@@ -545,7 +581,38 @@
     "details": "Tell us more",
     "detailsPlaceholder": "Add any details that will help the seller resolve this quickly.",
     "callout": "Your request goes directly to the seller. Most replies arrive within 1–2 business days.",
-    "submit": "Submit request"
+    "submit": "Submit request",
+    "status": {
+      "requested": "Return requested",
+      "approved": "Return approved",
+      "rejected": "Return rejected",
+      "completed": "Return completed"
+    },
+    "title": "Return",
+    "requestedOn": "Requested on {{date}}",
+    "reasonLine": "Reason: {{reason}}",
+    "sellerNote": "Seller's note",
+    "buyerNext": {
+      "requested": "The seller will review your request.",
+      "approved": "Approved. Follow the seller's note to send the item back.",
+      "rejected": "The seller rejected this return.",
+      "completed": "The seller has received the item back."
+    },
+    "approve": "Approve return",
+    "approveHint": "Opens a form to approve this return with an optional note for the buyer",
+    "reject": "Reject return",
+    "rejectHint": "Opens a form to reject this return with a note for the buyer",
+    "markReceived": "Mark item received",
+    "markReceivedHint": "Completes the return once the item is back with you",
+    "approveTitle": "Approve this return?",
+    "rejectTitle": "Reject this return?",
+    "approveBody": "Tell the buyer how to send the item back.",
+    "rejectBody": "The buyer will see your note.",
+    "note": "Note for the buyer",
+    "noteOptional": "Note for the buyer (optional)",
+    "notePlaceholder": "For example, where to post the item",
+    "respondError": "Could not update the return. Try again.",
+    "unavailable": "This order can't be returned right now."
   },
   "checkout": {
     "addressRequired": "Add a delivery address before checking out.",
