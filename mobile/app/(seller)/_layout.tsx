@@ -1,4 +1,4 @@
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { Redirect, Tabs } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 

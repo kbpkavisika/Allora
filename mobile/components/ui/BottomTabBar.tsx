@@ -1,5 +1,5 @@
-import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { PlatformPressable } from '@react-navigation/elements';
+import { BottomTabBarProps } from 'expo-router/js-tabs';
+import { PlatformPressable } from 'expo-router/react-navigation';
 import * as Haptics from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';

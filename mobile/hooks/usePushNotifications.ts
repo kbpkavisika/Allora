@@ -1,8 +1,11 @@
-import { useLastNotificationResponse } from 'expo-notifications';
 import { router } from 'expo-router';
 import { useEffect, useRef } from 'react';
 
-import { notificationConversationId, registerPushToken } from '@/lib/notifications';
+import {
+  notificationConversationId,
+  registerPushToken,
+  useLastNotificationResponse,
+} from '@/lib/notifications';
 
 export function usePushNotifications(userId: string | undefined, canNavigate: boolean) {
   const response = useLastNotificationResponse();
