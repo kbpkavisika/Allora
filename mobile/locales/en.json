@@ -325,7 +325,9 @@
     "trackingInvalid": "Use only letters, numbers and dashes.",
     "messageTooLong": "Keep your message under {{max}} characters.",
     "cancelReasonRequired": "Give the buyer a reason.",
-    "cancelReasonTooLong": "Keep the reason under 500 characters."
+    "cancelReasonTooLong": "Keep the reason under 500 characters.",
+    "returnNoteRequired": "Tell the buyer why.",
+    "returnNoteTooLong": "Keep the note under 500 characters."
   },
   "auth": {
     "email": "Email",
@@ -576,7 +578,38 @@
     "details": "Tell us more",
     "detailsPlaceholder": "Add any details that will help the seller resolve this quickly.",
     "callout": "Your request goes directly to the seller. Most replies arrive within 1–2 business days.",
-    "submit": "Submit request"
+    "submit": "Submit request",
+    "status": {
+      "requested": "Return requested",
+      "approved": "Return approved",
+      "rejected": "Return rejected",
+      "completed": "Return completed"
+    },
+    "title": "Return",
+    "requestedOn": "Requested on {{date}}",
+    "reasonLine": "Reason: {{reason}}",
+    "sellerNote": "Seller's note",
+    "buyerNext": {
+      "requested": "The seller will review your request.",
+      "approved": "Approved. Follow the seller's note to send the item back.",
+      "rejected": "The seller rejected this return.",
+      "completed": "The seller has received the item back."
+    },
+    "approve": "Approve return",
+    "approveHint": "Opens a form to approve this return with an optional note for the buyer",
+    "reject": "Reject return",
+    "rejectHint": "Opens a form to reject this return with a note for the buyer",
+    "markReceived": "Mark item received",
+    "markReceivedHint": "Completes the return once the item is back with you",
+    "approveTitle": "Approve this return?",
+    "rejectTitle": "Reject this return?",
+    "approveBody": "Tell the buyer how to send the item back.",
+    "rejectBody": "The buyer will see your note.",
+    "note": "Note for the buyer",
+    "noteOptional": "Note for the buyer (optional)",
+    "notePlaceholder": "For example, where to post the item",
+    "respondError": "Could not update the return. Try again.",
+    "unavailable": "This order can't be returned right now."
   },
   "checkout": {
     "addressRequired": "Add a delivery address before checking out.",

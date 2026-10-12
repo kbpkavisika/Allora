@@ -7,25 +7,37 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CancelOrderSheet } from '@/components/orders/CancelOrderSheet';
 import { DeliverySummary } from '@/components/orders/DeliverySummary';
 import { OrderCancellationNotice } from '@/components/orders/OrderCancellationNotice';
+import { OrderReturnSummary } from '@/components/orders/OrderReturnSummary';
+import { ReturnResponseSheet } from '@/components/seller/ReturnResponseSheet';
+import { FormError } from '@/components/ui/FormError';
 import { DeliveryUpdateSheet } from '@/components/seller/DeliveryUpdateSheet';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TopBar } from '@/components/ui/TopBar';
 import { nextDeliveryStatusLabel } from '@/lib/deliveries';
-import { canSellerCancel, formatMoney, formatPlacedAt, statusPresentation } from '@/lib/orders';
+import {
+  canSellerCancel,
+  formatMoney,
+  formatPlacedAt,
+  latestReturn,
+  statusPresentation,
+} from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 
 export default function SellerOrderDetailScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { getOrder, advanceDelivery } = useOrders();
+  const { getOrder, advanceDelivery, respondToReturn } = useOrders();
 
   const order = id ? getOrder(id) : undefined;
   const [isAdvancing, setIsAdvancing] = useState(false);
   const [isDeliveryOpen, setIsDeliveryOpen] = useState(false);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
+  const [returnDecision, setReturnDecision] = useState<'approved' | 'rejected' | null>(null);
+  const [isCompletingReturn, setIsCompletingReturn] = useState(false);
+  const [returnError, setReturnError] = useState<string | null>(null);
 
   if (!order) {
     return (
@@ -51,6 +63,7 @@ export default function SellerOrderDetailScreen() {
 
   const presentation = statusPresentation(order.status);
   const isCancelled = order.status === 'cancelled';
+  const orderReturn = latestReturn(order);
   const itemsTotal = order.items.reduce(
     (sum, item) => sum + item.unit_price * item.quantity,
     0
@@ -62,6 +75,17 @@ export default function SellerOrderDetailScreen() {
     setIsAdvancing(true);
     await advanceDelivery(order!.id);
     setIsAdvancing(false);
+  }
+
+  async function completeReturn() {
+    if (!orderReturn) return;
+
+    setReturnError(null);
+    setIsCompletingReturn(true);
+    const { error } = await respondToReturn({ returnId: orderReturn.id, decision: 'complete' });
+    setIsCompletingReturn(false);
+
+    if (error) setReturnError(t('returns.respondError'));
   }
 
   return (
@@ -110,6 +134,43 @@ export default function SellerOrderDetailScreen() {
           </View>
         </View>
 
+        {orderReturn ? (
+          <OrderReturnSummary orderReturn={orderReturn} viewer="seller">
+            {orderReturn.status === 'requested' ? (
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <Button
+                    size="sm"
+                    label={t('returns.approve')}
+                    hint={t('returns.approveHint')}
+                    onPress={() => setReturnDecision('approved')}
+                  />
+                </View>
+                <View className="flex-1">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    label={t('returns.reject')}
+                    hint={t('returns.rejectHint')}
+                    onPress={() => setReturnDecision('rejected')}
+                  />
+                </View>
+              </View>
+            ) : orderReturn.status === 'approved' ? (
+              <>
+                <FormError message={returnError} />
+                <Button
+                  size="sm"
+                  label={t('returns.markReceived')}
+                  hint={t('returns.markReceivedHint')}
+                  loading={isCompletingReturn}
+                  onPress={completeReturn}
+                />
+              </>
+            ) : null}
+          </OrderReturnSummary>
+        ) : null}
+
         {isCancelled ? (
           <OrderCancellationNotice order={order} viewer="seller" />
         ) : (
@@ -149,6 +210,20 @@ export default function SellerOrderDetailScreen() {
           delivery={order.delivery}
           onDismiss={() => setIsDeliveryOpen(false)}
         />
+      </Modal>
+
+      <Modal
+        visible={returnDecision !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setReturnDecision(null)}>
+        {orderReturn && returnDecision ? (
+          <ReturnResponseSheet
+            returnId={orderReturn.id}
+            decision={returnDecision}
+            onDismiss={() => setReturnDecision(null)}
+          />
+        ) : null}
       </Modal>
 
       <Modal

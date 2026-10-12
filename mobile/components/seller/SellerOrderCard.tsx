@@ -1,10 +1,19 @@
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { deliveryCaption, nextDeliveryStatusLabel } from '@/lib/deliveries';
-import { formatPlacedAt, itemSummary, statusPresentation, type Order } from '@/lib/orders';
+import {
+  formatPlacedAt,
+  hasOpenReturn,
+  itemSummary,
+  latestReturn,
+  returnStatusPresentation,
+  statusPresentation,
+  type Order,
+} from '@/lib/orders';
 
 export interface SellerOrderCardProps {
   order: Order;
@@ -30,6 +39,7 @@ export function SellerOrderCard({
   const delivery = deliveryCaption(order.delivery);
   const orderNumber = t('orders.orderNumber', { number: order.order_number });
   const buyer = order.ship_name ?? t('account.seller.buyer');
+  const openReturn = hasOpenReturn(order) ? latestReturn(order) : undefined;
 
   return (
     <View className="gap-3 rounded-12 border-1 border-border bg-surface p-3">
@@ -63,6 +73,13 @@ export function SellerOrderCard({
               {status.label} · {delivery ?? formatPlacedAt(order.placed_at)}
             </Text>
           </View>
+
+          {openReturn ? (
+            <Badge
+              label={returnStatusPresentation(openReturn.status).label}
+              variant={returnStatusPresentation(openReturn.status).variant}
+            />
+          ) : null}
         </View>
 
         <Icon name="forward" size="md" className="text-secondary" />

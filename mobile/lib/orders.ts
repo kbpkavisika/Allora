@@ -53,6 +53,7 @@ export interface Order {
   updated_at: string;
   items: OrderItem[];
   delivery: Delivery | null;
+  returns: OrderReturn[];
 }
 
 // Kept as aliases so the seller screens that imported the old names keep compiling.
@@ -67,14 +68,41 @@ export function returnReasonLabel(reason: string): string {
   return i18n.t(`orders.returnReason.${reason}`);
 }
 
+export type ReturnStatus = 'requested' | 'approved' | 'rejected' | 'completed';
+
 export interface OrderReturn {
   id: string;
   order_id: string;
   buyer_id: string;
   reason: ReturnReason;
   details: string | null;
-  status: 'open' | 'resolved';
+  status: ReturnStatus;
+  seller_note: string | null;
   created_at: string;
+  updated_at: string;
+}
+
+const RETURN_VARIANT: Record<ReturnStatus, BadgeVariant> = {
+  requested: 'warning',
+  approved: 'dark',
+  rejected: 'neutral',
+  completed: 'success',
+};
+
+export function returnStatusPresentation(status: ReturnStatus): { label: string; variant: BadgeVariant } {
+  return { label: i18n.t(`returns.status.${status}`), variant: RETURN_VARIANT[status] };
+}
+
+export function latestReturn(order: Order): OrderReturn | undefined {
+  return [...order.returns].sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
+}
+
+export function hasOpenReturn(order: Order): boolean {
+  return order.returns.some((item) => item.status === 'requested' || item.status === 'approved');
+}
+
+export function canRequestReturn(order: Order): boolean {
+  return order.status === 'completed' && !hasOpenReturn(order);
 }
 
 interface StatusPresentation {
@@ -95,6 +123,8 @@ export function statusPresentation(status: OrderStatus): StatusPresentation {
 }
 
 export const CANCEL_REASON_MAX_LENGTH = 500;
+
+export const RETURN_NOTE_MAX_LENGTH = 500;
 
 export function canBuyerCancel(order: Order): boolean {
   return (

@@ -43,6 +43,14 @@ export interface ReturnInput {
   details?: string;
 }
 
+export type ReturnDecision = 'approved' | 'rejected' | 'complete';
+
+export interface ReturnResponseInput {
+  returnId: string;
+  decision: ReturnDecision;
+  note?: string;
+}
+
 export interface OrdersContextValue {
   orders: Order[];
   isLoading: boolean;
@@ -51,6 +59,7 @@ export interface OrdersContextValue {
   updateDelivery: (input: DeliveryInput) => Promise<{ error: unknown }>;
   advanceDelivery: (orderId: string) => Promise<{ error: unknown }>;
   submitReturn: (input: ReturnInput) => Promise<{ error: unknown }>;
+  respondToReturn: (input: ReturnResponseInput) => Promise<{ error: unknown }>;
   cancelOrder: (orderId: string, reason?: string) => Promise<{ error: unknown }>;
   refresh: () => Promise<void>;
 }
@@ -97,7 +106,7 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
 
     const query = supabase
       .from('orders')
-      .select('*, items:order_items(*), delivery:deliveries(*)')
+      .select('*, items:order_items(*), delivery:deliveries(*), returns:order_returns(*)')
       .order('placed_at', { ascending: false });
 
     const { data } = isSeller
@@ -134,11 +143,9 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
 
       if (error) return { orders: [], error };
 
-      const created = ((data ?? []) as Omit<Order, 'items' | 'delivery'>[]).map((order) => ({
-        ...order,
-        items: [],
-        delivery: null,
-      }));
+      const created = ((data ?? []) as Omit<Order, 'items' | 'delivery' | 'returns'>[]).map(
+        (order) => ({ ...order, items: [], delivery: null, returns: [] })
+      );
       return { orders: created, error: null };
     },
     [userId, profile?.full_name, load]
@@ -188,18 +195,30 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
 
   const submitReturn = useCallback(
     async ({ orderId, reason, details }: ReturnInput) => {
-      if (!userId) return { error: new Error('Not signed in.') };
-
-      const { error } = await supabase.from('order_returns').insert({
-        order_id: orderId,
-        buyer_id: userId,
-        reason,
-        details: details?.trim() ? details.trim() : null,
+      const { error } = await supabase.rpc('request_return', {
+        p_order_id: orderId,
+        p_reason: reason,
+        p_details: details?.trim() ? details.trim() : null,
       });
 
+      await load();
       return { error };
     },
-    [userId]
+    [load]
+  );
+
+  const respondToReturn = useCallback(
+    async ({ returnId, decision, note }: ReturnResponseInput) => {
+      const { error } = await supabase.rpc('respond_to_return', {
+        p_return_id: returnId,
+        p_decision: decision,
+        p_note: note?.trim() ? note.trim() : null,
+      });
+
+      await load();
+      return { error };
+    },
+    [load]
   );
 
   const cancelOrder = useCallback(
@@ -224,6 +243,7 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
       updateDelivery,
       advanceDelivery,
       submitReturn,
+      respondToReturn,
       cancelOrder,
       refresh: load,
     }),
@@ -235,6 +255,7 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
       updateDelivery,
       advanceDelivery,
       submitReturn,
+      respondToReturn,
       cancelOrder,
       load,
     ]

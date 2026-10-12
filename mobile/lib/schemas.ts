@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import { MESSAGE_MAX_LENGTH } from '@/lib/chat';
-import { CANCEL_REASON_MAX_LENGTH, returnReasons } from '@/lib/orders';
+import { CANCEL_REASON_MAX_LENGTH, RETURN_NOTE_MAX_LENGTH, returnReasons } from '@/lib/orders';
 import i18n from '@/lib/i18n';
 
 const email = z
@@ -102,6 +102,19 @@ export function cancelOrderSchema(isReasonRequired: boolean) {
     reason: isReasonRequired
       ? reason.min(1, { error: () => i18n.t('validation.cancelReasonRequired') })
       : reason,
+  });
+}
+
+export function returnResponseSchema(isNoteRequired: boolean) {
+  const note = z
+    .string()
+    .trim()
+    .max(RETURN_NOTE_MAX_LENGTH, { error: () => i18n.t('validation.returnNoteTooLong') });
+
+  return z.object({
+    note: isNoteRequired
+      ? note.min(1, { error: () => i18n.t('validation.returnNoteRequired') })
+      : note,
   });
 }
 
@@ -207,6 +220,7 @@ export type ShippingAddressValues = z.infer<typeof shippingAddressSchema>;
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
 export type ReturnRequestValues = z.infer<typeof returnRequestSchema>;
 export type CancelOrderValues = z.infer<ReturnType<typeof cancelOrderSchema>>;
+export type ReturnResponseValues = z.infer<ReturnType<typeof returnResponseSchema>>;
 export type RefundRequestValues = z.infer<typeof refundRequestSchema>;
 export type ReviewValues = z.infer<typeof reviewSchema>;
 export type MessageValues = z.infer<typeof messageSchema>;
