@@ -76,7 +76,18 @@ export default function RefundStatusScreen() {
   const hasAnnouncedRef = useRef(false);
 
   const order = id ? getOrder(id) : undefined;
-  const refund = id ? refundService.getRefund(id) : undefined;
+  const [currentRefund, setCurrentRefund] = useState(id ? refundService.getRefund(id) : undefined);
+  const refund = currentRefund ?? (id ? refundService.getRefund(id) : undefined);
+
+  useEffect(() => {
+    if (order?.id && !currentRefund) {
+      void refundService.fetchRefundsForOrder(order.id, order.order_number).then((list) => {
+        if (list.length > 0) {
+          setCurrentRefund(list[list.length - 1]);
+        }
+      });
+    }
+  }, [order?.id, order?.order_number, currentRefund]);
 
   const [simulatedStatus, setSimulatedStatus] = useState<RefundStatus | null>(
     statusParam ?? null
