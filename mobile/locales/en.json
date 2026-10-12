@@ -491,7 +491,14 @@
     "checkoutHint": "Proceeds to payment for the items in your cart",
     "each": "{{price}} each",
     "remove": "Remove {{name}} from cart",
-    "removeHint": "Removes this item from your cart"
+    "removeHint": "Removes this item from your cart",
+    "soldOut": "Sold out. Remove it to check out.",
+    "overStock_one": "Only {{count}} left. Lower the quantity to check out.",
+    "overStock_other": "Only {{count}} left. Lower the quantity to check out.",
+    "limitReached_one": "Only {{count}} is available, and it's already in your cart.",
+    "limitReached_other": "Only {{count}} are available, and they're already in your cart.",
+    "updateError": "Could not update your cart. Try again.",
+    "fixStock": "Some items are sold out or over the available stock. Update them to check out."
   },
   "seller": {
     "home": {

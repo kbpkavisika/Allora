@@ -20,6 +20,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Toast } from '@/components/ui/Toast';
 import { TopBar } from '@/components/ui/TopBar';
 import { useSellerChat } from '@/hooks/useSellerChat';
+import { CartStockLimitError } from '@/lib/cart';
 import { useCart } from '@/lib/CartProvider';
 import { formatMoney } from '@/lib/orders';
 import { getStockStatus, type Product } from '@/lib/products';
@@ -102,7 +103,13 @@ export default function ProductDetailScreen() {
     setIsAdding(true);
     const { error } = await addItem(product.id);
     setIsAdding(false);
-    setToast(error ? t('product.addError') : t('product.added', { name: product.name }));
+    if (error instanceof CartStockLimitError) {
+      setToast(
+        error.available > 0 ? t('cart.limitReached', { count: error.available }) : t('stock.soldOut')
+      );
+    } else {
+      setToast(error ? t('product.addError') : t('product.added', { name: product.name }));
+    }
   }
 
   return (

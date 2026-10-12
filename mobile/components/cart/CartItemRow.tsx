@@ -5,7 +5,7 @@ import { Text, View } from 'react-native';
 import { QuantityStepper } from '@/components/ui/QuantityStepper';
 import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
-import type { CartLine } from '@/lib/cart';
+import { cartLineStockIssue, type CartLine } from '@/lib/cart';
 import { formatMoney } from '@/lib/orders';
 
 export interface CartItemRowProps {
@@ -17,6 +17,7 @@ export interface CartItemRowProps {
 export function CartItemRow({ line, onChangeQuantity, onRemove }: CartItemRowProps) {
   const { t } = useTranslation();
   const { product, quantity } = line;
+  const stockIssue = cartLineStockIssue(line);
 
   return (
     <View className="gap-3 rounded-12 border-1 border-border bg-surface p-3">
@@ -40,11 +41,23 @@ export function CartItemRow({ line, onChangeQuantity, onRemove }: CartItemRowPro
           <Text className="type-text-secondary text-secondary">
             {t('cart.each', { price: formatMoney(product.price) })}
           </Text>
+          {stockIssue ? (
+            <Text className="type-text-secondary text-error">
+              {stockIssue === 'soldOut'
+                ? t('cart.soldOut')
+                : t('cart.overStock', { count: product.stock_quantity })}
+            </Text>
+          ) : null}
         </View>
       </View>
 
       <View className="flex-row items-center justify-between">
-        <QuantityStepper quantity={quantity} productName={product.name} onChange={onChangeQuantity} />
+        <QuantityStepper
+          quantity={quantity}
+          productName={product.name}
+          onChange={onChangeQuantity}
+          max={product.stock_quantity}
+        />
         <IconButton
           variant="outlined"
           diameter={44}
