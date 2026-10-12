@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CancelOrderSheet } from '@/components/orders/CancelOrderSheet';
 import { DeliverySummary } from '@/components/orders/DeliverySummary';
 import { OrderCancellationNotice } from '@/components/orders/OrderCancellationNotice';
+import { OrderItemRows } from '@/components/orders/OrderItemRows';
 import { OrderReturnSummary } from '@/components/orders/OrderReturnSummary';
 import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
 import {
@@ -20,6 +21,7 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { StepProgress } from '@/components/ui/StepProgress';
 import { SuccessBanner } from '@/components/ui/SuccessBanner';
 import { TopBar } from '@/components/ui/TopBar';
+import { useOrdersRefresh } from '@/hooks/useOrdersRefresh';
 import { useSellerChat } from '@/hooks/useSellerChat';
 import { useAuth } from '@/lib/AuthProvider';
 import { deliveryTrackingStep } from '@/lib/deliveries';
@@ -29,7 +31,6 @@ import {
   formatMoney,
   latestReturn,
   statusPresentation,
-  type OrderItem,
 } from '@/lib/orders';
 import { formatDate } from '@/lib/i18n';
 import { useOrders } from '@/lib/OrdersProvider';
@@ -42,6 +43,7 @@ export default function OrderDetailScreen() {
   const { id, returned } = useLocalSearchParams<{ id?: string; returned?: string }>();
   const { getOrder, isLoading } = useOrders();
   const { openSellerChat, isOpening } = useSellerChat();
+  useOrdersRefresh();
 
   const order = id ? getOrder(id) : undefined;
   const [isCancelOpen, setIsCancelOpen] = useState(false);
@@ -195,27 +197,7 @@ export default function OrderDetailScreen() {
 
         <View className="gap-4">
           <SectionHeader title={t('orders.items')} />
-          <View className="rounded-12 border-1 border-border bg-surface px-4">
-            {order.items.map((item: OrderItem, index) => (
-              <View
-                key={item.id}
-                className={`min-h-tap flex-row items-center gap-3 py-3 ${
-                  index < order.items.length - 1 ? 'border-b-1 border-border' : ''
-                }`}>
-                <View className="flex-1 gap-0.5">
-                  <Text className="type-label-lg text-primary" numberOfLines={2}>
-                    {item.product_name}
-                  </Text>
-                  <Text className="type-text-secondary text-secondary">
-                    {formatMoney(item.unit_price)} × {item.quantity}
-                  </Text>
-                </View>
-                <Text className="type-text-primary text-primary">
-                  {formatMoney(item.unit_price * item.quantity)}
-                </Text>
-              </View>
-            ))}
-          </View>
+          <OrderItemRows items={order.items} />
           <View className="flex-row items-center justify-between px-1">
             <Text className="type-label-lg text-primary">{t('cart.total')}</Text>
             <Text className="type-label-lg text-primary">{formatMoney(orderTotal)}</Text>

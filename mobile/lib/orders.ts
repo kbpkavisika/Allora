@@ -24,6 +24,11 @@ export interface OrderItem {
   product_photo: string | null;
   unit_price: number;
   quantity: number;
+  product?: { photos: string[] } | null;
+}
+
+export function orderItemPhoto(item: OrderItem | undefined): string | null {
+  return item?.product_photo || item?.product?.photos?.[0] || null;
 }
 
 export interface Order {

@@ -4,12 +4,14 @@ import { Pressable, Text, View } from 'react-native';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
+import { ProductThumbnail } from '@/components/ui/ProductThumbnail';
 import { deliveryCaption, nextDeliveryStatusLabel } from '@/lib/deliveries';
 import {
   formatPlacedAt,
   hasOpenReturn,
   itemSummary,
   latestReturn,
+  orderItemPhoto,
   returnStatusPresentation,
   statusPresentation,
   type Order,
@@ -49,9 +51,7 @@ export function SellerOrderCard({
         aria-label={`${orderNumber}, ${buyer}, ${status.label}${position ? `, ${position}` : ''}`}
         accessibilityHint={t('seller.orders.openHint')}
         className="flex-row items-center gap-3 active:bg-surface-muted">
-        <View className="h-14 w-14 items-center justify-center rounded-8 bg-surface-sunken">
-          <Icon name="orders" size="md" className="text-secondary" />
-        </View>
+        <ProductThumbnail uri={orderItemPhoto(order.items[0])} fallbackIcon="orders" />
 
         <View className="flex-1 gap-1">
           <Text className="type-mono text-secondary" numberOfLines={1}>

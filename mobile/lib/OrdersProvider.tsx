@@ -106,7 +106,9 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
 
     const query = supabase
       .from('orders')
-      .select('*, items:order_items(*), delivery:deliveries(*), returns:order_returns(*)')
+      .select(
+        '*, items:order_items(*, product:products(photos)), delivery:deliveries(*), returns:order_returns(*)'
+      )
       .order('placed_at', { ascending: false });
 
     const { data } = isSeller
