@@ -1,10 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, Text, View } from 'react-native';
+import { Modal, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { CancelOrderSheet } from '@/components/orders/CancelOrderSheet';
 import { DeliverySummary } from '@/components/orders/DeliverySummary';
+import { OrderCancellationNotice } from '@/components/orders/OrderCancellationNotice';
 import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
 import {
   formatPaymentSummarySpeech,
@@ -20,7 +22,7 @@ import { TopBar } from '@/components/ui/TopBar';
 import { useSellerChat } from '@/hooks/useSellerChat';
 import { useAuth } from '@/lib/AuthProvider';
 import { deliveryTrackingStep } from '@/lib/deliveries';
-import { formatMoney, statusPresentation, type OrderItem } from '@/lib/orders';
+import { canBuyerCancel, formatMoney, statusPresentation, type OrderItem } from '@/lib/orders';
 import { formatDate } from '@/lib/i18n';
 import { useOrders } from '@/lib/OrdersProvider';
 import { refundService } from '@/services/refund/refundService';
@@ -34,6 +36,7 @@ export default function OrderDetailScreen() {
   const { openSellerChat, isOpening } = useSellerChat();
 
   const order = id ? getOrder(id) : undefined;
+  const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [refunds, setRefunds] = useState(order ? refundService.getRefundsForOrder(order.id) : []);
   const refund = refunds.length > 0 ? refunds[refunds.length - 1] : undefined;
 
@@ -71,6 +74,7 @@ export default function OrderDetailScreen() {
   }
 
   const presentation = statusPresentation(order.status);
+  const isCancelled = order.status === 'cancelled';
   const step = deliveryTrackingStep(order.delivery);
   const total = order.items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
   const orderTotal = order.total || total;
@@ -164,15 +168,21 @@ export default function OrderDetailScreen() {
           </Text>
         </View>
 
-        <View className="gap-4">
-          <SectionHeader title={t('orders.tracking')} />
-          <StepProgress current={step.current} total={step.total} />
-          <Text className="type-text-secondary text-secondary">
-            {t('orders.step', { current: step.current, total: step.total, label: step.label })}
-          </Text>
-        </View>
+        {isCancelled ? (
+          <OrderCancellationNotice order={order} viewer="buyer" />
+        ) : (
+          <>
+            <View className="gap-4">
+              <SectionHeader title={t('orders.tracking')} />
+              <StepProgress current={step.current} total={step.total} />
+              <Text className="type-text-secondary text-secondary">
+                {t('orders.step', { current: step.current, total: step.total, label: step.label })}
+              </Text>
+            </View>
 
-        <DeliverySummary delivery={order.delivery} />
+            <DeliverySummary delivery={order.delivery} />
+          </>
+        )}
 
         <View className="gap-4">
           <SectionHeader title={t('orders.items')} />
@@ -457,6 +467,18 @@ export default function OrderDetailScreen() {
         <Callout message={t('orders.alertCallout')} />
 
         <View className="gap-3">
+          {canBuyerCancel(order) ? (
+            <Button
+              variant="destructive"
+              size="md"
+              label={t('orders.cancel.action')}
+              hint={t('orders.cancel.buyerHint')}
+              onPress={() => setIsCancelOpen(true)}
+            />
+          ) : order.status === 'new' ? (
+            <Callout message={t('orders.cancel.paidUseRefund')} />
+          ) : null}
+
           {canRequestRefund ? (
             <Button
               variant="secondary"
@@ -496,6 +518,18 @@ export default function OrderDetailScreen() {
           </View>
         </View>
       </ScrollView>
+
+      <Modal
+        visible={isCancelOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsCancelOpen(false)}>
+        <CancelOrderSheet
+          orderId={order.id}
+          isSeller={false}
+          onDismiss={() => setIsCancelOpen(false)}
+        />
+      </Modal>
     </View>
   );
 }

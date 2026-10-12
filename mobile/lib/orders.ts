@@ -3,7 +3,7 @@ import type { Delivery } from '@/lib/deliveries';
 import i18n, { formatDate } from '@/lib/i18n';
 import { formatPrice } from '@/lib/products';
 
-export const orderStatuses = ['new', 'processing', 'completed'] as const;
+export const orderStatuses = ['new', 'processing', 'completed', 'cancelled'] as const;
 
 export type OrderStatus = (typeof orderStatuses)[number];
 
@@ -46,6 +46,9 @@ export interface Order {
   ship_country: string | null;
   ship_note: string | null;
   placed_at: string;
+  cancelled_at: string | null;
+  cancelled_by: 'buyer' | 'seller' | null;
+  cancel_reason: string | null;
   created_at: string;
   updated_at: string;
   items: OrderItem[];
@@ -84,10 +87,24 @@ const STATUS: Record<OrderStatus, Omit<StatusPresentation, 'label'>> = {
   new: { tone: 'bg-accent', variant: 'warning' },
   processing: { tone: 'bg-info', variant: 'neutral' },
   completed: { tone: 'bg-success', variant: 'success' },
+  cancelled: { tone: 'bg-error', variant: 'neutral' },
 };
 
 export function statusPresentation(status: OrderStatus): StatusPresentation {
   return { ...STATUS[status], label: i18n.t(`orders.status.${status}`) };
+}
+
+export const CANCEL_REASON_MAX_LENGTH = 500;
+
+export function canBuyerCancel(order: Order): boolean {
+  return (
+    order.status === 'new' &&
+    !(order.payment_method === 'payhere' && order.payment_status === 'paid')
+  );
+}
+
+export function canSellerCancel(order: Order): boolean {
+  return order.status === 'new' || order.status === 'processing';
 }
 
 export function itemSummary(items: OrderItem[]): string {

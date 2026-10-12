@@ -65,7 +65,8 @@
     "status": {
       "new": "New",
       "processing": "Processing",
-      "completed": "Completed"
+      "completed": "Completed",
+      "cancelled": "Cancelled"
     },
     "noItems": "No items",
     "itemSummary": "{{name}} and {{count}} more",
@@ -90,7 +91,26 @@
     "chatWithSeller": "Chat with seller",
     "chatWithSellerHint": "Opens a conversation with the seller about this order",
     "placedCaption": "Order placed {{date}}",
-    "openHint": "Opens the order"
+    "openHint": "Opens the order",
+    "cancel": {
+      "action": "Cancel order",
+      "buyerHint": "Opens a confirmation to cancel this order",
+      "sellerHint": "Opens a form to cancel this order with a reason for the buyer",
+      "title": "Cancel this order?",
+      "buyerBody": "The seller will be told, and nothing will be sent to you.",
+      "sellerBody": "The buyer will see your reason. The items go back into your stock.",
+      "reason": "Reason",
+      "reasonOptional": "Reason (optional)",
+      "reasonPlaceholder": "Tell the other side why",
+      "confirm": "Cancel order",
+      "keep": "Keep order",
+      "error": "Could not cancel the order. Try again.",
+      "cancelledByYou": "You cancelled this order on {{date}}.",
+      "cancelledByBuyer": "The buyer cancelled this order on {{date}}.",
+      "cancelledBySeller": "The seller cancelled this order on {{date}}.",
+      "reasonLine": "Reason: {{reason}}",
+      "paidUseRefund": "This order is paid, so it can't be cancelled here. Request a refund instead."
+    }
   },
   "deliveries": {
     "status": {
@@ -303,7 +323,9 @@
     "trackingRequired": "Enter the tracking number.",
     "trackingTooLong": "Keep the tracking number under 40 characters.",
     "trackingInvalid": "Use only letters, numbers and dashes.",
-    "messageTooLong": "Keep your message under {{max}} characters."
+    "messageTooLong": "Keep your message under {{max}} characters.",
+    "cancelReasonRequired": "Give the buyer a reason.",
+    "cancelReasonTooLong": "Keep the reason under 500 characters."
   },
   "auth": {
     "email": "Email",
@@ -521,12 +543,14 @@
       "emptyTitle": {
         "new": "No new orders",
         "processing": "No processing orders",
-        "completed": "No completed orders"
+        "completed": "No completed orders",
+        "cancelled": "No cancelled orders"
       },
       "emptyBody": {
         "new": "New orders from buyers will show up here.",
         "processing": "Orders you have started preparing will show up here.",
-        "completed": "Orders you have finished will show up here."
+        "completed": "Orders you have finished will show up here.",
+        "cancelled": "Orders you or your buyers cancel will show up here."
       },
       "openHint": "Opens the order details"
     },

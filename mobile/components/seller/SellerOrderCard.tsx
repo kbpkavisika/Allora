@@ -23,7 +23,10 @@ export function SellerOrderCard({
 }: SellerOrderCardProps) {
   const { t } = useTranslation();
   const status = statusPresentation(order.status);
-  const advanceLabel = nextDeliveryStatusLabel(order.delivery?.status ?? 'pending');
+  const advanceLabel =
+    order.status === 'cancelled'
+      ? null
+      : nextDeliveryStatusLabel(order.delivery?.status ?? 'pending');
   const delivery = deliveryCaption(order.delivery);
   const orderNumber = t('orders.orderNumber', { number: order.order_number });
   const buyer = order.ship_name ?? t('account.seller.buyer');

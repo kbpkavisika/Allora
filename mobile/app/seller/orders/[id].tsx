@@ -4,14 +4,16 @@ import { useTranslation } from 'react-i18next';
 import { Modal, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { CancelOrderSheet } from '@/components/orders/CancelOrderSheet';
 import { DeliverySummary } from '@/components/orders/DeliverySummary';
+import { OrderCancellationNotice } from '@/components/orders/OrderCancellationNotice';
 import { DeliveryUpdateSheet } from '@/components/seller/DeliveryUpdateSheet';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TopBar } from '@/components/ui/TopBar';
 import { nextDeliveryStatusLabel } from '@/lib/deliveries';
-import { formatMoney, formatPlacedAt, statusPresentation } from '@/lib/orders';
+import { canSellerCancel, formatMoney, formatPlacedAt, statusPresentation } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 
 export default function SellerOrderDetailScreen() {
@@ -23,6 +25,7 @@ export default function SellerOrderDetailScreen() {
   const order = id ? getOrder(id) : undefined;
   const [isAdvancing, setIsAdvancing] = useState(false);
   const [isDeliveryOpen, setIsDeliveryOpen] = useState(false);
+  const [isCancelOpen, setIsCancelOpen] = useState(false);
 
   if (!order) {
     return (
@@ -47,6 +50,7 @@ export default function SellerOrderDetailScreen() {
   }
 
   const presentation = statusPresentation(order.status);
+  const isCancelled = order.status === 'cancelled';
   const itemsTotal = order.items.reduce(
     (sum, item) => sum + item.unit_price * item.quantity,
     0
@@ -106,18 +110,33 @@ export default function SellerOrderDetailScreen() {
           </View>
         </View>
 
-        <DeliverySummary
-          delivery={order.delivery}
-          onEdit={() => setIsDeliveryOpen(true)}
-        />
-
-        {advanceLabel ? (
-          <Button label={advanceLabel} loading={isAdvancing} onPress={advance} />
+        {isCancelled ? (
+          <OrderCancellationNotice order={order} viewer="seller" />
         ) : (
-          <Text className="type-text-secondary text-center text-secondary">
-            {t('seller.orderDetail.complete')}
-          </Text>
+          <>
+            <DeliverySummary
+              delivery={order.delivery}
+              onEdit={() => setIsDeliveryOpen(true)}
+            />
+
+            {advanceLabel ? (
+              <Button label={advanceLabel} loading={isAdvancing} onPress={advance} />
+            ) : (
+              <Text className="type-text-secondary text-center text-secondary">
+                {t('seller.orderDetail.complete')}
+              </Text>
+            )}
+          </>
         )}
+
+        {canSellerCancel(order) ? (
+          <Button
+            variant="destructive"
+            label={t('orders.cancel.action')}
+            hint={t('orders.cancel.sellerHint')}
+            onPress={() => setIsCancelOpen(true)}
+          />
+        ) : null}
       </ScrollView>
 
       <Modal
@@ -129,6 +148,18 @@ export default function SellerOrderDetailScreen() {
           orderId={order.id}
           delivery={order.delivery}
           onDismiss={() => setIsDeliveryOpen(false)}
+        />
+      </Modal>
+
+      <Modal
+        visible={isCancelOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsCancelOpen(false)}>
+        <CancelOrderSheet
+          orderId={order.id}
+          isSeller
+          onDismiss={() => setIsCancelOpen(false)}
         />
       </Modal>
     </View>

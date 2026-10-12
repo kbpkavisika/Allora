@@ -51,6 +51,7 @@ export interface OrdersContextValue {
   updateDelivery: (input: DeliveryInput) => Promise<{ error: unknown }>;
   advanceDelivery: (orderId: string) => Promise<{ error: unknown }>;
   submitReturn: (input: ReturnInput) => Promise<{ error: unknown }>;
+  cancelOrder: (orderId: string, reason?: string) => Promise<{ error: unknown }>;
   refresh: () => Promise<void>;
 }
 
@@ -201,6 +202,19 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
     [userId]
   );
 
+  const cancelOrder = useCallback(
+    async (orderId: string, reason?: string) => {
+      const { error } = await supabase.rpc('cancel_order', {
+        p_order_id: orderId,
+        p_reason: reason?.trim() ? reason.trim() : null,
+      });
+
+      await load();
+      return { error };
+    },
+    [load]
+  );
+
   const value = useMemo<OrdersContextValue>(
     () => ({
       orders,
@@ -210,6 +224,7 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
       updateDelivery,
       advanceDelivery,
       submitReturn,
+      cancelOrder,
       refresh: load,
     }),
     [
@@ -220,6 +235,7 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
       updateDelivery,
       advanceDelivery,
       submitReturn,
+      cancelOrder,
       load,
     ]
   );
