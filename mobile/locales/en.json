@@ -845,6 +845,9 @@
   },
   "input": {
     "dictationHint": "Tap the microphone on your keyboard to start speaking",
+    "dictateHintAndroid": "Opens voice input so you can speak",
+    "dictationPrompt": "Speak now",
+    "dictationUnavailable": "Voice input is unavailable. Tap the microphone on your keyboard to start speaking.",
     "hidePassword": "Hide password",
     "showPassword": "Show password",
     "hidePasswordHint": "Conceals the password",

@@ -2,7 +2,7 @@ import { FunctionsHttpError } from '@supabase/supabase-js';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
@@ -13,6 +13,8 @@ import { InputField } from '@/components/ui/InputField';
 import { MessageBubble } from '@/components/ui/MessageBubble';
 import { ProductThumbnail } from '@/components/ui/ProductThumbnail';
 import { TopBar } from '@/components/ui/TopBar';
+import { useDictation } from '@/hooks/useDictation';
+import { MESSAGE_MAX_LENGTH } from '@/lib/chat';
 import { useCart } from '@/lib/CartProvider';
 import { formatPrice } from '@/lib/products';
 import type { Product } from '@/lib/products';
@@ -33,12 +35,21 @@ export default function ShoppingAssistantScreen() {
   const retryAt = useRef(0);
   const scrollRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
-  const { control, handleSubmit, reset } = useForm<MessageValues>({
+  const { control, handleSubmit, reset, setValue } = useForm<MessageValues>({
     resolver: zodResolver(messageSchema), defaultValues: { body: '' },
   });
 
+  const body = useWatch({ control, name: 'body' });
+  const { dictate, isDictating, hint, feedback } = useDictation({
+    inputRef,
+    value: body,
+    onChangeText: (body) => setValue('body', body, { shouldDirty: true, shouldValidate: true }),
+    maxLength: MESSAGE_MAX_LENGTH,
+    isDisabled: busy || isCartLoading,
+  });
+
   const submit = () => handleSubmit(async ({ body }) => {
-    if (pending.current || isCartLoading) return;
+    if (pending.current || isCartLoading || isDictating) return;
     if (Date.now() < retryAt.current) {
       setError(t('assistant.rateLimitWait', { seconds: Math.ceil((retryAt.current - Date.now()) / 1000) }));
       return;
@@ -156,6 +167,7 @@ export default function ShoppingAssistantScreen() {
             error={fieldState.error?.message}
             isDisabled={busy || isCartLoading}
             isMicVisible={false}
+            maxLength={MESSAGE_MAX_LENGTH}
             returnKeyType="send"
             submitBehavior="submit"
             onSubmitEditing={submit}
@@ -164,24 +176,26 @@ export default function ShoppingAssistantScreen() {
                 <IconButton
                   diameter={32}
                   variant="filled"
-                  icon={<Icon name="dictate" size="md" className={busy || isCartLoading ? 'text-disabled' : 'text-primary'} />}
+                  icon={<Icon name="dictate" size="md" className={busy || isCartLoading || isDictating ? 'text-disabled' : 'text-primary'} />}
                   label={t('assistant.dictate')}
-                  disabled={busy || isCartLoading}
-                  onPress={() => inputRef.current?.focus()}
+                  hint={hint}
+                  disabled={busy || isCartLoading || isDictating}
+                  onPress={dictate}
                 />
                 <IconButton
                   diameter={32}
                   variant="filled"
-                  icon={<Icon name="send" size="md" className={busy || isCartLoading || !field.value.trim() ? 'text-disabled' : 'text-primary'} />}
+                  icon={<Icon name="send" size="md" className={busy || isCartLoading || isDictating || !field.value.trim() ? 'text-disabled' : 'text-primary'} />}
                   label={t('composer.send')}
                   hint={t('composer.sendHint')}
-                  disabled={busy || isCartLoading || !field.value.trim()}
+                  disabled={busy || isCartLoading || isDictating || !field.value.trim()}
                   onPress={submit}
                 />
               </View>
             }
           />
         )} />
+        {feedback && <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>{feedback}</Text>}
       </View>
     </KeyboardAvoidingView>
   );
