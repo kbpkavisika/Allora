@@ -22,6 +22,7 @@ export interface SendMessageInput {
   body: string;
   conversationId?: string;
   shopId?: string;
+  buyerId?: string;
   productId?: string | null;
   orderId?: string | null;
 }
@@ -33,7 +34,10 @@ export interface ChatContextValue {
   unreadCount: number;
   isLoading: boolean;
   getConversation: (id: string) => ConversationSummary | undefined;
-  findConversation: (shopId: string) => Promise<{ conversationId: string | null; error: unknown }>;
+  findConversation: (
+    shopId: string,
+    buyerId?: string
+  ) => Promise<{ conversationId: string | null; error: unknown }>;
   loadMessages: (
     conversationId: string,
     before?: string
@@ -100,8 +104,11 @@ export function ChatProvider({ children }: ChatProviderProps) {
     [conversations]
   );
 
-  const findConversation = useCallback(async (shopId: string) => {
-    const { data, error } = await supabase.rpc('find_conversation', { p_shop_id: shopId });
+  const findConversation = useCallback(async (shopId: string, buyerId?: string) => {
+    const { data, error } = await supabase.rpc('find_conversation', {
+      p_shop_id: shopId,
+      p_buyer_id: buyerId ?? null,
+    });
     return { conversationId: (data as string | null) ?? null, error };
   }, []);
 
@@ -115,13 +122,14 @@ export function ChatProvider({ children }: ChatProviderProps) {
   }, []);
 
   const sendMessage = useCallback(
-    async ({ body, conversationId, shopId, productId, orderId }: SendMessageInput) => {
+    async ({ body, conversationId, shopId, buyerId, productId, orderId }: SendMessageInput) => {
       const { data, error } = await supabase.rpc('send_message', {
         p_body: body,
         p_conversation_id: conversationId ?? null,
         p_shop_id: shopId ?? null,
         p_product_id: productId ?? null,
         p_order_id: orderId ?? null,
+        p_buyer_id: buyerId ?? null,
       });
 
       if (!error) await load();

@@ -53,7 +53,8 @@
     "you": "You",
     "buyerEmpty": "Tap Chat with seller on a product or order to ask a question.",
     "mutedLabel": "muted",
-    "openHint": "Opens the conversation"
+    "openHint": "Opens the conversation",
+    "sellerStartBody": "Send {{name}} a message about their order."
   },
   "orders": {
     "returnReason": {
@@ -569,7 +570,9 @@
     },
     "orderDetail": {
       "unavailable": "This order is no longer available.",
-      "complete": "This order is complete."
+      "complete": "This order is complete.",
+      "messageBuyer": "Message buyer",
+      "messageBuyerHint": "Opens a conversation with the buyer about this order"
     }
   },
   "returns": {

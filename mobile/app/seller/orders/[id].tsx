@@ -10,6 +10,7 @@ import { OrderCancellationNotice } from '@/components/orders/OrderCancellationNo
 import { OrderReturnSummary } from '@/components/orders/OrderReturnSummary';
 import { ReturnResponseSheet } from '@/components/seller/ReturnResponseSheet';
 import { FormError } from '@/components/ui/FormError';
+import { useSellerChat } from '@/hooks/useSellerChat';
 import { DeliveryUpdateSheet } from '@/components/seller/DeliveryUpdateSheet';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -30,6 +31,7 @@ export default function SellerOrderDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const { getOrder, advanceDelivery, respondToReturn } = useOrders();
+  const { openSellerChat, isOpening } = useSellerChat();
 
   const order = id ? getOrder(id) : undefined;
   const [isAdvancing, setIsAdvancing] = useState(false);
@@ -189,6 +191,19 @@ export default function SellerOrderDetailScreen() {
             )}
           </>
         )}
+
+        {order.shop_id ? (
+          <Button
+            variant="secondary"
+            label={t('seller.orderDetail.messageBuyer')}
+            hint={t('seller.orderDetail.messageBuyerHint')}
+            loading={isOpening}
+            onPress={() =>
+              order.shop_id &&
+              openSellerChat({ shopId: order.shop_id, buyerId: order.buyer_id, orderId: order.id })
+            }
+          />
+        ) : null}
 
         {canSellerCancel(order) ? (
           <Button
