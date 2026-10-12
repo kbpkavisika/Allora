@@ -1,8 +1,10 @@
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeOut, useReducedMotion } from 'react-native-reanimated';
+import Animated, { FadeOut } from 'react-native-reanimated';
+
+import { useReduceMotion } from '@/hooks/useReduceMotion';
 
 export function BrandSplash() {
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReduceMotion();
 
   return (
     <Animated.View
