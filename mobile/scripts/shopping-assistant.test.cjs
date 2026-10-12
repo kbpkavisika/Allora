@@ -190,3 +190,61 @@ test('client never automatically reinvokes a failed request', async () => {
 });
 
 
+test('client bounds history before sending rather than spending an invocation on rejected history', async () => {
+  let sent;
+  const client = {
+    auth: { getSession: async () => ({ data: { session: { access_token: 'valid', expires_at: Date.now() / 1000 + 3600 } }, error: null }) },
+    functions: { invoke: async (_, options) => { sent = options.body; return { data: {}, error: null }; } },
+  };
+  const messages = Array.from({ length: 12 }, () => ({ role: 'user', content: 'x'.repeat(4000) }));
+  await exportsUnderTest.invokeShoppingAssistant(client, { messages, productIds: [] });
+  assert.ok(sent.messages.reduce((sum, m) => sum + m.content.length, 0) <= 16000);
+  assert.equal(sent.messages.at(-1), messages.at(-1));
+});
+
+test('oversized body and malformed JSON are rejected without provider calls', async () => {
+  let calls = 0;
+  const endpoint = loadEndpoint({ transport: async () => { calls++; throw new Error('Must not call'); } });
+  for (const [content, status] of [['x'.repeat(65537), 413], ['{broken', 400]]) {
+    const response = await endpoint(new Request('http://localhost', { method: 'POST', headers: { Authorization: 'Bearer token' }, body: content }));
+    assert.equal(response.status, status);
+  }
+  assert.equal(calls, 0);
+});
+
+test('invalid search budgets, empty replies, and exhausted stock cannot produce actions', async () => {
+  const base = { type: 'reply', query: '', maxPrice: null, productId: '', quantity: 1, message: 'Hello' };
+  for (const action of [{ ...base, message: '' }, { ...base, type: 'search', query: 'milk', maxPrice: -1 }]) {
+    const response = await loadEndpoint({ action })(request(body));
+    assert.equal(response.status, 502);
+  }
+  const response = await loadEndpoint({ products: [{ ...product, stock_quantity: 0 }], action: { ...base, type: 'add', productId: 'milk' } })(request({ ...body, productIds: ['milk'] }));
+  assert.equal(response.status, 409);
+});
+
+
+test('budget-only alternatives browse in-stock products without an invented keyword', async () => {
+  const queries = [];
+  const action = { type: 'search', query: '', maxPrice: 2000, excludeCurrentResults: true, productId: '', quantity: 1, message: 'Other products within your budget' };
+  const response = await loadEndpoint({ action, products: [product], queries })(request({ messages: [{ role: 'user', content: 'What else can I buy for 2000rs' }], productIds: ['milk'] }));
+  assert.equal(response.status, 200);
+  assert.ok(queries.some(q => q[0] === 'lte' && q[1] === 'price' && q[2] === 2000));
+  assert.ok(queries.some(q => q[0] === 'not' && q[1] === 'id' && q[2] === 'in' && q[3] === '(milk)'));
+  assert.equal(queries.some(q => q[0] === 'ilike'), false);
+});
+
+test('budget-free browsing is allowed but wildcard-only product keywords are rejected', async () => {
+  const base = { type: 'search', query: '', maxPrice: null, productId: '', quantity: 1, message: 'Browse products' };
+  assert.equal((await loadEndpoint({ action: base })(request(body))).status, 200);
+  assert.equal((await loadEndpoint({ action: { ...base, query: '%_\\' } })(request(body))).status, 502);
+});
+
+test('legacy and gateway errors preserve a diagnostic code and request header', async () => {
+  const response = new Response(JSON.stringify({ error: 'Legacy provider unavailable' }), { status: 502, headers: { 'x-request-id': 'gateway-request' } });
+  const failure = await exportsUnderTest.readShoppingFailure(response);
+  assert.equal(failure.requestId, 'gateway-request');
+  assert.equal(failure.code, 'unclassified_http_error');
+  assert.equal(failure.error, 'Legacy provider unavailable');
+  const text = await exportsUnderTest.readShoppingFailure(new Response('Bad Gateway', { status: 502 }));
+  assert.equal(text.code, 'non_json_http_error');
+});
