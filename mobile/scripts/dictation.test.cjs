@@ -228,6 +228,53 @@ for (const change of ['unmount', 'disabled', 'value']) {
   });
 }
 
+function find(node, type, predicate = () => true) {
+  if (!node || typeof node !== 'object') return undefined;
+  if (node.type === type && predicate(node)) return node;
+  for (const child of [].concat(node.props?.children ?? [])) {
+    const found = find(child, type, predicate);
+    if (found) return found;
+  }
+}
+
+for (const platform of ['android', 'ios']) {
+  test('shared field mic uses ' + platform + ' input and preserves secure-field controls', async () => {
+    const app = runtime(platform);
+    const { InputField } = app.component('components/ui/InputField.tsx');
+    const field = app.instance();
+    const props = { label: 'Name', value: 'Buy', onChangeText: (text) => app.calls.changes.push(text) };
+    const tree = field.render(() => InputField(props));
+    find(tree, 'TextInput').props.ref(field.options.inputRef.current);
+    const mic = find(tree, 'IconButton');
+    const pending = mic.props.onPress();
+    await tick();
+    if (platform === 'android') app.finish(success('rice'));
+    await pending;
+    assert.equal(app.calls.launches.length, platform === 'android' ? 1 : 0);
+    assert.equal(app.calls.focus, platform === 'ios' ? 1 : 0);
+    assert.deepEqual(app.calls.changes, platform === 'android' ? ['Buy rice'] : []);
+    const secure = field.render(() => InputField({ ...props, isSecure: true }));
+    assert.equal(find(secure, 'IconButton').props.label, 'input.showPassword');
+  });
+}
+
+test('assistant mic fills the form without sending a message', async () => {
+  const app = runtime();
+  const screen = app.component('app/(tabs)/allora-ai.tsx').default;
+  const instance = app.instance();
+  const tree = instance.render(screen);
+  const controller = find(tree, 'Controller');
+  const input = controller.props.render({ field: { value: 'Buy', onChange() {}, onBlur() {} }, fieldState: {} });
+  input.props.ref.current = instance.options.inputRef.current;
+  const pending = find(input.props.trailingAccessory, 'IconButton', (node) => node.props.label === 'assistant.dictate').props.onPress();
+  await tick();
+  app.finish(success('rice'));
+  await pending;
+  assert.deepEqual(app.calls.changes, ['Buy rice']);
+  assert.equal(app.calls.submits ?? 0, 0);
+  assert.equal(app.calls.focus, 0);
+});
+
 test('dictation never truncates pre-existing text already beyond maxLength', async () => {
   const app = runtime();
   const pending = app.instance({ value: 'Existing content', maxLength: 8 }).render().dictate();
