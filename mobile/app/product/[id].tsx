@@ -19,6 +19,7 @@ import { Divider } from '@/components/ui/Divider';
 import { Icon } from '@/components/ui/Icon';
 import { Toast } from '@/components/ui/Toast';
 import { TopBar } from '@/components/ui/TopBar';
+import { useReduceMotion } from '@/hooks/useReduceMotion';
 import { useSellerChat } from '@/hooks/useSellerChat';
 import { useCart } from '@/lib/CartProvider';
 import { formatMoney } from '@/lib/orders';
@@ -202,6 +203,7 @@ export default function ProductDetailScreen() {
 }
 
 function PhotoCarousel({ photos, name }: { photos: string[]; name: string }) {
+  const reduceMotion = useReduceMotion();
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const [index, setIndex] = useState(0);
@@ -241,7 +243,7 @@ function PhotoCarousel({ photos, name }: { photos: string[]; name: string }) {
               source={{ uri: item }}
               style={{ width: '100%', height: '100%' }}
               contentFit="contain"
-              transition={150}
+              transition={reduceMotion ? 0 : 150}
               alt={t('product.photoAlt', { name, index: i + 1, total: photos.length })}
             />
           </View>

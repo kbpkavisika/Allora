@@ -22,6 +22,7 @@ import { InputField } from '@/components/ui/InputField';
 import { OptionList } from '@/components/ui/OptionList';
 import { ProductTile, ProductTileSkeleton } from '@/components/ui/ProductTile';
 import { ScrollTabs, type ScrollTabItem } from '@/components/ui/ScrollTabs';
+import { useReduceMotion } from '@/hooks/useReduceMotion';
 import { useListPosition } from '@/hooks/useListPosition';
 import { BROWSE_PAGE_SIZE, fetchProducts, productSorts, type ProductSort } from '@/lib/browse';
 import { useCart } from '@/lib/CartProvider';
@@ -42,6 +43,7 @@ interface Query {
 }
 
 export default function ShopScreen() {
+  const reduceMotion = useReduceMotion();
   const { t } = useTranslation();
   const categoryTabs: ScrollTabItem[] = [
     { value: 'all', label: t('shop.all') },
@@ -200,7 +202,7 @@ export default function ShopScreen() {
       <Modal
         visible={isSortOpen}
         transparent
-        animationType="fade"
+        animationType={reduceMotion ? 'none' : 'fade'}
         onRequestClose={() => setIsSortOpen(false)}>
         <BottomSheet label={t('shop.sortProducts')} onDismiss={() => setIsSortOpen(false)}>
           <Text role="heading" className="type-h2 mb-4 text-primary" maxFontSizeMultiplier={1.5}>
