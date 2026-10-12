@@ -9,7 +9,7 @@ Turn each preference on in **Account → Accessibility**, then work through ever
 | Tool | Android | iOS |
 |---|---|---|
 | Screen reader | TalkBack (Settings → Accessibility → TalkBack) | VoiceOver (Settings → Accessibility → VoiceOver) |
-| Dictation | Gboard voice typing (mic key on the keyboard) | Keyboard dictation (Settings → General → Keyboard → Enable Dictation) |
+| Dictation | System speech recognition dialog; keyboard mic as fallback | Keyboard dictation (Settings → General → Keyboard → Enable Dictation) |
 | Contrast audit | Accessibility Scanner (Play Store) | Xcode → Open Developer Tool → Accessibility Inspector → Audit |
 | System text size | Settings → Display → Font size at max | Settings → Accessibility → Display & Text Size → Larger Text at max |
 
@@ -28,8 +28,15 @@ Turn each preference on in **Account → Accessibility**, then work through ever
 ### Dictation
 - With the preference **off**, no field shows a microphone button.
 - With it **on**, text fields show a microphone button. Number, password and price fields do not.
-- Tapping the mic focuses the field, opens the keyboard and shows "Tap the microphone on your keyboard to start speaking" under the field. With a screen reader on, the hint is also announced.
-- Dictated text lands in the field, and the form's validation messages work as if the text were typed.
+- On Android, tapping a field mic opens the system speech recognition dialog without opening the keyboard. On iOS, it focuses the field, opens the keyboard and shows "Tap the microphone on your keyboard to start speaking". With a screen reader on, the keyboard hint is also announced.
+- Dictated text appends to existing text, respects the field’s maximum length, and uses normal form validation.
+- Cancel the Android dialog: the field’s text stays unchanged, and the keyboard stays closed.
+- Tap the mic repeatedly: only one dialog opens.
+- Test English, Sinhala and Tamil app languages on devices whose speech service supports them.
+- Disable or remove the Android speech service: the keyboard opens, and a localized explanation is shown and announced.
+- Leave the screen while dictation is pending: late results do not change another field or screen.
+- In AlloraAI, dictation fills the message input; the user must tap Send explicitly.
+- iOS still opens the keyboard, and secure-field reveal controls remain unchanged.
 - The hint disappears when you leave the field.
 
 ### Screen reader support

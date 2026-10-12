@@ -6,7 +6,7 @@ AlloraAI replaces Saved in the buyer bottom navigation. It searches in-stock pro
 
 Run `npm start` from `mobile/`, sign in as a buyer, and open AlloraAI. Ask for a product that exists in the catalog, optionally with a budget: “Find milk under 500 rupees”. After results appear, tap the product’s Add to cart button to add one without another AI invocation. You can also say “I like the first one” or “Add two of the second one”; interpreting those messages uses one invocation. Open Cart to verify the item and quantity.
 
-For voice input, tap the microphone inside the input, use the phone keyboard microphone, then tap the small send icon in the input. This experiment uses keyboard dictation, not continuous listening.
+For voice input on Android, tap the microphone inside the input to open the phone’s speech recognition dialog. On iOS, tap the input microphone, then use the keyboard microphone. Recognized text fills the input; review it and tap the send icon. If Android speech input is unavailable, the keyboard opens instead. Dictation does not send messages automatically.
 
 ## Server setup
 
