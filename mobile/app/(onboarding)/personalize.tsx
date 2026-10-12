@@ -32,7 +32,7 @@ export default function PersonalizeScreen() {
       large_text: false,
       high_contrast: false,
       dictation_enabled: false,
-      screen_reader_support: false,
+      screen_reader_support: true,
       reduce_motion: false,
     },
   });
@@ -70,7 +70,8 @@ export default function PersonalizeScreen() {
               <PreferenceRow
                 title={t(`accessibility.features.${key}.title`)}
                 description={t(`accessibility.features.${key}.description`)}
-                checked={value}
+                checked={key === 'screen_reader_support' || value}
+                disabled={key === 'screen_reader_support'}
                 onChange={onChange}
               />
             )}

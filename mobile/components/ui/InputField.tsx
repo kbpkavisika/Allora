@@ -334,7 +334,7 @@ export function InputField({
           role={isSearch ? 'searchbox' : undefined}
           aria-label={accessibleName}
           aria-disabled={isDisabled}
-          accessibilityHint={profile?.screen_reader_support ? helperText : undefined}
+          accessibilityHint={helperText}
           {...rest}
         />
 

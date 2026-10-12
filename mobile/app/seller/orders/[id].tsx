@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TopBar } from '@/components/ui/TopBar';
+import { useReduceMotion } from '@/hooks/useReduceMotion';
 import { nextDeliveryStatusLabel } from '@/lib/deliveries';
 import {
   canSellerCancel,
@@ -29,6 +30,7 @@ import {
 import { useOrders } from '@/lib/OrdersProvider';
 
 export default function SellerOrderDetailScreen() {
+  const reduceMotion = useReduceMotion();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -200,7 +202,7 @@ export default function SellerOrderDetailScreen() {
       <Modal
         visible={isDeliveryOpen}
         transparent
-        animationType="fade"
+        animationType={reduceMotion ? 'none' : 'fade'}
         onRequestClose={() => setIsDeliveryOpen(false)}>
         <DeliveryUpdateSheet
           orderId={order.id}

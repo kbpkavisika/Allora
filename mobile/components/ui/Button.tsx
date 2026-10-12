@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View, type PressableProps } from 'react-native';
-import { useReducedMotion } from 'react-native-reanimated';
+
+import { useReduceMotion } from '@/hooks/useReduceMotion';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'social' | 'link' | 'destructive';
 export type ButtonSize = 'lg' | 'md' | 'sm';
@@ -73,7 +74,7 @@ export function Button({
   ...rest
 }: Readonly<ButtonProps>) {
   const [focused, setFocused] = useState(false);
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useReduceMotion();
   const inert = disabled || loading;
 
   const labelColor = inert ? 'text-disabled' : LABEL[variant];
@@ -85,7 +86,7 @@ export function Button({
       : SIZE[size];
   const width = fullWidth && !isLink ? 'w-full' : 'self-start';
   const isFilled = variant === 'primary' || variant === 'destructive';
-  const press = !inert && !reduceMotion && isFilled ? 'active:scale-[0.97]' : '';
+  const press = !inert && !reduceMotion && isFilled ? 'active:scale-[0.97]' : 'active:scale-100';
 
   return (
     <Pressable
