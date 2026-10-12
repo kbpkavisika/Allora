@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import i18n from '@/lib/i18n';
 
 export interface Review {
   id: string;
@@ -15,14 +16,13 @@ export interface Review {
   author: { full_name: string | null } | null;
 }
 
-export const reviewSorts = [
-  'Most recent',
-  'Most helpful',
-  'Highest rated',
-  'Lowest rated',
-] as const;
+export const reviewSorts = ['recent', 'helpful', 'highest', 'lowest'] as const;
 
 export type ReviewSort = (typeof reviewSorts)[number];
+
+export function reviewSortLabel(sort: string): string {
+  return i18n.t(`reviews.sort.${sort}`);
+}
 
 export const STAR_VALUES = [5, 4, 3, 2, 1] as const;
 
@@ -57,13 +57,13 @@ export function formatAverage(average: number): string {
 }
 
 export function formatReviewCount(total: number): string {
-  return `${total} ${total === 1 ? 'review' : 'reviews'}`;
+  return i18n.t('reviews.count', { count: total });
 }
 
 export function reviewerName(fullName: string | null): string {
   const parts = fullName?.trim().split(/\s+/).filter(Boolean) ?? [];
   if (parts.length === 0) {
-    return 'Allora shopper';
+    return i18n.t('reviews.anonymous');
   }
   const surname = parts.length > 1 ? ` ${parts[parts.length - 1][0].toUpperCase()}.` : '';
   return `${parts[0]}${surname}`;
@@ -74,23 +74,23 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export function formatReviewAge(createdAt: string): string {
   const days = Math.floor((Date.now() - new Date(createdAt).getTime()) / DAY_MS);
 
-  if (days <= 0) return 'today';
-  if (days === 1) return 'yesterday';
-  if (days < 7) return `${days} days ago`;
+  if (days <= 0) return i18n.t('reviews.age.today');
+  if (days === 1) return i18n.t('reviews.age.yesterday');
+  if (days < 7) return i18n.t('reviews.age.days', { count: days });
 
   const weeks = Math.floor(days / 7);
-  if (weeks < 5) return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
+  if (weeks < 5) return i18n.t('reviews.age.weeks', { count: weeks });
 
   const months = Math.floor(days / 30);
-  if (months < 12) return `${months} ${months === 1 ? 'month' : 'months'} ago`;
+  if (months < 12) return i18n.t('reviews.age.months', { count: months });
 
   const years = Math.floor(days / 365);
-  return `${years} ${years === 1 ? 'year' : 'years'} ago`;
+  return i18n.t('reviews.age.years', { count: years });
 }
 
 export function reviewMeta(review: Review): string {
   const age = formatReviewAge(review.created_at);
-  return review.order_id ? `Verified purchase · ${age}` : age;
+  return review.order_id ? i18n.t('reviews.verified', { age }) : age;
 }
 
 // The product page only needs the aggregate, so it reads the ratings alone rather than
@@ -116,11 +116,11 @@ export async function fetchProductReviews(
     .eq('product_id', productId);
 
   const ordered =
-    sort === 'Most helpful'
+    sort === 'helpful'
       ? query.order('helpful_count', { ascending: false })
-      : sort === 'Highest rated'
+      : sort === 'highest'
         ? query.order('rating', { ascending: false })
-        : sort === 'Lowest rated'
+        : sort === 'lowest'
           ? query.order('rating', { ascending: true })
           : query.order('created_at', { ascending: false });
 

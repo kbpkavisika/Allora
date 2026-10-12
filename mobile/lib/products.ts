@@ -1,5 +1,6 @@
 import type { BadgeVariant } from '@/components/ui/Badge';
 import type { ProductDetailsValues } from '@/lib/sellerSchemas';
+import i18n from '@/lib/i18n';
 
 export interface Product {
   id: string;
@@ -26,14 +27,26 @@ export function getStockStatus(stockQuantity: string | number): StockStatus {
   const quantity = Number(stockQuantity);
 
   if (quantity <= 0) {
-    return { badgeLabel: 'Sold out', detailLabel: 'None left', variant: 'neutral' };
+    return {
+      badgeLabel: i18n.t('stock.soldOut'),
+      detailLabel: i18n.t('stock.noneLeft'),
+      variant: 'neutral',
+    };
   }
 
   if (quantity <= LOW_STOCK_THRESHOLD) {
-    return { badgeLabel: 'Low stock', detailLabel: `${quantity} left`, variant: 'warning' };
+    return {
+      badgeLabel: i18n.t('stock.low'),
+      detailLabel: i18n.t('stock.left', { count: quantity }),
+      variant: 'warning',
+    };
   }
 
-  return { badgeLabel: 'In stock', detailLabel: `${quantity} in stock`, variant: 'success' };
+  return {
+    badgeLabel: i18n.t('stock.inStock'),
+    detailLabel: i18n.t('stock.countInStock', { count: quantity }),
+    variant: 'success',
+  };
 }
 
 // Form fields are strings; the numeric and integer columns come back as numbers.

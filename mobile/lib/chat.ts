@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import i18n, { formatDate, formatTime } from '@/lib/i18n';
 
 export const MESSAGE_MAX_LENGTH = 2000;
 
@@ -48,26 +49,26 @@ export function isSameDay(a: string, b: string): boolean {
 }
 
 export function formatMessageTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return formatTime(iso, { hour: 'numeric', minute: '2-digit' });
 }
 
 export function formatConversationTime(iso: string): string {
   const days = daysAgo(iso);
 
   if (days <= 0) return formatMessageTime(iso);
-  if (days === 1) return 'Yesterday';
-  if (days < 7) return new Date(iso).toLocaleDateString('en-US', { weekday: 'short' });
+  if (days === 1) return i18n.t('chat.yesterday');
+  if (days < 7) return formatDate(iso, { weekday: 'short' });
 
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return formatDate(iso, { month: 'short', day: 'numeric' });
 }
 
 export function formatMessageDay(iso: string): string {
   const days = daysAgo(iso);
 
-  if (days <= 0) return 'Today';
-  if (days === 1) return 'Yesterday';
+  if (days <= 0) return i18n.t('chat.today');
+  if (days === 1) return i18n.t('chat.yesterday');
 
-  return new Date(iso).toLocaleDateString('en-US', {
+  return formatDate(iso, {
     weekday: 'long',
     month: 'short',
     day: 'numeric',
@@ -75,10 +76,10 @@ export function formatMessageDay(iso: string): string {
 }
 
 export function conversationPreview(conversation: ConversationSummary, userId: string): string {
-  if (!conversation.last_message_body) return 'No messages yet';
+  if (!conversation.last_message_body) return i18n.t('chat.noMessagesYet');
 
   return conversation.last_message_sender_id === userId
-    ? `You: ${conversation.last_message_body}`
+    ? i18n.t('chat.youPrefix', { body: conversation.last_message_body })
     : conversation.last_message_body;
 }
 
