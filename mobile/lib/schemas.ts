@@ -226,3 +226,17 @@ export type ReviewValues = z.infer<typeof reviewSchema>;
 export type MessageValues = z.infer<typeof messageSchema>;
 export type AccessibilityPreferencesValues = z.infer<typeof accessibilityPreferencesSchema>;
 export type NotificationPreferencesValues = z.infer<typeof notificationPreferencesSchema>;
+
+export const shoppingResponseSchema = z.object({
+  action: z.object({
+    type: z.enum(['search', 'add', 'reply']),
+    productId: z.string(),
+    quantity: z.number().int().min(1).max(100),
+    message: z.string().max(2000),
+  }),
+  products: z.array(z.object({
+    id: z.string(), shop_id: z.string(), name: z.string(), description: z.string(),
+    price: z.coerce.number().nonnegative(), stock_quantity: z.number().int().nonnegative(),
+    category: z.string(), photos: z.array(z.string()), created_at: z.string(), updated_at: z.string(),
+  })).max(6),
+});
