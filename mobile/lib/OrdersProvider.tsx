@@ -121,61 +121,23 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
       if (!userId) return { orders: [], error: new Error('Not signed in.') };
       if (lines.length === 0) return { orders: [], error: new Error('Your cart is empty.') };
 
-      const byShop = new Map<string, CartLine[]>();
-      for (const line of lines) {
-        const key = line.product.shop_id;
-        byShop.set(key, [...(byShop.get(key) ?? []), line]);
-      }
-
-      const created: Order[] = [];
-
-      for (const [shopKey, shopLines] of byShop) {
-        const subtotal = shopLines.reduce(
-          (sum, line) => sum + line.product.price * line.quantity,
-          0
-        );
-
-        const { data: order, error: orderError } = await supabase
-          .from('orders')
-          .insert({
-            buyer_id: userId,
-            shop_id: shopKey,
-            status: 'new',
-            payment_method: paymentMethod,
-            payment_status: paymentStatus,
-            payment_reference: paymentReference ?? null,
-            subtotal,
-            total: subtotal,
-            ...addressSnapshot(address, profile?.full_name ?? null),
-          })
-          .select()
-          .single();
-
-        if (orderError || !order) {
-          await load();
-          return { orders: created, error: orderError ?? new Error('Could not place the order.') };
-        }
-
-        const { error: itemsError } = await supabase.from('order_items').insert(
-          shopLines.map((line) => ({
-            order_id: order.id,
-            product_id: line.product.id,
-            product_name: line.product.name,
-            product_photo: line.product.photos[0] ?? null,
-            unit_price: line.product.price,
-            quantity: line.quantity,
-          }))
-        );
-
-        if (itemsError) {
-          await load();
-          return { orders: created, error: itemsError };
-        }
-
-        created.push({ ...(order as unknown as Order), items: [], delivery: null });
-      }
+      const { data, error } = await supabase.rpc('place_order', {
+        p_items: lines.map((line) => ({ product_id: line.product.id, quantity: line.quantity })),
+        p_payment_method: paymentMethod,
+        p_payment_status: paymentStatus,
+        p_payment_reference: paymentReference ?? null,
+        p_shipping: addressSnapshot(address, profile?.full_name ?? null),
+      });
 
       await load();
+
+      if (error) return { orders: [], error };
+
+      const created = ((data ?? []) as Omit<Order, 'items' | 'delivery'>[]).map((order) => ({
+        ...order,
+        items: [],
+        delivery: null,
+      }));
       return { orders: created, error: null };
     },
     [userId, profile?.full_name, load]
