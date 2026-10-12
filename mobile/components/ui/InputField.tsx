@@ -75,6 +75,7 @@ type BaseProps = Omit<
   width?: InputFieldWidth;
   valueVariant?: InputFieldValueVariant;
   isMicVisible?: boolean;
+  trailingAccessory?: React.ReactNode;
   isLabelHidden?: boolean;
   multiline?: boolean;
   className?: string;
@@ -158,6 +159,7 @@ export function InputField({
   isRequired = false,
   isSecure = false,
   isMicVisible = true,
+  trailingAccessory,
   isLabelHidden = false,
   width = 'full',
   valueVariant = 'text',
@@ -339,6 +341,7 @@ export function InputField({
         />
 
         {renderTrailing()}
+        {trailingAccessory}
       </View>
 
       {hasError ? (
