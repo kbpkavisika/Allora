@@ -24,12 +24,22 @@ const schema = {
 
 
 Deno.serve(async (req: Request) => {
+  const requestId = crypto.randomUUID();
+  const started = Date.now();
   let stage = 'request';
+  let providerCalls = 0;
+  const log = (level: 'info' | 'warn' | 'error', event: string, fields: Record<string, unknown> = {}) => {
+    console[level](JSON.stringify({ function: 'shopping-assistant', requestId, event, stage, ...fields }));
+  };
   const json = (body: Record<string, unknown>, status = 200, extraHeaders: Record<string, string> = {}) => {
-    return new Response(JSON.stringify(body), { status, headers: { ...headers, ...extraHeaders } });
+    log(status >= 500 ? 'error' : status >= 400 ? 'warn' : 'info', 'request_completed', {
+      status, code: body.code, durationMs: Date.now() - started, providerCalls,
+    });
+    return new Response(JSON.stringify({ ...body, requestId }), { status, headers: { ...headers, 'x-request-id': requestId, ...extraHeaders } });
   };
   const fail = (code: string, error: string, status: number) => json({ code, error }, status);
   if (req.method === 'OPTIONS') return json({}, 200);
+  log('info', 'request_started', { method: req.method });
   if (req.method !== 'POST') return json({ code: 'method_not_allowed', error: 'Method not allowed.' }, 405, { Allow: 'POST, OPTIONS' });
   try {
     const authorization = req.headers.get('Authorization');
@@ -45,9 +55,37 @@ Deno.serve(async (req: Request) => {
     });
     stage = 'auth';
     const { data: { user }, error: authError } = await supabase.auth.getUser(authorization.slice(7));
-    if (authError || !user) return fail('unauthorized', 'Please sign in again.', 401);
+    if (authError) {
+      log('warn', 'auth_failed', { authStatus: authError.status, errorCode: authError.code });
+      if (!authError.status || authError.status >= 500 || authError.status === 429) return fail('auth_unavailable', 'Sign-in service is temporarily unavailable. Please try again later.', 503);
+      return fail('unauthorized', 'Please sign in again.', 401);
+    }
+    if (!user) return fail('unauthorized', 'Please sign in again.', 401);
     stage = 'validation';
-    const raw = await req.text();
+    const reader = req.body?.getReader();
+    if (!reader) return fail('invalid_request', 'Invalid shopping request.', 400);
+    const cancel = () => { void reader.cancel().catch(() => undefined); };
+    deadline.addEventListener('abort', cancel, { once: true });
+    let raw = '';
+    let bytes = 0;
+    const decoder = new TextDecoder();
+    try {
+      while (true) {
+        const { value, done } = await reader.read();
+        deadline.throwIfAborted();
+        if (done) break;
+        bytes += value.byteLength;
+        if (bytes > 65536) {
+          cancel();
+          return fail('request_too_large', 'Shopping request is too large.', 413);
+        }
+        raw += decoder.decode(value, { stream: true });
+      }
+      raw += decoder.decode();
+    } finally {
+      deadline.removeEventListener('abort', cancel);
+      reader.releaseLock();
+    }
     const body = JSON.parse(raw) as { messages: Message[]; productIds: string[] };
     if (!body || !Array.isArray(body.messages) || body.messages.length < 1 || body.messages.length > 12 ||
       !body.messages.every(m => m && ['user', 'assistant'].includes(m.role) && typeof m.content === 'string' && m.content.trim().length > 0 && m.content.length <= 4000) ||
@@ -56,6 +94,7 @@ Deno.serve(async (req: Request) => {
       !body.productIds.every(id => typeof id === 'string' && id.length > 0 && id.length <= 64) || new Set(body.productIds).size !== body.productIds.length) {
       return fail('invalid_request', 'Invalid shopping request.', 400);
     }
+    log('info', 'request_validated', { messageCount: body.messages.length, productCount: body.productIds.length });
     let products: Product[] = [];
     if (body.productIds.length) {
       stage = 'catalog_context';
@@ -66,6 +105,7 @@ Deno.serve(async (req: Request) => {
     }
     stage = 'provider';
     const model = Deno.env.get('GROQ_MODEL') || 'openai/gpt-oss-20b';
+    providerCalls++;
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST', signal: AbortSignal.any([deadline, AbortSignal.timeout(30000)]),
       headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
@@ -77,6 +117,10 @@ Deno.serve(async (req: Request) => {
       }),
     });
     if (!response.ok) {
+      const providerError = await response.json().catch(() => null);
+      const errorCode = providerError?.error?.code;
+      log('error', 'provider_failed', { providerStatus: response.status, model,
+        providerErrorCode: typeof errorCode === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(errorCode) ? errorCode : undefined });
       if (response.status === 429) {
         const seconds = Number(response.headers.get('Retry-After'));
         const retryAfter = Number.isFinite(seconds) && seconds > 0 ? Math.min(300, Math.ceil(seconds)) : 30;
@@ -87,6 +131,8 @@ Deno.serve(async (req: Request) => {
     }
     stage = 'provider_response';
     const completion = await response.json();
+    log('info', 'provider_completed', { model, finishReason: completion.choices?.[0]?.finish_reason,
+      promptTokens: completion.usage?.prompt_tokens, completionTokens: completion.usage?.completion_tokens });
     const action = JSON.parse(completion.choices?.[0]?.message?.content || 'null') as Action | null;
     if (!action || !['search', 'add', 'reply'].includes(action.type) || typeof action.message !== 'string' || action.message.length > 2000 ||
       (action.type === 'reply' && !action.message.trim()) || typeof action.query !== 'string' || action.query.length > 100 ||
@@ -112,9 +158,12 @@ Deno.serve(async (req: Request) => {
       if (error) throw error;
       products = data ?? [];
     }
+    log('info', 'action_ready', { actionType: action.type, productCount: products.length });
     return json({ action, products });
   } catch (error) {
     const details = error as { name?: string; code?: string };
+    log('error', 'request_failed', { errorName: details?.name, errorCode: details?.code });
+    if (details?.name === 'TimeoutError' || details?.name === 'AbortError') return fail('request_timeout', 'AlloraAI took too long to respond. Please try again later.', 504);
     if (stage === 'validation' && details?.name === 'SyntaxError') return fail('invalid_request', 'Invalid shopping request.', 400);
     if (stage === 'provider_response') return fail('invalid_provider_response', 'Invalid assistant response. Please try again.', 502);
     if (stage === 'provider') return fail('provider_unavailable', 'AlloraAI is temporarily unavailable. Please try again later.', 502);
