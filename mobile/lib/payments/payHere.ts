@@ -70,7 +70,7 @@ export async function startPayHereCheckout({
         delivery_country: address.country,
       };
 
-      console.log('[PayHere] starting', {
+      console.log('[PayHere] starting checkout', {
         sandbox: paymentObject.sandbox,
         orderId: paymentObject.order_id,
         amount: paymentObject.amount,

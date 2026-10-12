@@ -1,11 +1,16 @@
+import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, Text, View } from 'react-native';
+import { AccessibilityInfo, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PaymentMethodOption } from '@/components/payment/PaymentMethodOption';
+import { PaymentAuthentication } from '@/components/payment/PaymentAuthentication';
+import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
+import { formatPaymentConfirmationSpeech } from '@/components/payment/paymentSpeech';
 import { Button } from '@/components/ui/Button';
+import { Callout } from '@/components/ui/Callout';
 import { FormError } from '@/components/ui/FormError';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { TopBar } from '@/components/ui/TopBar';
@@ -36,9 +41,23 @@ export default function CheckoutScreen() {
     [addresses]
   );
 
+  type PaymentState =
+    | 'idle'
+    | 'authentication_required'
+    | 'processing'
+    | 'success'
+    | 'failed'
+    | 'cancelled'
+    | 'pending';
+
+  const [paymentState, setPaymentState] = useState<PaymentState>('idle');
   const [method, setMethod] = useState<PaymentMethod>('payhere');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAuthenticatingPayment, setIsAuthenticatingPayment] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const otpVerifiedRef = useRef(false);
+  const isProcessingPaymentRef = useRef(false);
 
   const total = subtotal;
 
@@ -46,147 +65,228 @@ export default function CheckoutScreen() {
     router.replace({ pathname: '/payment/result', params });
   }
 
-  async function submit() {
+  async function executePayment() {
+    if (isProcessingPaymentRef.current) {
+      return;
+    }
+
     if (!address) {
       setError(t('checkout.addressRequired'));
       return;
     }
 
     setError(null);
+
+    if (method === 'payhere' && !(otpVerified || otpVerifiedRef.current)) {
+      console.warn('[CheckoutOTP] blocked PayHere execution before verification');
+      return;
+    }
+
+    isProcessingPaymentRef.current = true;
     setIsSubmitting(true);
+    setPaymentState('processing');
 
-    if (method === 'payhere') {
-      const fullName = profile?.full_name?.trim() ?? '';
-      const [firstName, ...lastNameParts] = fullName.split(/\s+/).filter(Boolean);
-      const temporaryFallbackOrderId = `CART-${Date.now()}`;
-      let resolvedOrderId = temporaryFallbackOrderId;
+    try {
+      if (method === 'payhere') {
+        const fullName = profile?.full_name?.trim() ?? '';
+        const [firstName, ...lastNameParts] = fullName.split(/\s+/).filter(Boolean);
+        const temporaryFallbackOrderId = `CART-${Date.now()}`;
+        let resolvedOrderId = temporaryFallbackOrderId;
 
-      try {
-        const initialization = await initializePayHerePayment(total);
-        resolvedOrderId = initialization.payHereOrderId;
-        console.info('[Checkout] PayHere initialization succeeded', {
-          paymentId: initialization.paymentId,
-          payHereOrderId: initialization.payHereOrderId,
+        try {
+          const initialization = await initializePayHerePayment(total);
+          resolvedOrderId = initialization.payHereOrderId;
+          console.info('[Checkout] PayHere initialization succeeded', {
+            paymentId: initialization.paymentId,
+            payHereOrderId: initialization.payHereOrderId,
+          });
+        } catch (initializationError) {
+          if (isPayHereInitializationUnavailable(initializationError)) {
+            console.warn(
+              '[Checkout] Temporary PayHere initializer fallback: function unavailable; using local order ID generation.'
+            );
+          } else {
+            setIsSubmitting(false);
+            setPaymentState('failed');
+            setError(
+              initializationError instanceof Error
+                ? initializationError.message
+                : t('checkout.initError')
+            );
+            return;
+          }
+        }
+
+        const outcome = await startPayHereCheckout({
+          orderId: resolvedOrderId,
+          amountLkr: total,
+          lines,
+          customer: {
+            firstName: firstName || 'Customer',
+            lastName: lastNameParts.join(' ') || firstName || 'Customer',
+            email: session?.user.email ?? '',
+            phone: profile?.phone ?? '',
+          },
+          address,
         });
-      } catch (initializationError) {
-        if (isPayHereInitializationUnavailable(initializationError)) {
-          console.warn(
-            '[Checkout] Temporary PayHere initializer fallback: function unavailable; using local order ID generation.'
-          );
-        } else {
+
+        if (outcome.status === 'cancelled') {
           setIsSubmitting(false);
-          setError(
-            initializationError instanceof Error
-              ? initializationError.message
-              : t('checkout.initError')
-          );
+          setPaymentState('cancelled');
+          console.info('[Checkout] PayHere checkout was cancelled by user');
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+          AccessibilityInfo.announceForAccessibility('Payment was cancelled. No charges were made.');
           return;
         }
-      }
 
-      const outcome = await startPayHereCheckout({
-        orderId: resolvedOrderId,
-        amountLkr: total,
-        lines,
-        customer: {
-          firstName: firstName || 'Customer',
-          lastName: lastNameParts.join(' ') || firstName || 'Customer',
-          email: session?.user.email ?? '',
-          phone: profile?.phone ?? '',
-        },
-        address,
-      });
-
-      if (outcome.status !== 'completed' || !outcome.paymentId) {
-        setIsSubmitting(false);
-        if (outcome.status === 'failed' && outcome.error) {
-          setError(outcome.error);
+        if (outcome.status !== 'completed' || !outcome.paymentId) {
+          setIsSubmitting(false);
+          setPaymentState('failed');
+          const failureMessage =
+            outcome.status === 'failed' && outcome.error
+              ? outcome.error
+              : 'Payment could not be completed.';
+          setError(failureMessage);
+          goToResult({ variant: 'failure', total: String(total), message: failureMessage });
+          return;
         }
-        goToResult({ variant: 'failure', total: String(total) });
+
+        const { orders, error: placeError } = await placeOrder({
+          lines,
+          paymentMethod: 'payhere',
+          paymentStatus: 'pending',
+          paymentReference: outcome.paymentId,
+          address,
+        });
+
+        if (placeError) {
+          setIsSubmitting(false);
+          setPaymentState('failed');
+          setError(t('checkout.saveAfterPaymentError'));
+          return;
+        }
+
+        const buyerEmail = session?.user.email ?? '';
+        const buyerName = profile?.full_name?.trim() || 'Customer';
+
+        if (buyerEmail) {
+          const receiptPayload = buildPaymentReceiptPayload({
+            buyerEmail,
+            buyerName,
+            paymentId: outcome.paymentId,
+            payHereOrderId: resolvedOrderId,
+            amount: total,
+            currency: 'LKR',
+            paymentMethod: 'payhere',
+            paymentDate: new Date().toISOString(),
+            orders: orders.map((order) => ({
+              id: order.id,
+              order_number: order.order_number,
+              total: order.total,
+            })),
+            items: lines.map((line) => ({
+              productName: line.product.name,
+              quantity: line.quantity,
+              unitPrice: line.product.price,
+              lineTotal: line.product.price * line.quantity,
+            })),
+          });
+
+          void sendPaymentReceipt(receiptPayload).then((receiptSent) => {
+            if (!receiptSent) {
+              console.warn('[Checkout] Receipt email was not sent successfully, but the payment remains successful.');
+            }
+          });
+        } else {
+          console.warn('[Checkout] Payment succeeded, but no authenticated email was available for the receipt.');
+        }
+
+        setPaymentState('success');
+        setIsSubmitting(false);
+        await clear();
+        goToResult({
+          variant: 'success',
+          orderId: orders[0]?.id ?? '',
+          count: String(orders.length),
+          total: String(total),
+          reference: outcome.paymentId,
+        });
         return;
       }
 
       const { orders, error: placeError } = await placeOrder({
         lines,
-        paymentMethod: 'payhere',
+        paymentMethod: 'cod',
         paymentStatus: 'pending',
-        paymentReference: outcome.paymentId,
         address,
       });
 
       if (placeError) {
         setIsSubmitting(false);
-        setError(t('checkout.saveAfterPaymentError'));
+        setPaymentState('failed');
+        setError(t('checkout.placeError'));
         return;
       }
 
-      const buyerEmail = session?.user.email ?? '';
-      const buyerName = profile?.full_name?.trim() || 'Customer';
-
-      if (buyerEmail) {
-        const receiptPayload = buildPaymentReceiptPayload({
-          buyerEmail,
-          buyerName,
-          paymentId: outcome.paymentId,
-          payHereOrderId: resolvedOrderId,
-          amount: total,
-          currency: 'LKR',
-          paymentMethod: 'payhere',
-          paymentDate: new Date().toISOString(),
-          orders: orders.map((order) => ({
-            id: order.id,
-            order_number: order.order_number,
-            total: order.total,
-          })),
-          items: lines.map((line) => ({
-            productName: line.product.name,
-            quantity: line.quantity,
-            unitPrice: line.product.price,
-            lineTotal: line.product.price * line.quantity,
-          })),
-        });
-
-        const receiptSent = await sendPaymentReceipt(receiptPayload);
-        if (!receiptSent) {
-          console.warn('[Checkout] Receipt email was not sent successfully, but the payment remains successful.');
-        }
-      } else {
-        console.warn('[Checkout] Payment succeeded, but no authenticated email was available for the receipt.');
-      }
-
+      setPaymentState('success');
       setIsSubmitting(false);
       await clear();
       goToResult({
-        variant: 'success',
+        variant: 'cod',
         orderId: orders[0]?.id ?? '',
         count: String(orders.length),
         total: String(total),
-        reference: outcome.paymentId,
       });
+    } finally {
+      isProcessingPaymentRef.current = false;
+    }
+  }
+
+  function handlePayPress() {
+    console.info('[CheckoutOTP] Pay pressed');
+
+    if (isSubmitting || isProcessingPaymentRef.current || isAuthenticatingPayment) {
       return;
     }
 
-    const { orders, error: placeError } = await placeOrder({
-      lines,
-      paymentMethod: 'cod',
-      paymentStatus: 'pending',
-      address,
-    });
-
-    setIsSubmitting(false);
-
-    if (placeError) {
-      setError(t('checkout.placeError'));
+    if (!address) {
+      setError(t('checkout.addressRequired'));
       return;
     }
 
-    await clear();
-    goToResult({
-      variant: 'cod',
-      orderId: orders[0]?.id ?? '',
-      count: String(orders.length),
-      total: String(total),
-    });
+    if (method !== 'payhere') {
+      void executePayment();
+      return;
+    }
+
+    otpVerifiedRef.current = false;
+    setOtpVerified(false);
+    setError(null);
+    setPaymentState('authentication_required');
+    setIsAuthenticatingPayment(true);
+    console.info('[CheckoutOTP] showing authentication');
+  }
+
+  function handleOtpVerified() {
+    if (isProcessingPaymentRef.current || !isAuthenticatingPayment || method !== 'payhere') return;
+
+    console.info('[CheckoutOTP] verification succeeded');
+    otpVerifiedRef.current = true;
+    setOtpVerified(true);
+    setIsAuthenticatingPayment(false);
+    setPaymentState('processing');
+    console.info('[CheckoutOTP] continuing to PayHere');
+    void executePayment();
+  }
+
+  function handleAuthenticationCancel() {
+    otpVerifiedRef.current = false;
+    setOtpVerified(false);
+    setIsAuthenticatingPayment(false);
+    setPaymentState('idle');
+    setError(null);
+    AccessibilityInfo.announceForAccessibility('Payment authentication cancelled.');
+    console.info('[CheckoutOTP] authentication cancelled');
   }
 
   if (lines.length === 0) {
@@ -288,6 +388,20 @@ export default function CheckoutScreen() {
           />
         </View>
 
+        {isAuthenticatingPayment ? (
+          <PaymentAuthentication
+            onVerified={handleOtpVerified}
+            onCancel={handleAuthenticationCancel}
+          />
+        ) : null}
+
+        {paymentState === 'cancelled' ? (
+          <Callout
+            tone="info"
+            message="Payment was cancelled. You can review your details and try again whenever you are ready."
+          />
+        ) : null}
+
         <FormError message={error} />
       </ScrollView>
 
@@ -298,16 +412,24 @@ export default function CheckoutScreen() {
           <Text className="type-label-lg text-primary">{t('cart.total')}</Text>
           <Text className="type-h3 text-primary">{formatMoney(total)}</Text>
         </View>
+        <ReadAloudButton
+          text={formatPaymentConfirmationSpeech({
+            amount: total,
+            currency: 'LKR',
+            actionLabel: method === 'payhere' ? 'Pay' : 'Place order',
+          })}
+          label="Read aloud"
+          disabled={isSubmitting || isAuthenticatingPayment || paymentState === 'processing'}
+        />
         <Button
-          label={
-            method === 'payhere'
-              ? t('checkout.pay', { amount: formatMoney(total) })
-              : t('checkout.placeOrder')
-          }
-          loading={isSubmitting}
-          onPress={submit}
+          label={method === 'payhere' ? t('checkout.pay', { amount: formatMoney(total) }) : t('checkout.placeOrder')}
+          loading={isSubmitting || paymentState === 'processing'}
+          disabled={isSubmitting || isAuthenticatingPayment || paymentState === 'processing'}
+          onPress={handlePayPress}
           hint={
-            method === 'payhere' ? t('checkout.payHint') : t('checkout.placeOrderHint')
+            method === 'payhere'
+              ? t('checkout.payHint')
+              : t('checkout.placeOrderHint')
           }
         />
       </View>

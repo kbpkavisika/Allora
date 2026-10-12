@@ -7,7 +7,13 @@ export const orderStatuses = ['new', 'processing', 'completed'] as const;
 export type OrderStatus = (typeof orderStatuses)[number];
 
 export type PaymentMethod = 'payhere' | 'cod';
-export type PaymentStatus = 'pending' | 'paid' | 'failed';
+export type PaymentStatus =
+  | 'pending'
+  | 'paid'
+  | 'failed'
+  | 'refunded'
+  | 'partially_refunded';
+
 
 export interface OrderItem {
   id: string;

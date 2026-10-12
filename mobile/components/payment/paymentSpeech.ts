@@ -1,0 +1,262 @@
+import type { PaymentResult as PaymentResultData } from '@/services/payment/paymentTypes';
+
+const CURRENCY_NAMES: Record<string, string> = {
+  AED: 'UAE dirhams',
+  AUD: 'Australian dollars',
+  CAD: 'Canadian dollars',
+  EUR: 'euros',
+  GBP: 'British pounds',
+  INR: 'Indian rupees',
+  LKR: 'Sri Lankan rupees',
+  SGD: 'Singapore dollars',
+  USD: 'US dollars',
+};
+
+function integerToWords(value: number): string {
+  if (value < 0) return `minus ${integerToWords(Math.abs(value))}`;
+  if (value < 20) {
+    return [
+      'zero',
+      'one',
+      'two',
+      'three',
+      'four',
+      'five',
+      'six',
+      'seven',
+      'eight',
+      'nine',
+      'ten',
+      'eleven',
+      'twelve',
+      'thirteen',
+      'fourteen',
+      'fifteen',
+      'sixteen',
+      'seventeen',
+      'eighteen',
+      'nineteen',
+    ][value];
+  }
+
+  if (value < 100) {
+    const tens = Math.floor(value / 10);
+    const remainder = value % 10;
+    const word = ['twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'][tens - 2];
+    return remainder === 0 ? word : `${word} ${integerToWords(remainder)}`;
+  }
+
+  if (value < 1000) {
+    const hundreds = Math.floor(value / 100);
+    const remainder = value % 100;
+    const word = `${integerToWords(hundreds)} hundred`;
+    return remainder === 0 ? word : `${word} ${integerToWords(remainder)}`;
+  }
+
+  if (value < 1_000_000) {
+    const thousands = Math.floor(value / 1000);
+    const remainder = value % 1000;
+    const word = `${integerToWords(thousands)} thousand`;
+    return remainder === 0 ? word : `${word} ${integerToWords(remainder)}`;
+  }
+
+  if (value < 1_000_000_000) {
+    const millions = Math.floor(value / 1_000_000);
+    const remainder = value % 1_000_000;
+    const word = `${integerToWords(millions)} million`;
+    return remainder === 0 ? word : `${word} ${integerToWords(remainder)}`;
+  }
+
+  return String(value);
+}
+
+export function formatCurrencyName(currency: string): string {
+  const normalized = currency.trim().toUpperCase();
+  return CURRENCY_NAMES[normalized] ?? `${normalized || 'local'} currency`;
+}
+
+export function formatAmountForSpeech(amount: number): string {
+  const roundedAmount = Number.isFinite(amount) ? Math.trunc(amount) : 0;
+  if (roundedAmount === 0) return 'zero';
+  return integerToWords(Math.abs(roundedAmount));
+}
+
+export function formatPaymentConfirmationSpeech({
+  amount,
+  currency,
+  actionLabel = 'Pay',
+}: {
+  amount: number;
+  currency: string;
+  actionLabel?: string;
+}): string {
+  return `You are about to pay ${formatAmountForSpeech(amount)} ${formatCurrencyName(currency)}. Press ${actionLabel} to continue.`;
+}
+
+export function formatPaymentAuthenticationSpeech(maskedPhone?: string | null): string {
+  const base = 'Payment authentication is required. A six digit verification code was sent to your phone. Enter the six digit code to continue.';
+  if (!maskedPhone) return base;
+
+  const tail = maskedPhone.match(/\d{4}$/)?.[0] ?? maskedPhone;
+  return `Payment authentication is required. A six digit verification code was sent to your phone ending in ${tail}. Enter the six digit code to continue.`;
+}
+
+export function formatPaymentResultSpeech(
+  result: PaymentResultData,
+  amount?: number,
+  currency?: string,
+): string {
+  const reference = result.reference
+    ? ` Your payment reference is ${result.reference}.`
+    : ' No payment reference is available.';
+  const message = result.message?.trim();
+
+  switch (result.state) {
+    case 'success': {
+      const hasAmount = typeof amount === 'number' && Number.isFinite(amount);
+      const hasCurrency = typeof currency === 'string' && currency.trim().length > 0;
+
+      if (hasAmount && hasCurrency) {
+        const amountText = `${formatAmountForSpeech(amount)} ${formatCurrencyName(currency)}`;
+        return `Payment successful. Your payment of ${amountText} was completed successfully.${reference}`;
+      }
+      const detail = message || 'Your payment was completed successfully.';
+      return `Payment successful. ${detail.replace(/\.$/, '')}.${reference}`;
+    }
+    case 'failed': {
+      const detail = message || 'The payment was unsuccessful.';
+      return `Payment failed. ${detail.replace(/\.$/, '')}.${reference} You can choose to try the payment again or return to checkout.`;
+    }
+    case 'cancelled': {
+      const detail = message || 'The payment process was cancelled before completion.';
+      return `Payment was cancelled. ${detail.replace(/\.$/, '')}.${reference} No amount was charged.`;
+    }
+    case 'pending': {
+      const detail = message || 'Your payment is still being processed.';
+      return `Payment is being processed. ${detail.replace(/\.$/, '')}.${reference} Please wait a moment while the provider completes verification.`;
+    }
+    case 'authentication_required': {
+      const detail = message || 'Enter the six digit verification code sent to your phone.';
+      return `Payment authentication is required. ${detail.replace(/\.$/, '')}.${reference}`;
+    }
+    default:
+      return `Your payment is still being processed.${reference}`;
+  }
+}
+
+export function formatCheckoutResultSpeech({
+  variant,
+  amount,
+  currency = 'LKR',
+  reference,
+  message,
+}: {
+  variant: 'success' | 'failure' | 'cod' | 'cancelled' | 'pending';
+  amount: number;
+  currency?: string;
+  reference?: string;
+  message?: string;
+}): string {
+  const referenceText = reference
+    ? ` Your payment reference is ${reference}.`
+    : ' No payment reference is available.';
+  const amountText = `${formatAmountForSpeech(amount)} ${formatCurrencyName(currency)}`;
+
+  if (variant === 'success') {
+    return `Payment successful. Your payment of ${amountText} was completed successfully.${referenceText} A confirmation receipt will be delivered to your registered email address.`;
+  }
+
+  if (variant === 'cod') {
+    return `Order placed successfully. Pay ${amountText} in cash when your order arrives.`;
+  }
+
+  if (variant === 'cancelled') {
+    return 'Payment was cancelled. No charges were made. You can return to checkout to try again.';
+  }
+
+  if (variant === 'pending') {
+    return `Payment is being processed for ${amountText}.${referenceText} Please wait while the transaction is verified.`;
+  }
+
+  const detail = message || "The payment wasn't completed, so your order was not placed.";
+  return `Payment failed. ${detail.replace(/\.$/, '')}.${referenceText} You can try the payment again or choose a different payment method.`;
+}
+
+export function formatRefundRequestSpeech({
+  orderNumber,
+  amount,
+  currency = 'LKR',
+}: {
+  orderNumber: string;
+  amount: number;
+  currency?: string;
+}): string {
+  const amountText = `${formatAmountForSpeech(amount)} ${formatCurrencyName(currency)}`;
+  return `Refund request for order ${orderNumber}. The refundable amount is ${amountText}. Choose full or partial refund, select a reason, and press review refund request to continue.`;
+}
+
+export function formatRefundConfirmationSpeech({
+  amount,
+  currency = 'LKR',
+  reason,
+  reference,
+}: {
+  amount: number;
+  currency?: string;
+  reason: string;
+  reference?: string;
+}): string {
+  const amountText = `${formatAmountForSpeech(amount)} ${formatCurrencyName(currency)}`;
+  const referenceText = reference ? ` Payment reference is ${reference}.` : '';
+  return `Confirm refund request. You are requesting a refund of ${amountText} for reason: ${reason}.${referenceText} Press Confirm refund to submit your request for processing.`;
+}
+
+export function formatRefundStatusSpeech({
+  status,
+  amount,
+  currency = 'LKR',
+  refundReference,
+  reason,
+}: {
+  status: string;
+  amount: number;
+  currency?: string;
+  refundReference: string;
+  reason?: string;
+}): string {
+  const amountText = `${formatAmountForSpeech(amount)} ${formatCurrencyName(currency)}`;
+  const reasonText = reason ? ` Reason: ${reason}.` : '';
+
+  if (status === 'processing' || status === 'requested') {
+    return `Refund processing. Your refund request of ${amountText} has been submitted and is being processed. Refund reference is ${refundReference}.${reasonText}`;
+  }
+
+  if (status === 'refunded') {
+    return `Refund completed. Your refund of ${amountText} has been completed successfully and returned to your payment method. Refund reference is ${refundReference}.${reasonText}`;
+  }
+
+  if (status === 'failed') {
+    return `Refund failed. Amount was ${amountText}. Refund reference is ${refundReference}.${reasonText} You can choose to retry submitting the refund request.`;
+  }
+
+  return `Refund status: ${status}. Amount: ${amountText}. Reference: ${refundReference}.${reasonText}`;
+}
+
+export function formatPaymentSummarySpeech({
+  status,
+  amount,
+  currency = 'LKR',
+  reference,
+  method,
+}: {
+  status: string;
+  amount: number;
+  currency?: string;
+  reference?: string | null;
+  method?: string | null;
+}): string {
+  const amountText = `${formatAmountForSpeech(amount)} ${formatCurrencyName(currency)}`;
+  const refText = reference ? ` Payment reference is ${reference}.` : ' No payment reference is available.';
+  const methodText = method ? ` Payment method is ${method}.` : '';
+  return `Payment information. Payment status: ${status}. Amount: ${amountText}.${methodText}${refText}`;
+}

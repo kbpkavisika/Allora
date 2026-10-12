@@ -92,6 +92,60 @@ export const returnRequestSchema = z.object({
     .optional(),
 });
 
+export const refundReasons = [
+  'damaged',
+  'wrong_item',
+  'not_received',
+  'not_as_described',
+  'not_needed',
+  'other',
+] as const;
+
+export const refundRequestSchema = z
+  .object({
+    refundType: z.enum(['full', 'partial'], {
+      error: 'Choose full or partial refund.',
+    }),
+    partialAmount: z.string().optional(),
+    reason: z.enum(refundReasons, {
+      error: 'Choose a reason for the refund.',
+    }),
+    details: z
+      .string()
+      .trim()
+      .max(1000, { error: 'Keep the details under 1000 characters.' })
+      .optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.refundType === 'partial') {
+      const trimmed = data.partialAmount?.trim() ?? '';
+      if (!trimmed) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Enter a valid refund amount.',
+          path: ['partialAmount'],
+        });
+      } else {
+        const parsed = parseFloat(trimmed);
+        if (isNaN(parsed) || parsed <= 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Enter a valid refund amount greater than zero.',
+            path: ['partialAmount'],
+          });
+        }
+      }
+    }
+    if (data.reason === 'other' && (!data.details || data.details.trim().length === 0)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Please enter details explaining your reason for the refund.',
+        path: ['details'],
+      });
+    }
+  });
+
+
 export const reviewSchema = z.object({
   rating: z
     .number()
@@ -139,6 +193,7 @@ export type ProfileValues = z.infer<typeof profileSchema>;
 export type ShippingAddressValues = z.infer<typeof shippingAddressSchema>;
 export type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
 export type ReturnRequestValues = z.infer<typeof returnRequestSchema>;
+export type RefundRequestValues = z.infer<typeof refundRequestSchema>;
 export type ReviewValues = z.infer<typeof reviewSchema>;
 export type MessageValues = z.infer<typeof messageSchema>;
 export type AccessibilityPreferencesValues = z.infer<typeof accessibilityPreferencesSchema>;

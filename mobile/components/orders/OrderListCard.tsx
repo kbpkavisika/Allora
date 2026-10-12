@@ -3,13 +3,57 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
+import { Badge, type BadgeVariant } from '@/components/ui/Badge';
 import { Icon } from '@/components/ui/Icon';
 import { deliveryCaption } from '@/lib/deliveries';
-import { formatPlacedAt, itemSummary, statusPresentation, type Order } from '@/lib/orders';
+import { formatMoney, formatPlacedAt, itemSummary, statusPresentation, type Order } from '@/lib/orders';
+import { refundService } from '@/services/refund/refundService';
 
 export interface OrderListCardProps {
   order: Order;
   position?: string;
+}
+
+function getOrderPaymentBadge(order: Order): { label: string; variant: BadgeVariant; voice: string } {
+  const refund = refundService.getRefund(order.id);
+  if (refund) {
+    if (refund.status === 'refunded') {
+      return { label: 'Refund Completed', variant: 'success', voice: 'Refund completed' };
+    }
+    if (refund.status === 'failed') {
+      return { label: 'Refund Failed', variant: 'warning', voice: 'Refund failed' };
+    }
+    return { label: 'Refund Processing', variant: 'neutral', voice: 'Refund processing' };
+  }
+
+  if (order.payment_status === 'refunded') {
+    return { label: 'Refund Completed', variant: 'success', voice: 'Refund completed' };
+  }
+
+  if (order.payment_status === 'partially_refunded') {
+    return { label: 'Partially Refunded', variant: 'neutral', voice: 'Order partially refunded' };
+  }
+
+  if (order.status === ('cancelled' as any) || (order as any).cancelled_at) {
+    return { label: 'Cancelled', variant: 'neutral', voice: 'Order cancelled' };
+  }
+
+  if (order.payment_status === 'failed') {
+    return { label: 'Payment Failed', variant: 'warning', voice: 'Payment failed' };
+  }
+
+  if (
+    order.payment_status === 'paid' ||
+    (order.status === 'completed' && order.payment_method === 'payhere')
+  ) {
+    return { label: 'Paid', variant: 'success', voice: 'Payment paid' };
+  }
+
+  if (order.payment_method === 'cod') {
+    return { label: 'Due on Delivery', variant: 'neutral', voice: 'Payment due on delivery' };
+  }
+
+  return { label: 'Pending', variant: 'neutral', voice: 'Payment pending' };
 }
 
 export function OrderListCard({ order, position }: OrderListCardProps) {
@@ -20,13 +64,13 @@ export function OrderListCard({ order, position }: OrderListCardProps) {
   const caption = `${status.label} · ${
     delivery ?? t('orders.placedCaption', { date: formatPlacedAt(order.placed_at) })
   }`;
-  const orderNumber = t('orders.orderNumber', { number: order.order_number });
+  const paymentBadge = getOrderPaymentBadge(order);
 
   return (
     <Pressable
       onPress={() => router.push({ pathname: '/orders/[id]', params: { id: order.id } })}
       role="button"
-      aria-label={`${orderNumber}, ${status.label}${position ? `, ${position}` : ''}`}
+      aria-label={`${t('orders.orderNumber', { number: order.order_number })}, ${itemSummary(order.items)}, ${formatMoney(order.total)}, Status: ${status.label}, Payment: ${paymentBadge.voice}${position ? `, ${position}` : ''}`}
       accessibilityHint={t('orders.openHint')}
       className="flex-row items-center gap-3 rounded-12 border-1 border-border bg-surface p-3 active:bg-surface-muted">
       <View className="h-14 w-14 items-center justify-center overflow-hidden rounded-8 bg-surface-sunken">
@@ -42,18 +86,27 @@ export function OrderListCard({ order, position }: OrderListCardProps) {
       </View>
 
       <View className="flex-1 gap-1">
-        <Text className="type-mono text-secondary" numberOfLines={1}>
-          {orderNumber}
-        </Text>
+        <View className="flex-row items-center justify-between gap-2">
+          <Text className="type-mono text-secondary" numberOfLines={1}>
+            {t('orders.orderNumber', { number: order.order_number })}
+          </Text>
+          <Badge label={paymentBadge.label} variant={paymentBadge.variant} />
+        </View>
+
         <Text className="type-label-lg text-primary" numberOfLines={1}>
           {itemSummary(order.items)}
         </Text>
 
         {/* Status is a full sentence, never colour alone (design.md §06, wireframe S16). */}
-        <View className="flex-row items-center gap-2">
-          <View className={`h-2 w-2 rounded-full ${status.tone}`} />
-          <Text className="type-text-secondary text-secondary" numberOfLines={1}>
-            {caption}
+        <View className="flex-row items-center justify-between gap-2">
+          <View className="flex-1 flex-row items-center gap-2">
+            <View className={`h-2 w-2 rounded-full ${status.tone}`} />
+            <Text className="type-text-secondary text-secondary" numberOfLines={1}>
+              {caption}
+            </Text>
+          </View>
+          <Text className="type-label text-primary">
+            {formatMoney(order.total)}
           </Text>
         </View>
       </View>

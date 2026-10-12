@@ -15,7 +15,9 @@ export function isPayHereInitializationUnavailable(error: unknown): boolean {
       message.includes('network') ||
       message.includes('not deployed') ||
       message.includes('not available') ||
-      message.includes('temporarily unavailable')
+      message.includes('temporarily unavailable') ||
+      message.includes('timeout') ||
+      message.includes('aborted')
     ) {
       return true;
     }
@@ -28,7 +30,9 @@ export function isPayHereInitializationUnavailable(error: unknown): boolean {
       message.includes('network') ||
       message.includes('not deployed') ||
       message.includes('not available') ||
-      message.includes('temporarily unavailable')
+      message.includes('temporarily unavailable') ||
+      message.includes('timeout') ||
+      message.includes('aborted')
     );
   }
 
@@ -63,17 +67,28 @@ export async function initializePayHerePayment(
     throw new Error('Payment service is not configured.');
   }
 
-  const response = await fetch(`${supabaseUrl}/functions/v1/initialize-payhere-payment`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      amount,
-      currency: 'LKR',
-    }),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, 2500);
+
+  let response: Response;
+  try {
+    response = await fetch(`${supabaseUrl}/functions/v1/initialize-payhere-payment`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        amount,
+        currency: 'LKR',
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     const errorMessage = await parseErrorResponse(response);

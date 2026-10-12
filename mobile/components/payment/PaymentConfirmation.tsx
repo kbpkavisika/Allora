@@ -2,6 +2,8 @@ import * as Haptics from 'expo-haptics';
 import { Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
+import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
+import { formatPaymentConfirmationSpeech } from '@/components/payment/paymentSpeech';
 
 export interface PaymentConfirmationProps {
   amount: number;
@@ -28,6 +30,11 @@ export function PaymentConfirmation({
       <Text className="type-h3 text-primary" accessibilityRole="header" maxFontSizeMultiplier={2}>
         You are about to pay {currency} {formattedAmount}.
       </Text>
+      <ReadAloudButton
+        text={formatPaymentConfirmationSpeech({ amount, currency })}
+        label="Read aloud"
+        disabled={disabled}
+      />
       <Button
         label="Confirm payment"
         onPress={handleConfirm}

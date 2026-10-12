@@ -572,12 +572,16 @@
     "heading": {
       "success": "Payment successful",
       "cod": "Order placed!",
-      "failure": "Payment failed"
+      "failure": "Payment failed",
+      "cancelled": "Payment cancelled",
+      "pending": "Payment processing"
     },
     "body": {
       "success": "Your order is confirmed. The payment was successful.",
       "cod": "Pay {{amount}} in cash when your order arrives.",
-      "failure": "The payment wasn't completed, so your order was not placed."
+      "failure": "The payment wasn't completed, so your order was not placed.",
+      "cancelled": "The payment process was cancelled before completion. No charges were made.",
+      "pending": "Your payment is being processed. Please wait while verification is finalized."
     },
     "noCharge": "No amount was charged. Try the payment again, or choose a different method.",
     "multipleOrders": "{{count}} orders placed · one per shop",
@@ -589,7 +593,16 @@
     },
     "notAvailable": "N/A",
     "differentMethod": "Choose a different method",
-    "track": "Track your order"
+    "track": "Track your order",
+    "cancelledNote": "Your order was not placed and no payment was deducted. You can resume checkout at any time.",
+    "pendingNote": "Payment verification is taking a moment. If this does not update automatically, check your order status in a few minutes.",
+    "amountDue": "Amount due",
+    "amount": "Amount",
+    "paymentMethod": "Payment method",
+    "payHereOnline": "PayHere (online)",
+    "paymentReference": "Payment reference",
+    "receiptNote": "A confirmation receipt will be sent to your registered email address.",
+    "readAloud": "Read aloud summary"
   },
   "product": {
     "title": "Product",
