@@ -617,7 +617,6 @@
   "checkout": {
     "addressRequired": "Add a delivery address before checking out.",
     "initError": "Could not initialize PayHere payment.",
-    "saveAfterPaymentError": "Payment went through but the order did not save. Contact support.",
     "placeError": "Could not place the order. Please try again.",
     "emptyCart": "Your cart is empty",
     "orderSummary": "Order summary",

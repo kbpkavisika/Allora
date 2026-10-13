@@ -90,12 +90,7 @@ export default function OrderDetailScreen() {
   const total = order.items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
   const orderTotal = order.total || total;
 
-  const isEligibleForRefund =
-    order.payment_status !== 'failed' &&
-    (order.payment_method === 'payhere' ||
-      Boolean(order.payment_reference) ||
-      order.payment_status === 'paid' ||
-      order.status === 'completed');
+  const isEligibleForRefund = order.payment_status === 'paid';
 
   const canRequestRefund = isEligibleForRefund && (!refund || refund.status === 'failed');
 
@@ -114,10 +109,7 @@ export default function OrderDetailScreen() {
   } else if (order.payment_status === 'failed') {
     paymentBadgeLabel = 'Failed';
     paymentBadgeVariant = 'warning';
-  } else if (
-    order.payment_status === 'paid' ||
-    (order.status === 'completed' && order.payment_method === 'payhere')
-  ) {
+  } else if (order.payment_status === 'paid') {
     paymentBadgeLabel = 'Paid';
     paymentBadgeVariant = 'success';
   } else if (order.payment_method === 'cod') {

@@ -49,10 +49,7 @@ function getOrderPaymentBadge(order: Order): { label: string; variant: BadgeVari
     return { label: 'Payment Failed', variant: 'warning', voice: 'Payment failed' };
   }
 
-  if (
-    order.payment_status === 'paid' ||
-    (order.status === 'completed' && order.payment_method === 'payhere')
-  ) {
+  if (order.payment_status === 'paid') {
     return { label: 'Paid', variant: 'success', voice: 'Payment paid' };
   }
 
