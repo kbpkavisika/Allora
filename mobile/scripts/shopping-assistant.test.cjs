@@ -119,6 +119,11 @@ test('malformed provider output and timeouts have distinct stable errors', async
   const malformed = await loadEndpoint({ transport: async () => new Response('{broken') })(request(body));
   assert.equal(malformed.status, 502);
   assert.equal((await malformed.json()).code, 'invalid_provider_response');
+  for (const code of ['tool_use_failed', 'json_validate_failed']) {
+    const failedGeneration = await loadEndpoint({ transport: async () => new Response(JSON.stringify({ error: { code } }), { status: 400 }) })(request(body));
+    assert.equal(failedGeneration.status, 502);
+    assert.equal((await failedGeneration.json()).code, 'provider_generation_failed');
+  }
   const timedOut = await loadEndpoint({ transport: async () => { throw new DOMException('timeout', 'TimeoutError'); } })(request(body));
   assert.equal(timedOut.status, 504);
 });
@@ -134,6 +139,16 @@ test('rate limits preserve bounded retry guidance without invoking the provider 
   assert.equal(response.status, 429);
   assert.equal(response.headers.get('Retry-After'), '45');
   assert.equal((await response.json()).retryAfter, 45);
+});
+
+test('per-minute and daily provider limits are reported as different errors', async () => {
+  const limit = message => loadEndpoint({ transport: async () => new Response(JSON.stringify({ error: { code: 'rate_limit_exceeded', message } }), { status: 429 }) })(request(body));
+  const perMinute = await (await limit('Rate limit reached on tokens per minute (TPM)')).json();
+  assert.equal(perMinute.code, 'rate_limited');
+  assert.match(perMinute.error, /rate limit hit/);
+  const daily = await (await limit('Rate limit reached on tokens per day (TPD)')).json();
+  assert.equal(daily.code, 'daily_limit_reached');
+  assert.match(daily.error, /daily limit/);
 });
 
 test('rejects duplicate product IDs and excessive total history before provider work', async () => {

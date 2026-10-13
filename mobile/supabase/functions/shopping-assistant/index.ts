@@ -104,7 +104,7 @@ Deno.serve(async (req: Request) => {
       if (products.length !== body.productIds.length) return fail('stale_products', 'Some product results are no longer available. Please search again.', 409);
     }
     stage = 'provider';
-    const model = Deno.env.get('GROQ_MODEL') || 'openai/gpt-oss-20b';
+    const model = Deno.env.get('GROQ_MODEL') || 'openai/gpt-oss-120b';
     providerCalls++;
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST', signal: AbortSignal.any([deadline, AbortSignal.timeout(30000)]),
@@ -124,10 +124,18 @@ Deno.serve(async (req: Request) => {
       if (response.status === 429) {
         const seconds = Number(response.headers.get('Retry-After'));
         const retryAfter = Number.isFinite(seconds) && seconds > 0 ? Math.min(300, Math.ceil(seconds)) : 30;
-        return json({ code: 'rate_limited', error: 'AlloraAI has reached its provider rate limit. Please try again shortly.', retryAfter }, 429, { 'Retry-After': String(retryAfter) });
+        const daily = /per day/i.test(String(providerError?.error?.message ?? ''));
+        return json({
+          code: daily ? 'daily_limit_reached' : 'rate_limited',
+          error: daily ? 'AI provider daily limit reached. AlloraAI is out of AI requests for today.' : 'AI provider rate limit hit. Too many AlloraAI messages were sent in the last minute.',
+          retryAfter,
+        }, 429, { 'Retry-After': String(retryAfter) });
       }
-      if ([400, 401, 403, 404, 422].includes(response.status)) return fail('provider_configuration', 'AlloraAI provider configuration needs attention.', 503);
-      return fail('provider_unavailable', 'AlloraAI is temporarily unavailable. Please try again later.', 502);
+      if (response.status === 400 && ['tool_use_failed', 'json_validate_failed'].includes(errorCode)) return fail('provider_generation_failed', 'The AI model returned an unusable answer. Please send your message again.', 502);
+      if (response.status === 401 || response.status === 403) return fail('provider_configuration', 'The AI provider rejected the AlloraAI API key.', 503);
+      if (response.status === 404) return fail('provider_configuration', 'The configured AI model is not available from the AI provider.', 503);
+      if ([400, 413, 422].includes(response.status)) return fail('provider_configuration', 'The AI provider rejected the AlloraAI request format.', 503);
+      return fail('provider_unavailable', 'The AI provider is having problems right now.', 502);
     }
     stage = 'provider_response';
     const completion = await response.json();
@@ -139,7 +147,7 @@ Deno.serve(async (req: Request) => {
       (action.maxPrice !== null && (typeof action.maxPrice !== 'number' || !Number.isFinite(action.maxPrice) || action.maxPrice < 0)) ||
       (action.excludeCurrentResults !== undefined && typeof action.excludeCurrentResults !== 'boolean') ||
       typeof action.productId !== 'string' || action.productId.length > 64 || !Number.isInteger(action.quantity) || action.quantity < 1 || action.quantity > 100) {
-      return fail('invalid_provider_response', 'Invalid assistant response. Please try again.', 502);
+      return fail('invalid_provider_response', 'The AI model returned an unusable answer. Please send your message again.', 502);
     }
     if (action.type === 'add') {
       const selected = products.find(p => p.id === action.productId);
@@ -163,11 +171,12 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     const details = error as { name?: string; code?: string };
     log('error', 'request_failed', { errorName: details?.name, errorCode: details?.code });
-    if (details?.name === 'TimeoutError' || details?.name === 'AbortError') return fail('request_timeout', 'AlloraAI took too long to respond. Please try again later.', 504);
+    if (details?.name === 'TimeoutError' || details?.name === 'AbortError') return fail('request_timeout', stage === 'provider' ? 'The AI provider took too long to respond.' : 'The store took too long to respond.', 504);
     if (stage === 'validation' && details?.name === 'SyntaxError') return fail('invalid_request', 'Invalid shopping request.', 400);
-    if (stage === 'provider_response') return fail('invalid_provider_response', 'Invalid assistant response. Please try again.', 502);
-    if (stage === 'provider') return fail('provider_unavailable', 'AlloraAI is temporarily unavailable. Please try again later.', 502);
-    if (stage === 'auth' || stage.startsWith('catalog_')) return fail('dependency_unavailable', 'AlloraAI could not access the shopping service. Please try again later.', 503);
+    if (stage === 'provider_response') return fail('invalid_provider_response', 'The AI model returned an unusable answer. Please send your message again.', 502);
+    if (stage === 'provider') return fail('provider_unavailable', 'AlloraAI could not reach the AI provider.', 502);
+    if (stage === 'auth') return fail('dependency_unavailable', 'AlloraAI could not reach the sign-in service.', 503);
+    if (stage.startsWith('catalog_')) return fail('dependency_unavailable', 'AlloraAI could not load products from the store.', 503);
     return fail('internal_error', 'AlloraAI could not complete this request. Please try again.', 500);
   }
 });

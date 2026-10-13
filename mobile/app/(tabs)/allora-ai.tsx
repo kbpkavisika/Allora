@@ -33,6 +33,7 @@ export default function ShoppingAssistantScreen() {
   const [error, setError] = useState<string | null>(null);
   const pending = useRef(false);
   const retryAt = useRef(0);
+  const cooldownReason = useRef('');
   const scrollRef = useRef<ScrollView>(null);
   const inputRef = useRef<TextInput>(null);
   const { control, handleSubmit, reset, setValue } = useForm<MessageValues>({
@@ -51,7 +52,7 @@ export default function ShoppingAssistantScreen() {
   const submit = () => handleSubmit(async ({ body }) => {
     if (pending.current || isCartLoading || isDictating) return;
     if (Date.now() < retryAt.current) {
-      setError(t('assistant.rateLimitWait', { seconds: Math.ceil((retryAt.current - Date.now()) / 1000) }));
+      setError(cooldownReason.current + ' ' + t('assistant.retryIn', { seconds: Math.ceil((retryAt.current - Date.now()) / 1000) }));
       return;
     }
     pending.current = true;
@@ -72,13 +73,17 @@ export default function ShoppingAssistantScreen() {
           ? await readShoppingFailure(invokeError.context)
           : null;
         const status = invokeError instanceof FunctionsHttpError ? invokeError.context.status : undefined;
-        if (status === 429 || status === 502 || status === 503 || status === 504) {
+        console.warn(JSON.stringify({ event: 'shopping_assistant_failed', status, code: failure?.code ?? invokeError.name, requestId: failure?.requestId, gatewayRequestId: failure?.gatewayRequestId }));
+        const reason = status === 401 ? t('assistant.signInAgain') : failure?.error ?? t('assistant.unavailable');
+        const isModelGlitch = failure?.code === 'provider_generation_failed' || failure?.code === 'invalid_provider_response';
+        if (!isModelGlitch && (status === 429 || status === 502 || status === 503 || status === 504)) {
           const seconds = typeof failure?.retryAfter === 'number' && Number.isFinite(failure.retryAfter)
             ? Math.min(300, Math.max(1, failure.retryAfter)) : 30;
           retryAt.current = Date.now() + seconds * 1000;
+          cooldownReason.current = reason;
+          throw new Error(reason + ' ' + t('assistant.retryIn', { seconds }));
         }
-        console.warn(JSON.stringify({ event: 'shopping_assistant_failed', status, code: failure?.code ?? invokeError.name, requestId: failure?.requestId, gatewayRequestId: failure?.gatewayRequestId }));
-        throw new Error(status === 401 ? t('assistant.signInAgain') : failure?.error ?? t('assistant.unavailable'));
+        throw new Error(reason);
       }
       if (data?.error) throw new Error(data.error);
       const parsed = shoppingResponseSchema.parse(data);

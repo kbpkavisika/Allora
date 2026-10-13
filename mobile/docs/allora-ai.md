@@ -12,7 +12,7 @@ For voice input on Android, tap the microphone inside the input to open the phon
 
 The app calls the `shopping-assistant` Supabase Edge Function. The client checks the session and refreshes it when close to expiry before invoking. The function independently verifies the user session and sends up to 12 chat messages (at most 16,000 characters) and the current result IDs, names, prices, and stock to Groq. The model returns one search, add, or reply action. Products and prices come from Supabase; cart success is reported only after the existing cart accepts the addition.
 
-Keep `GROQ_API_KEY` in Supabase secrets, never in an `EXPO_PUBLIC_` variable. For local setup, copy `supabase/.env.example` to the ignored `supabase/.env.local` and provide the key. The default model is `openai/gpt-oss-20b`; `GROQ_MODEL` can select another Groq model that supports strict structured output.
+Keep `GROQ_API_KEY` in Supabase secrets, never in an `EXPO_PUBLIC_` variable. For local setup, copy `supabase/.env.example` to the ignored `supabase/.env.local` and provide the key. The default model is `openai/gpt-oss-120b`; `GROQ_MODEL` can select another Groq model that supports strict structured output.
 
 From `mobile/`, deploy updates with:
 
@@ -21,7 +21,7 @@ npx supabase secrets set --env-file supabase/.env.local
 npx supabase functions deploy shopping-assistant
 ```
 
-The function handles user authentication itself with `auth.getUser`; gateway JWT verification is disabled to support the project’s key setup. Provider rate limits are shown as chat errors. Requests are not automatically retried; provider errors and rate limits impose a short client cooldown. Search supports a product-name keyword or browsing across all categories, with an optional maximum price. Budget-only requests such as “What else can I buy for 2000rs” browse in-stock products at or below LKR 2,000; alternative requests exclude the current results. This is not semantic catalog search.
+The function handles user authentication itself with `auth.getUser`; gateway JWT verification is disabled to support the project’s key setup. Provider rate limits are shown as chat errors. Requests are not automatically retried; provider errors and rate limits impose a short client cooldown, while model generation failures can be resent immediately. Search supports a product-name keyword or browsing across all categories, with an optional maximum price. Budget-only requests such as “What else can I buy for 2000rs” browse in-stock products at or below LKR 2,000; alternative requests exclude the current results. This is not semantic catalog search.
 
 ## Checks
 
@@ -42,8 +42,10 @@ Deploy the updated function before expecting the new logs. In Supabase Dashboard
 | --- | --- |
 | 401 unauthorized | Missing or rejected user access token. Sign in again. |
 | 401 without our requestId or request_started log | The handler may not have run. Check Invocations/platform logs and deployed JWT verification. The repository sets verify_jwt = false and still validates users with auth.getUser. |
-| 503 provider_configuration | Groq rejected the key, model, or request configuration. Check provider_failed.providerStatus/providerErrorCode and server secrets; custom models must support strict structured output. |
-| 429 rate_limited | Groq throttled the request. Respect retryAfter / Retry-After. |
+| 503 provider_configuration | Groq rejected the key (401/403), model (404), or request format (400/413/422). Check provider_failed.providerStatus/providerErrorCode and server secrets; custom models must support strict structured output. |
+| 502 provider_generation_failed | Groq 400 tool_use_failed / json_validate_failed: the model produced an unusable answer. No client cooldown; resend the message. |
+| 429 rate_limited | Groq per-minute limit hit (free tier: 8,000 tokens/minute, about 8 messages). Respect retryAfter / Retry-After. |
+| 429 daily_limit_reached | Groq daily limit hit (free tier: 1,000 requests or 200K tokens per day). |
 | 502 provider_unavailable | Groq returned an upstream error or could not be reached. |
 | 502 invalid_provider_response | Provider output failed parsing or action validation. |
 | 503 auth_unavailable / dependency_unavailable | Authentication or catalog service failed; this is not treated as an expired session. |

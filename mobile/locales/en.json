@@ -935,7 +935,7 @@
   },
   "assistant": {
     "signInAgain": "Please sign in again before using AlloraAI.",
-    "rateLimitWait": "Please wait {{seconds}} seconds before trying AlloraAI again.",
+    "retryIn": "Try again in {{seconds}} seconds.",
     "addSelected": "Add one {{name}} to my cart.",
     "title": "AlloraAI",
     "intro": "Tell me what you need. Try “Find milk under 500 rupees”, then “Add two of the first one”. Payment is unavailable in this experiment.",
