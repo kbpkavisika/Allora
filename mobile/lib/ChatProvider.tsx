@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 
+import { useAppForeground } from '@/hooks/useAppForeground';
 import { useAuth } from '@/lib/AuthProvider';
 import {
   MESSAGE_PAGE_SIZE,
@@ -80,11 +81,13 @@ export function ChatProvider({ children }: ChatProviderProps) {
     load();
   }, [load]);
 
+  useAppForeground(load);
+
   useEffect(() => {
     if (!userId) return;
 
     const channel = supabase
-      .channel(`inbox:${userId}`)
+      .channel(`inbox:${userId}`, { config: { private: true } })
       .on('broadcast', { event: 'message' }, ({ payload }) => {
         listeners.current.forEach((listener) => listener(payload as MessageEvent));
         load();

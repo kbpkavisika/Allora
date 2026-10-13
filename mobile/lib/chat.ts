@@ -21,12 +21,24 @@ export interface ConversationSummary {
   id: string;
   buyer_id: string;
   shop_id: string;
-  counterpart_name: string;
+  counterpart_name: string | null;
   last_message_body: string | null;
   last_message_sender_id: string | null;
   last_message_at: string | null;
   unread_count: number;
   muted: boolean;
+  counterpart_last_read_at: string | null;
+}
+
+export function conversationName(conversation: ConversationSummary): string {
+  return conversation.counterpart_name ?? i18n.t('account.seller.buyer');
+}
+
+export function isSeenByCounterpart(conversation: ConversationSummary, message: Message): boolean {
+  return (
+    !!conversation.counterpart_last_read_at &&
+    Date.parse(conversation.counterpart_last_read_at) >= Date.parse(message.created_at)
+  );
 }
 
 export interface MessageEvent {

@@ -23,12 +23,15 @@ import { IconButton } from '@/components/ui/IconButton';
 import { MessageBubble } from '@/components/ui/MessageBubble';
 import { Toast } from '@/components/ui/Toast';
 import { TopBar } from '@/components/ui/TopBar';
+import { useAppForeground } from '@/hooks/useAppForeground';
 import { useAuth } from '@/lib/AuthProvider';
 import {
+  conversationName,
   fetchProductNames,
   formatMessageDay,
   formatMessageTime,
   isSameDay,
+  isSeenByCounterpart,
   mergeMessages,
   MESSAGE_PAGE_SIZE,
   NEW_CONVERSATION_ID,
@@ -124,6 +127,8 @@ export default function ChatThreadScreen() {
     refreshMessages();
   }, [refreshMessages]);
 
+  useAppForeground(refreshMessages);
+
   useEffect(
     () =>
       subscribeToMessages((event) => {
@@ -168,7 +173,14 @@ export default function ChatThreadScreen() {
 
   const buyerName = buyerId && orderId ? getOrder(orderId)?.ship_name ?? null : null;
   const counterpartName = buyerId ? buyerName : shopName;
-  const title = conversation?.counterpart_name ?? counterpartName ?? t('tabs.chat');
+  const title = conversation
+    ? conversationName(conversation)
+    : (counterpartName ?? t('tabs.chat'));
+  const lastSentMessage = messages.find((message) => message.sender_id === userId);
+  const seenMessageId =
+    conversation && lastSentMessage && isSeenByCounterpart(conversation, lastSentMessage)
+      ? lastSentMessage.id
+      : null;
 
   function contextLine({ productId: product, orderId: order }: MessageContext): ContextLine | null {
     if (order) {
@@ -327,6 +339,7 @@ export default function ChatThreadScreen() {
                     isMine={isMine}
                     senderLabel={isMine ? t('chat.you') : title}
                     header={line ? <MessageContextLine {...line} /> : null}
+                    status={item.id === seenMessageId ? t('chat.seen') : null}
                   />
                 </View>
               );

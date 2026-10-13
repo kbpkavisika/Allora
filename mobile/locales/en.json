@@ -51,6 +51,7 @@
     "startBody": "Ask {{name}} about a product, an order or delivery.",
     "theSeller": "the seller",
     "you": "You",
+    "seen": "Seen",
     "buyerEmpty": "Tap Chat with seller on a product or order to ask a question.",
     "mutedLabel": "muted",
     "openHint": "Opens the conversation",
@@ -501,6 +502,9 @@
     "cartLabel_one": "Cart, {{count}} item",
     "cartLabel_other": "Cart, {{count}} items",
     "cartHint": "Opens your cart",
+    "messagesLabel_one": "Messages, {{count}} unread",
+    "messagesLabel_other": "Messages, {{count}} unread",
+    "messagesHint": "Opens your chats with sellers",
     "loadError": "Could not load products",
     "noProducts": "No products found",
     "tryDifferentSearch": "Try a different search or category."
