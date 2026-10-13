@@ -1,7 +1,10 @@
+import { uploadToCloudinary } from '@/lib/cloudinary';
 import { supabase } from '@/lib/supabase';
 import i18n, { formatDate, formatTime } from '@/lib/i18n';
 
 export const MESSAGE_MAX_LENGTH = 2000;
+
+export const VOICE_NOTE_MAX_MS = 120_000;
 
 export const MESSAGE_PAGE_SIZE = 50;
 
@@ -14,6 +17,8 @@ export interface Message {
   body: string;
   product_id: string | null;
   order_id: string | null;
+  audio_url: string | null;
+  audio_duration_ms: number | null;
   created_at: string;
 }
 
@@ -28,6 +33,18 @@ export interface ConversationSummary {
   unread_count: number;
   muted: boolean;
   counterpart_last_read_at: string | null;
+  last_message_is_voice: boolean;
+}
+
+export function formatVoiceDuration(ms: number): string {
+  const totalSeconds = Math.max(0, Math.round(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+export function uploadVoiceNote(uri: string): Promise<string> {
+  return uploadToCloudinary(uri, 'video');
 }
 
 export function conversationName(conversation: ConversationSummary): string {
@@ -88,11 +105,15 @@ export function formatMessageDay(iso: string): string {
 }
 
 export function conversationPreview(conversation: ConversationSummary, userId: string): string {
-  if (!conversation.last_message_body) return i18n.t('chat.noMessagesYet');
+  const body =
+    conversation.last_message_body ||
+    (conversation.last_message_is_voice ? i18n.t('chat.voiceMessage') : null);
+
+  if (!body) return i18n.t('chat.noMessagesYet');
 
   return conversation.last_message_sender_id === userId
-    ? i18n.t('chat.youPrefix', { body: conversation.last_message_body })
-    : conversation.last_message_body;
+    ? i18n.t('chat.youPrefix', { body })
+    : body;
 }
 
 export function mergeMessages(current: Message[], incoming: Message[]): Message[] {

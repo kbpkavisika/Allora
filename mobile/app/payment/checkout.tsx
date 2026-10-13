@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PaymentMethodOption } from '@/components/payment/PaymentMethodOption';
 import { PaymentAuthentication } from '@/components/payment/PaymentAuthentication';
-import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
+import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
 import { formatPaymentConfirmationSpeech } from '@/components/payment/paymentSpeech';
 import { Button } from '@/components/ui/Button';
 import { Callout } from '@/components/ui/Callout';

@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Divider } from '@/components/ui/Divider';
 import { Icon } from '@/components/ui/Icon';
+import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
 import { Toast } from '@/components/ui/Toast';
 import { TopBar } from '@/components/ui/TopBar';
 import { useReduceMotion } from '@/hooks/useReduceMotion';
@@ -24,8 +25,14 @@ import { useSellerChat } from '@/hooks/useSellerChat';
 import { CartStockLimitError } from '@/lib/cart';
 import { useCart } from '@/lib/CartProvider';
 import { formatMoney } from '@/lib/orders';
-import { getStockStatus, type Product } from '@/lib/products';
-import { fetchRatingSummary, summarizeReviews, type RatingSummary } from '@/lib/reviews';
+import { formatProductSpeech, getStockStatus, type Product } from '@/lib/products';
+import {
+  fetchRatingSummary,
+  formatAverage,
+  formatReviewCount,
+  summarizeReviews,
+  type RatingSummary,
+} from '@/lib/reviews';
 import { useShop } from '@/lib/ShopProvider';
 import { supabase } from '@/lib/supabase';
 
@@ -98,6 +105,12 @@ export default function ProductDetailScreen() {
   const soldOut = product.stock_quantity <= 0;
   const hasDescription = product.description.trim().length > 0;
   const isOwnProduct = shop?.id === product.shop_id;
+  const reviewsSpeech =
+    reviewSummary.total > 0
+      ? t('reviews.summaryLabel', {
+          caption: `${formatAverage(reviewSummary.average)} · ${formatReviewCount(reviewSummary.total)}`,
+        })
+      : t('reviews.summaryLabelEmpty');
 
   async function handleAdd() {
     if (!product) return;
@@ -166,9 +179,17 @@ export default function ProductDetailScreen() {
             }
           />
 
+          <Divider />
+
+          <ReadAloudButton
+            text={formatProductSpeech(product, reviewsSpeech)}
+            hint={t('readAloud.productHint')}
+            variant="social"
+            fullWidth
+          />
+
           {!isOwnProduct ? (
             <>
-              <Divider />
               <Button
                 variant="secondary"
                 label={t('orders.chatWithSeller')}

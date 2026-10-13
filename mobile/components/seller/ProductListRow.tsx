@@ -1,9 +1,9 @@
-import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { Badge } from '@/components/ui/Badge';
 import { Icon } from '@/components/ui/Icon';
+import { ProductThumbnail } from '@/components/ui/ProductThumbnail';
 import { formatPrice, getStockStatus, type Product } from '@/lib/products';
 
 export interface ProductListRowProps {
@@ -15,7 +15,6 @@ export interface ProductListRowProps {
 export function ProductListRow({ product, onPress, position }: ProductListRowProps) {
   const { t } = useTranslation();
   const stock = getStockStatus(product.stock_quantity);
-  const cover = product.photos[0];
 
   return (
     <Pressable
@@ -24,17 +23,7 @@ export function ProductListRow({ product, onPress, position }: ProductListRowPro
       aria-label={`${product.name}, ${formatPrice(product.price)}, ${stock.detailLabel}${position ? `, ${position}` : ''}`}
       accessibilityHint={t('seller.products.openHint')}
       className="min-h-tap flex-row items-center gap-3 py-3 active:bg-surface-muted">
-      <View className="h-14 w-14 items-center justify-center overflow-hidden rounded-8 bg-surface-sunken">
-        {cover ? (
-          <Image
-            source={{ uri: cover }}
-            style={{ width: '100%', height: '100%' }}
-            contentFit="cover"
-          />
-        ) : (
-          <Icon name="shop" size="md" className="text-secondary" />
-        )}
-      </View>
+      <ProductThumbnail uri={product.photos[0]} />
 
       <View className="flex-1 gap-1">
         <Text className="type-label-lg text-primary" numberOfLines={1} maxFontSizeMultiplier={1.5}>

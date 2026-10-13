@@ -11,7 +11,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
-import { MessageComposer } from '@/components/chat/MessageComposer';
+import { MessageComposer, type VoiceRecordingProblem } from '@/components/chat/MessageComposer';
+import { VoiceNotePlayer } from '@/components/chat/VoiceNotePlayer';
 import {
   MessageContextLine,
   type MessageContextLineProps,
@@ -24,7 +25,9 @@ import { MessageBubble } from '@/components/ui/MessageBubble';
 import { Toast } from '@/components/ui/Toast';
 import { TopBar } from '@/components/ui/TopBar';
 import { useAppForeground } from '@/hooks/useAppForeground';
+import type { VoiceRecording } from '@/hooks/useVoiceRecorder';
 import { useAuth } from '@/lib/AuthProvider';
+import { uploadErrorMessage } from '@/lib/cloudinary';
 import {
   conversationName,
   fetchProductNames,
@@ -35,9 +38,10 @@ import {
   mergeMessages,
   MESSAGE_PAGE_SIZE,
   NEW_CONVERSATION_ID,
+  uploadVoiceNote,
   type Message,
 } from '@/lib/chat';
-import { useChat } from '@/lib/ChatProvider';
+import { useChat, type SendMessageInput } from '@/lib/ChatProvider';
 import { setActiveConversation } from '@/lib/notifications';
 import { useOrders } from '@/lib/OrdersProvider';
 import { useProfile } from '@/lib/ProfileProvider';
@@ -225,9 +229,30 @@ export default function ChatThreadScreen() {
     }
   }
 
-  async function handleSend(body: string) {
+  function handleSend(body: string) {
+    return deliver({ body });
+  }
+
+  async function handleSendVoice({ uri, durationMs }: VoiceRecording) {
+    let audioUrl: string;
+    try {
+      audioUrl = await uploadVoiceNote(uri);
+    } catch (error) {
+      console.warn('[Chat] voice upload failed', error);
+      setToast(uploadErrorMessage(error, t('chat.sendError'), t('chat.voiceUploadError')));
+      return false;
+    }
+
+    return deliver({ body: '', audioUrl, audioDurationMs: durationMs });
+  }
+
+  function handleVoiceProblem(problem: VoiceRecordingProblem) {
+    setToast(problem === 'denied' ? t('chat.micDenied') : t('chat.recordError'));
+  }
+
+  async function deliver(content: Pick<SendMessageInput, 'body' | 'audioUrl' | 'audioDurationMs'>) {
     const { message, error } = await sendMessage({
-      body,
+      ...content,
       conversationId: conversationId ?? undefined,
       shopId: conversationId ? undefined : shopId,
       buyerId: conversationId ? undefined : buyerId,
@@ -340,6 +365,15 @@ export default function ChatThreadScreen() {
                     senderLabel={isMine ? t('chat.you') : title}
                     header={line ? <MessageContextLine {...line} /> : null}
                     status={item.id === seenMessageId ? t('chat.seen') : null}
+                    media={
+                      item.audio_url && item.audio_duration_ms ? (
+                        <VoiceNotePlayer
+                          url={item.audio_url}
+                          durationMs={item.audio_duration_ms}
+                          isMine={isMine}
+                        />
+                      ) : null
+                    }
                   />
                 </View>
               );
@@ -353,7 +387,12 @@ export default function ChatThreadScreen() {
           {pendingLine ? (
             <MessageContextLine {...pendingLine} onRemove={() => setPendingContext(null)} />
           ) : null}
-          <MessageComposer onSend={handleSend} disabled={isLoading} />
+          <MessageComposer
+            onSend={handleSend}
+            onSendVoice={handleSendVoice}
+            onVoiceProblem={handleVoiceProblem}
+            disabled={isLoading}
+          />
         </View>
       </KeyboardAvoidingView>
 

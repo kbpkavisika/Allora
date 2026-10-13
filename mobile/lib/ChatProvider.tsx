@@ -26,6 +26,8 @@ export interface SendMessageInput {
   buyerId?: string;
   productId?: string | null;
   orderId?: string | null;
+  audioUrl?: string | null;
+  audioDurationMs?: number | null;
 }
 
 export type MessageListener = (event: MessageEvent) => void;
@@ -125,7 +127,16 @@ export function ChatProvider({ children }: ChatProviderProps) {
   }, []);
 
   const sendMessage = useCallback(
-    async ({ body, conversationId, shopId, buyerId, productId, orderId }: SendMessageInput) => {
+    async ({
+      body,
+      conversationId,
+      shopId,
+      buyerId,
+      productId,
+      orderId,
+      audioUrl,
+      audioDurationMs,
+    }: SendMessageInput) => {
       const { data, error } = await supabase.rpc('send_message', {
         p_body: body,
         p_conversation_id: conversationId ?? null,
@@ -133,6 +144,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
         p_product_id: productId ?? null,
         p_order_id: orderId ?? null,
         p_buyer_id: buyerId ?? null,
+        p_audio_url: audioUrl ?? null,
+        p_audio_duration_ms: audioDurationMs ?? null,
       });
 
       if (!error) await load();

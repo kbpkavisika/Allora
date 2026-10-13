@@ -9,7 +9,7 @@ import { DeliverySummary } from '@/components/orders/DeliverySummary';
 import { OrderCancellationNotice } from '@/components/orders/OrderCancellationNotice';
 import { OrderItemRows } from '@/components/orders/OrderItemRows';
 import { OrderReturnSummary } from '@/components/orders/OrderReturnSummary';
-import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
+import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
 import {
   formatPaymentSummarySpeech,
   formatRefundStatusSpeech,
