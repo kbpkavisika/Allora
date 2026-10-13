@@ -29,8 +29,8 @@ import type { Product } from '@/lib/products';
 import { shopCategories } from '@/lib/shop';
 import { translateOption } from '@/lib/i18n';
 
-// design.md §03: "tiles 2-up, gap 2" — product tiles bleed to the screen edge with a 2px gap on
-// both axes. The 16px gutter is restored for the search field, category tabs, and filter row.
+// Match the search and filter gutters while keeping the 2px gap between tiles.
+const GRID_PADDING = 16;
 const TILE_GAP = 2;
 
 type LoadMode = 'reset' | 'more' | 'refresh';
@@ -51,7 +51,7 @@ export default function ShopScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const positionOf = useListPosition();
-  const tileWidth = (width - TILE_GAP) / 2;
+  const tileWidth = (width - GRID_PADDING * 2 - TILE_GAP) / 2;
 
   const [searchText, setSearchText] = useState('');
   const [query, setQuery] = useState<Query>({ search: '', category: 'all', sort: 'newest' });
@@ -155,7 +155,7 @@ export default function ShopScreen() {
         numColumns={2}
         keyExtractor={(item) => item.id}
         columnWrapperStyle={{ gap: TILE_GAP, marginBottom: TILE_GAP }}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 32 }}
+        contentContainerStyle={{ paddingHorizontal: GRID_PADDING, paddingBottom: insets.bottom + 32 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         refreshControl={
