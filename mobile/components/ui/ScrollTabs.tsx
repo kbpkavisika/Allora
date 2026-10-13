@@ -39,7 +39,7 @@ export function ScrollTabs({
             accessibilityRole="tab"
             aria-selected={selected}
             aria-label={tab.count === undefined ? tab.label : `${tab.label}, ${tab.count}`}
-            className={`h-12 shrink-0 justify-center border-b-3 ${
+            className={`h-[48px] shrink-0 justify-center border-b-3 ${
               selected ? 'border-accent' : 'border-transparent'
             }`}>
             <Text

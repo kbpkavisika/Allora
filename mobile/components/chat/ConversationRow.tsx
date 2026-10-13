@@ -4,7 +4,12 @@ import { Pressable, Text, View } from 'react-native';
 import { Avatar } from '@/components/ui/Avatar';
 import { CountBadge } from '@/components/ui/CountBadge';
 import { Icon } from '@/components/ui/Icon';
-import { conversationPreview, formatConversationTime, type ConversationSummary } from '@/lib/chat';
+import {
+  conversationName,
+  conversationPreview,
+  formatConversationTime,
+  type ConversationSummary,
+} from '@/lib/chat';
 
 export interface ConversationRowProps {
   conversation: ConversationSummary;
@@ -16,12 +21,13 @@ export function ConversationRow({ conversation, userId, onPress }: ConversationR
   const { t } = useTranslation();
   const isUnread = conversation.unread_count > 0;
   const preview = conversationPreview(conversation, userId);
+  const name = conversationName(conversation);
   const time = conversation.last_message_at
     ? formatConversationTime(conversation.last_message_at)
     : null;
 
   const accessibleName = [
-    conversation.counterpart_name,
+    name,
     conversation.muted ? t('chat.mutedLabel') : null,
     isUnread ? t('account.buyer.unread', { count: conversation.unread_count }) : null,
     preview,
@@ -37,7 +43,7 @@ export function ConversationRow({ conversation, userId, onPress }: ConversationR
       aria-label={accessibleName}
       accessibilityHint={t('chat.openHint')}
       className="min-h-tap flex-row items-center gap-3 px-4 py-3 active:bg-surface-muted">
-      <Avatar name={conversation.counterpart_name} />
+      <Avatar name={name} />
 
       <View className="flex-1 gap-0.5">
         <View className="flex-row items-center justify-between gap-3">
@@ -45,7 +51,7 @@ export function ConversationRow({ conversation, userId, onPress }: ConversationR
             className={`flex-1 text-primary ${isUnread ? 'type-label-lg' : 'type-text-primary'}`}
             numberOfLines={1}
             maxFontSizeMultiplier={1.5}>
-            {conversation.counterpart_name}
+            {name}
           </Text>
           {conversation.muted ? <Icon name="mute" size="sm" className="text-secondary" /> : null}
           {time ? (

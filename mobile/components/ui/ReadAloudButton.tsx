@@ -1,15 +1,34 @@
 import * as Speech from 'expo-speech';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
-import { Button } from '@/components/ui/Button';
+import { Button, type ButtonVariant } from '@/components/ui/Button';
+import { Icon } from '@/components/ui/Icon';
 
 export interface ReadAloudButtonProps {
   text: string;
   label?: string;
+  hint?: string;
   disabled?: boolean;
+  fullWidth?: boolean;
+  variant?: Extract<ButtonVariant, 'secondary' | 'social'>;
 }
 
-export function ReadAloudButton({ text, label = 'Read aloud', disabled = false }: ReadAloudButtonProps) {
+const SPEECH_LANGUAGE: Record<string, string> = {
+  en: 'en-US',
+  si: 'si-LK',
+  ta: 'ta-LK',
+};
+
+export function ReadAloudButton({
+  text,
+  label,
+  hint,
+  disabled = false,
+  fullWidth = false,
+  variant = 'secondary',
+}: ReadAloudButtonProps) {
+  const { t, i18n } = useTranslation();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -60,6 +79,7 @@ export function ReadAloudButton({ text, label = 'Read aloud', disabled = false }
       await Speech.stop();
       setIsSpeaking(true);
       Speech.speak(text, {
+        language: SPEECH_LANGUAGE[i18n.language] ?? SPEECH_LANGUAGE.en,
         rate: 0.85,
         pitch: 1.0,
       });
@@ -70,30 +90,30 @@ export function ReadAloudButton({ text, label = 'Read aloud', disabled = false }
     }
   }
 
-  const currentLabel = isSpeaking ? 'Stop reading' : label;
+  const currentLabel = isSpeaking ? t('readAloud.stop') : (label ?? t('readAloud.label'));
+  const currentHint = isSpeaking ? t('readAloud.stopHint') : (hint ?? t('readAloud.hint'));
 
   return (
     <Button
       label={currentLabel}
-      variant="secondary"
+      variant={variant}
       size="md"
+      leadingIcon={
+        <Icon
+          name={isSpeaking ? 'stop' : 'speak'}
+          size="md"
+          className={disabled ? 'text-disabled' : 'text-primary'}
+        />
+      }
       onPress={() => {
         void handlePress();
       }}
       disabled={disabled}
       accessibilityLabel={currentLabel}
-      accessibilityHint={
-        isSpeaking
-          ? 'Stops reading aloud'
-          : 'Reads the payment or refund information aloud'
-      }
-      hint={
-        isSpeaking
-          ? 'Stops reading aloud'
-          : 'Reads the payment or refund information aloud'
-      }
-      fullWidth={false}
-      className="self-start"
+      accessibilityHint={currentHint}
+      hint={currentHint}
+      fullWidth={fullWidth}
+      className={fullWidth ? '' : 'self-start'}
     />
   );
 }

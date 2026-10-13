@@ -26,6 +26,7 @@ import {
   type ProductDetailsValues,
 } from '@/lib/sellerSchemas';
 import { translateOption } from '@/lib/i18n';
+import { photoUploadErrorMessage } from '@/lib/photoUpload';
 
 const TOTAL_STEPS = 4;
 
@@ -126,7 +127,10 @@ export default function AddProductScreen() {
     const { error } = await createProduct(toProductInput(values));
 
     if (error) {
-      setFormError(t('addProduct.publishError'));
+      console.warn('[AddProduct] publish failed', error);
+      setFormError(
+        photoUploadErrorMessage(error, t('addProduct.publishError'), t('productForm.photoUploadError'))
+      );
       return;
     }
 

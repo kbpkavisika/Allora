@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
+import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
 import { formatRefundStatusSpeech } from '@/components/payment/paymentSpeech';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';

@@ -14,7 +14,6 @@ import { nextDeliveryStatus, type DeliveryStatus } from '@/lib/deliveries';
 import {
   type Order,
   type PaymentMethod,
-  type PaymentStatus,
   type ReturnReason,
 } from '@/lib/orders';
 import type { Address } from '@/lib/profile';
@@ -25,8 +24,6 @@ import { supabase } from '@/lib/supabase';
 export interface PlaceOrderInput {
   lines: CartLine[];
   paymentMethod: PaymentMethod;
-  paymentStatus: PaymentStatus;
-  paymentReference?: string | null;
   address: Address | null;
 }
 
@@ -112,7 +109,9 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
       .order('placed_at', { ascending: false });
 
     const { data } = isSeller
-      ? await query.eq('shop_id', shopId!)
+      ? await query
+          .eq('shop_id', shopId!)
+          .or('payment_method.is.null,payment_method.eq.cod,payment_status.in.(paid,refunded,partially_refunded)')
       : await query.eq('buyer_id', userId);
 
     setOrders((data ?? []) as unknown as Order[]);
@@ -129,15 +128,13 @@ export function OrdersProvider({ children }: OrdersProviderProps) {
   );
 
   const placeOrder = useCallback(
-    async ({ lines, paymentMethod, paymentStatus, paymentReference, address }: PlaceOrderInput) => {
+    async ({ lines, paymentMethod, address }: PlaceOrderInput) => {
       if (!userId) return { orders: [], error: new Error('Not signed in.') };
       if (lines.length === 0) return { orders: [], error: new Error('Your cart is empty.') };
 
       const { data, error } = await supabase.rpc('place_order', {
         p_items: lines.map((line) => ({ product_id: line.product.id, quantity: line.quantity })),
         p_payment_method: paymentMethod,
-        p_payment_status: paymentStatus,
-        p_payment_reference: paymentReference ?? null,
         p_shipping: addressSnapshot(address, profile?.full_name ?? null),
       });
 

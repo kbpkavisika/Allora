@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { Text, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
-import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
+import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
 import { formatPaymentConfirmationSpeech } from '@/components/payment/paymentSpeech';
 
 export interface PaymentConfirmationProps {

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { BottomTabBar, type TabDefinition } from '@/components/ui/BottomTabBar';
 import { Header } from '@/components/ui/Header';
+import { useChat } from '@/hooks/useChat';
 
 export default function TabLayout() {
   const { t } = useTranslation();
@@ -14,10 +15,18 @@ export default function TabLayout() {
     'orders/index': { label: t('tabs.orders'), icon: 'orders' },
     'account/index': { label: t('tabs.account'), icon: 'account' },
   };
+  const { unreadCount } = useChat();
+
   return (
     <Tabs
       screenOptions={{ header: () => <Header /> }}
-      tabBar={(props) => <BottomTabBar {...(props as unknown as BottomTabBarProps)} tabs={tabs} />}>
+      tabBar={(props) => (
+        <BottomTabBar
+          {...(props as unknown as BottomTabBarProps)}
+          tabs={tabs}
+          badges={{ 'account/index': unreadCount }}
+        />
+      )}>
       <Tabs.Screen name="index" options={{ title: t('tabs.shop'), headerShown: false }} />
       <Tabs.Screen name="cart/index" options={{ title: t('tabs.cart') }} />
       <Tabs.Screen name="allora-ai" options={{ title: t('assistant.title'), headerShown: false }} />

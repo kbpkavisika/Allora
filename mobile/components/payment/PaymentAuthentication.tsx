@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 
 import { FormError } from '@/components/ui/FormError';
-import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
+import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
 import { formatPaymentAuthenticationSpeech } from '@/components/payment/paymentSpeech';
 import {
   requestPaymentOtp,

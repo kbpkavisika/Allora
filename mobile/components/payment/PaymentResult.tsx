@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
 import { Text, View } from 'react-native';
 
-import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
+import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
 import { formatPaymentResultSpeech } from '@/components/payment/paymentSpeech';
 import type { PaymentResult as PaymentResultData } from '@/services/payment/paymentTypes';
 

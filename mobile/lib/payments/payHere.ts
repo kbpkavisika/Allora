@@ -6,7 +6,7 @@ import type { Address } from '@/lib/profile';
 export type PaymentOutcomeStatus = 'completed' | 'failed' | 'cancelled';
 
 export interface PayHereCheckoutInput {
-  orderId?: string;
+  orderId: string;
   amountLkr: number;
   lines: CartLine[];
   customer: {
@@ -38,7 +38,7 @@ export async function startPayHereCheckout({
 }: PayHereCheckoutInput): Promise<PaymentOutcome> {
   const merchantId = process.env.EXPO_PUBLIC_PAYHERE_MERCHANT_ID;
   const notifyUrl = process.env.EXPO_PUBLIC_PAYHERE_NOTIFY_URL;
-  const resolvedOrderId = orderId ?? `CART-${Date.now()}`;
+  const resolvedOrderId = orderId;
 
   if (!merchantId || !notifyUrl) {
     return {

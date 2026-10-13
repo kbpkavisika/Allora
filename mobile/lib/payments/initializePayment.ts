@@ -7,109 +7,33 @@ export interface PayHerePaymentInitializationResult {
   currency: string;
 }
 
-export function isPayHereInitializationUnavailable(error: unknown): boolean {
-  if (error instanceof Error) {
-    const message = error.message.toLowerCase();
-    if (
-      message.includes('failed to fetch') ||
-      message.includes('network') ||
-      message.includes('not deployed') ||
-      message.includes('not available') ||
-      message.includes('temporarily unavailable') ||
-      message.includes('timeout') ||
-      message.includes('aborted')
-    ) {
-      return true;
-    }
-  }
-
-  if (typeof error === 'string') {
-    const message = error.toLowerCase();
-    return (
-      message.includes('failed to fetch') ||
-      message.includes('network') ||
-      message.includes('not deployed') ||
-      message.includes('not available') ||
-      message.includes('temporarily unavailable') ||
-      message.includes('timeout') ||
-      message.includes('aborted')
-    );
-  }
-
-  return false;
-}
-
-async function parseErrorResponse(response: Response): Promise<string> {
-  try {
-    const payload = (await response.json()) as { error?: string };
-    if (payload?.error) {
-      return payload.error;
-    }
-  } catch {
-    // Ignore invalid JSON and fall back to the status message.
-  }
-
-  return `Payment initialization failed (${response.status}).`;
+interface StartPayHerePaymentRow {
+  payment_id: string;
+  payhere_order_id: string;
+  amount: number | string;
+  currency: string;
 }
 
 export async function initializePayHerePayment(
-  amount: number
+  orderIds: string[]
 ): Promise<PayHerePaymentInitializationResult> {
-  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-  const accessToken = sessionData.session?.access_token;
+  const { data, error } = await supabase
+    .rpc('start_payhere_payment', { p_order_ids: orderIds })
+    .single<StartPayHerePaymentRow>();
 
-  if (sessionError || !accessToken) {
-    throw new Error('Authentication required to initialize PayHere payment.');
-  }
-
-  const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-  if (!supabaseUrl) {
-    throw new Error('Payment service is not configured.');
-  }
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => {
-    controller.abort();
-  }, 2500);
-
-  let response: Response;
-  try {
-    response = await fetch(`${supabaseUrl}/functions/v1/initialize-payhere-payment`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        amount,
-        currency: 'LKR',
-      }),
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timeoutId);
-  }
-
-  if (!response.ok) {
-    const errorMessage = await parseErrorResponse(response);
-
-    if (response.status === 404 || response.status === 502 || response.status === 503) {
-      throw new Error('initialize-payhere-payment is not deployed yet.');
-    }
-
-    throw new Error(errorMessage);
-  }
-
-  const payload = (await response.json()) as Partial<PayHerePaymentInitializationResult>;
-
-  if (!payload.paymentId || !payload.payHereOrderId || !payload.amount || !payload.currency) {
-    throw new Error('Invalid payment initialization response.');
+  if (error || !data) {
+    throw error ?? new Error('Invalid payment initialization response.');
   }
 
   return {
-    paymentId: payload.paymentId,
-    payHereOrderId: payload.payHereOrderId,
-    amount: Number(payload.amount),
-    currency: payload.currency,
+    paymentId: data.payment_id,
+    payHereOrderId: data.payhere_order_id,
+    amount: Number(data.amount),
+    currency: data.currency,
   };
+}
+
+export async function abandonPayHereCheckout(orderIds: string[]): Promise<{ error: unknown }> {
+  const { error } = await supabase.rpc('abandon_payhere_checkout', { p_order_ids: orderIds });
+  return { error };
 }

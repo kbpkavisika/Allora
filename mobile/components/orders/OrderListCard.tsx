@@ -6,6 +6,7 @@ import { Badge, type BadgeVariant } from '@/components/ui/Badge';
 import { Icon } from '@/components/ui/Icon';
 import { ProductThumbnail } from '@/components/ui/ProductThumbnail';
 import { deliveryCaption } from '@/lib/deliveries';
+import i18n from '@/lib/i18n';
 import {
   formatMoney,
   formatPlacedAt,
@@ -49,10 +50,7 @@ function getOrderPaymentBadge(order: Order): { label: string; variant: BadgeVari
     return { label: 'Payment Failed', variant: 'warning', voice: 'Payment failed' };
   }
 
-  if (
-    order.payment_status === 'paid' ||
-    (order.status === 'completed' && order.payment_method === 'payhere')
-  ) {
+  if (order.payment_status === 'paid') {
     return { label: 'Paid', variant: 'success', voice: 'Payment paid' };
   }
 
@@ -61,6 +59,22 @@ function getOrderPaymentBadge(order: Order): { label: string; variant: BadgeVari
   }
 
   return { label: 'Pending', variant: 'neutral', voice: 'Payment pending' };
+}
+
+export function orderSpokenSummary(order: Order): string {
+  const status = statusPresentation(order.status);
+  const delivery = deliveryCaption(order.delivery);
+
+  return [
+    i18n.t('orders.orderNumber', { number: order.order_number }),
+    itemSummary(order.items),
+    formatMoney(order.total),
+    `Status: ${status.label}`,
+    delivery,
+    `Payment: ${getOrderPaymentBadge(order).voice}`,
+  ]
+    .filter(Boolean)
+    .join(', ');
 }
 
 export function OrderListCard({ order, position }: OrderListCardProps) {

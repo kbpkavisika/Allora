@@ -48,6 +48,7 @@ const NEXT_STATUS: Partial<Record<DeliveryStatus, DeliveryStatus>> = {
   pending: 'packed',
   packed: 'shipped',
   shipped: 'delivered',
+  failed: 'shipped',
 };
 
 export function nextDeliveryStatus(status: DeliveryStatus): DeliveryStatus | null {
