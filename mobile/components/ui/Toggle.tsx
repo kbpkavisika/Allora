@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Pressable } from 'react-native';
 
+import { useReduceMotion } from '@/hooks/useReduceMotion';
+
 export interface ToggleProps {
   value: boolean;
   onValueChange: (value: boolean) => void;
@@ -24,15 +26,23 @@ export function Toggle({
   disabled = false,
   className = '',
 }: ToggleProps) {
+  const reduceMotion = useReduceMotion();
   const progress = useRef(new Animated.Value(value ? 1 : 0)).current;
 
   useEffect(() => {
-    Animated.timing(progress, {
+    if (reduceMotion) {
+      progress.setValue(value ? 1 : 0);
+      return;
+    }
+
+    const animation = Animated.timing(progress, {
       toValue: value ? 1 : 0,
       duration: 140,
       useNativeDriver: true,
-    }).start();
-  }, [value, progress]);
+    });
+    animation.start();
+    return () => animation.stop();
+  }, [value, progress, reduceMotion]);
 
   const translateX = progress.interpolate({ inputRange: [0, 1], outputRange: [0, TRAVEL] });
 

@@ -20,6 +20,7 @@ import 'react-native-reanimated';
 import { BrandSplash } from '@/components/BrandSplash';
 import { colorVars, typographyVars } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useReduceMotion } from '@/hooks/useReduceMotion';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { AuthProvider, useAuth } from '@/lib/AuthProvider';
 import { CartProvider } from '@/lib/CartProvider';
@@ -36,10 +37,6 @@ import '../global.css';
 const SPLASH_MIN_MS = 1200;
 
 SplashScreen.preventAutoHideAsync();
-
-if (Constants.executionEnvironment !== ExecutionEnvironment.StoreClient) {
-  SplashScreen.setOptions({ fade: true, duration: 200 });
-}
 
 export default function RootLayout() {
   return (
@@ -62,6 +59,7 @@ export default function RootLayout() {
 }
 
 function RootNavigator() {
+  const reduceMotion = useReduceMotion();
   const colorScheme = useColorScheme();
   const { session, isLoading } = useAuth();
   const { profile, isLoading: isProfileLoading } = useProfile();
@@ -78,12 +76,11 @@ function RootNavigator() {
   });
 
   const [minHoldElapsed, setMinHoldElapsed] = useState(false);
+  const [startupComplete, setStartupComplete] = useState(false);
 
   const ready = fontsLoaded && !isLoading && !isProfileLoading && !isShopLoading;
-  // Defaults to "in the app" while the profile is still loading (masked by the splash below)
-  // so exactly one Stack.Protected guard is ever true — never zero, which expo-router can get
-  // stuck on if the current screen falls outside every protected branch at once.
-  const needsOnboarding = !!session && !isProfileLoading && (profile?.role ?? null) === null;
+  if (!startupComplete && ready && minHoldElapsed) setStartupComplete(true);
+  const needsOnboarding = !!session && profile?.role === null;
   const showApp = !!session && !needsOnboarding;
   const isSeller = profile?.role === 'seller';
 
@@ -97,9 +94,12 @@ function RootNavigator() {
  
   useEffect(() => {
     if (fontsLoaded) {
+      if (Constants.executionEnvironment !== ExecutionEnvironment.StoreClient) {
+        SplashScreen.setOptions({ fade: !reduceMotion, duration: reduceMotion ? 0 : 200 });
+      }
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded]);
+  }, [fontsLoaded, reduceMotion]);
 
   if (!fontsLoaded) {
     return null;
@@ -113,7 +113,7 @@ function RootNavigator() {
           ...typographyVars(!!profile?.large_text),
           ...colorVars(colorScheme === 'dark' ? 'dark' : 'light', !!profile?.high_contrast),
         })}>
-        <Stack>
+        <Stack screenOptions={{ animation: reduceMotion ? 'none' : 'default', gestureEnabled: !reduceMotion }}>
           <Stack.Protected guard={showApp && !isSeller}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           </Stack.Protected>
@@ -136,7 +136,7 @@ function RootNavigator() {
             <Stack.Screen name="seller/orders/[id]" options={{ headerShown: false }} />
             <Stack.Screen
               name="seller/quick-stock"
-              options={{ presentation: 'transparentModal', animation: 'fade', headerShown: false }}
+              options={{ presentation: 'transparentModal', animation: reduceMotion ? 'none' : 'fade', headerShown: false }}
             />
           </Stack.Protected>
 
@@ -187,7 +187,7 @@ function RootNavigator() {
 
           <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
         </Stack>
-        {(!ready || !minHoldElapsed) && <BrandSplash />}
+        {!startupComplete && <BrandSplash />}
         <StatusBar style="auto" />
       </View>
     </ThemeProvider>

@@ -845,6 +845,9 @@
   },
   "input": {
     "dictationHint": "Tap the microphone on your keyboard to start speaking",
+    "dictateHintAndroid": "Opens voice input so you can speak",
+    "dictationPrompt": "Speak now",
+    "dictationUnavailable": "Voice input is unavailable. Tap the microphone on your keyboard to start speaking.",
     "hidePassword": "Hide password",
     "showPassword": "Show password",
     "hidePasswordHint": "Conceals the password",
@@ -875,5 +878,22 @@
   },
   "sheet": {
     "close": "Close {{label}}"
+  },
+  "assistant": {
+    "signInAgain": "Please sign in again before using AlloraAI.",
+    "rateLimitWait": "Please wait {{seconds}} seconds before trying AlloraAI again.",
+    "addSelected": "Add one {{name}} to my cart.",
+    "title": "AlloraAI",
+    "intro": "Tell me what you need. Try “Find milk under 500 rupees”, then “Add two of the first one”. Payment is unavailable in this experiment.",
+    "you": "You",
+    "results": "Here are the matching products, cheapest first. Tell me which to add:",
+    "noResults": "No matching products in stock. Try another product name or budget.",
+    "added": "Added {{count}} × {{name}} to your cart.",
+    "unavailable": "Shopping assistant is unavailable. Check its setup and try again.",
+    "failed": "I could not complete that request. No addition was confirmed. Please check your cart before retrying.",
+    "thinking": "Looking into your request…",
+    "command": "Shopping command",
+    "voiceHint": "Tap Dictate, use your keyboard’s microphone to speak, then tap Send.",
+    "dictate": "Dictate"
   }
 }

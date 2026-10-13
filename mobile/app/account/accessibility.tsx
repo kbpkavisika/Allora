@@ -28,25 +28,37 @@ export default function EditAccessibilityScreen() {
             large_text: profile.large_text,
             high_contrast: profile.high_contrast,
             dictation_enabled: profile.dictation_enabled,
-            screen_reader_support: profile.screen_reader_support,
+            screen_reader_support: true,
             reduce_motion: profile.reduce_motion,
           }
         : undefined,
     [profile]
   );
 
-  const { control, handleSubmit } = useForm<AccessibilityPreferencesValues>({
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { isSubmitting },
+  } = useForm<AccessibilityPreferencesValues>({
     resolver: zodResolver(accessibilityPreferencesSchema),
     values,
   });
 
-  async function onSubmit(formValues: AccessibilityPreferencesValues) {
+  async function onSubmit(
+    formValues: AccessibilityPreferencesValues,
+    key: keyof AccessibilityPreferencesValues
+  ) {
     setFormError(null);
-    const { error } = await updateProfile(formValues);
-    if (error) setFormError(t('accessibility.saveError'));
+    const { error } = await updateProfile({ [key]: formValues[key] });
+    if (error) {
+      reset(values);
+      setFormError(t('accessibility.saveError'));
+    }
   }
 
-  const save = handleSubmit(onSubmit);
+  const save = (key: keyof AccessibilityPreferencesValues) =>
+    handleSubmit((formValues) => onSubmit(formValues, key));
 
   if (!profile) {
     return (
@@ -75,10 +87,12 @@ export default function EditAccessibilityScreen() {
                 <ToggleRow
                   title={t(`accessibility.features.${key}.title`)}
                   description={t(`accessibility.features.${key}.description`)}
-                  value={value}
+                  value={key === 'screen_reader_support' || value}
+                  disabled={key === 'screen_reader_support' || isSubmitting}
                   onValueChange={(next) => {
+                    if (key === 'screen_reader_support') return;
                     onChange(next);
-                    save();
+                    void save(key)();
                   }}
                   className={`p-4 ${
                     index < ACCESSIBILITY_FEATURES.length - 1 ? 'border-b-1 border-border' : ''

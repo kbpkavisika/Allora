@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 
 import { useAuth } from '@/lib/AuthProvider';
 import type { Address, Profile } from '@/lib/profile';
@@ -55,6 +55,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const profileRevision = useRef(0);
+  const updateQueue = useRef<Promise<void>>(Promise.resolve());
 
   const load = useCallback(async () => {
     if (!userId) {
@@ -64,6 +66,8 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
       return;
     }
 
+    await updateQueue.current;
+    const revision = profileRevision.current;
     setIsLoading(true);
 
     const [profileResult, addressesResult] = await Promise.all([
@@ -71,7 +75,9 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
       supabase.from('addresses').select('*').eq('user_id', userId).order('created_at'),
     ]);
 
-    setProfile(profileResult.data ?? null);
+    if (revision === profileRevision.current && !profileResult.error) {
+      setProfile(profileResult.data ?? null);
+    }
     setAddresses(addressesResult.data ?? []);
     setIsLoading(false);
   }, [userId]);
@@ -80,21 +86,30 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
     load();
   }, [load]);
 
-  async function updateProfile(patch: ProfileUpdateInput) {
-    if (!userId) return { error: new Error('Not signed in.') };
+  function updateProfile(patch: ProfileUpdateInput): Promise<{ error: unknown }> {
+    if (!userId) return Promise.resolve({ error: new Error('Not signed in.') });
+    profileRevision.current += 1;
 
-    const previous = profile;
-    setProfile((current) => (current ? { ...current, ...patch } : current));
+    const save = updateQueue.current.then(async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .update({ ...patch, screen_reader_support: true })
+          .eq('id', userId)
+          .select()
+          .single();
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .update(patch)
-      .eq('id', userId)
-      .select()
-      .single();
+        if (!error) setProfile(data);
+        return { error };
+      } catch (error) {
+        return { error };
+      } finally {
+        profileRevision.current += 1;
+      }
+    });
 
-    setProfile(error ? previous : data);
-    return { error };
+    updateQueue.current = save.then(() => {});
+    return save;
   }
 
   async function saveAddress(input: AddressInput, id?: string) {
@@ -119,7 +134,7 @@ export function ProfileProvider({ children }: ProfileProviderProps) {
   }
 
   const value: ProfileContextValue = {
-    profile,
+    profile: profile ? { ...profile, screen_reader_support: true } : null,
     addresses,
     isLoading,
     updateProfile,

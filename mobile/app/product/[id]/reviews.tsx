@@ -13,6 +13,7 @@ import { FilterChip } from '@/components/ui/FilterChip';
 import { OptionList } from '@/components/ui/OptionList';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
 import { TopBar } from '@/components/ui/TopBar';
+import { useReduceMotion } from '@/hooks/useReduceMotion';
 import type { Product } from '@/lib/products';
 import {
   fetchProductReviews,
@@ -25,6 +26,7 @@ import {
 import { supabase } from '@/lib/supabase';
 
 export default function ProductReviewsScreen() {
+  const reduceMotion = useReduceMotion();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
@@ -171,7 +173,7 @@ export default function ProductReviewsScreen() {
       <Modal
         visible={isSortOpen}
         transparent
-        animationType="fade"
+        animationType={reduceMotion ? 'none' : 'fade'}
         onRequestClose={() => setIsSortOpen(false)}>
         <BottomSheet label={t('reviews.sortLabel')} onDismiss={() => setIsSortOpen(false)}>
           <Text role="heading" className="type-h2 mb-4 text-primary" maxFontSizeMultiplier={1.5}>

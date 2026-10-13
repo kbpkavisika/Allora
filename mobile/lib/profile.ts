@@ -62,8 +62,8 @@ export const ACCESSIBILITY_FEATURES = [
   'large_text',
   'high_contrast',
   'dictation_enabled',
-  'screen_reader_support',
   'reduce_motion',
+  'screen_reader_support',
 ] as const satisfies readonly (keyof Profile)[];
 
 export function enabledAccessibilityFeatures(profile: Profile): string {
