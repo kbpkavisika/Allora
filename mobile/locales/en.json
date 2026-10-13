@@ -714,6 +714,8 @@
     "notFound": "Product not found",
     "addError": "Could not add to cart. Try again.",
     "added": "{{name}} added to cart",
+    "addedWithTotal_one": "{{name}} added to cart. Cart now has {{count}} item, {{total}} total.",
+    "addedWithTotal_other": "{{name}} added to cart. Cart now has {{count}} items, {{total}} total.",
     "description": "Description",
     "chatHint": "Opens a conversation with the seller about this product",
     "addToCart": "Add to cart · {{price}}",

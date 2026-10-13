@@ -115,14 +115,22 @@ export default function ProductDetailScreen() {
   async function handleAdd() {
     if (!product) return;
     setIsAdding(true);
-    const { error } = await addItem(product.id);
+    const { error, cart } = await addItem(product.id);
     setIsAdding(false);
     if (error instanceof CartStockLimitError) {
       setToast(
         error.available > 0 ? t('cart.limitReached', { count: error.available }) : t('stock.soldOut')
       );
+    } else if (error || !cart) {
+      setToast(t('product.addError'));
     } else {
-      setToast(error ? t('product.addError') : t('product.added', { name: product.name }));
+      setToast(
+        t('product.addedWithTotal', {
+          name: product.name,
+          count: cart.itemCount,
+          total: formatMoney(cart.subtotal),
+        })
+      );
     }
   }
 

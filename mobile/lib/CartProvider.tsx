@@ -15,12 +15,20 @@ import { supabase } from '@/lib/supabase';
 
 export type { CartLine } from '@/lib/cart';
 
+export interface CartTotals {
+  itemCount: number;
+  subtotal: number;
+}
+
 export interface CartContextValue {
   lines: CartLine[];
   itemCount: number;
   subtotal: number;
   isLoading: boolean;
-  addItem: (productId: string, quantity?: number) => Promise<{ error: unknown }>;
+  addItem: (
+    productId: string,
+    quantity?: number
+  ) => Promise<{ error: unknown; cart?: CartTotals }>;
   updateQuantity: (productId: string, quantity: number) => Promise<{ error: unknown }>;
   removeItem: (productId: string) => Promise<{ error: unknown }>;
   clear: () => Promise<{ error: unknown }>;
@@ -45,11 +53,11 @@ export function CartProvider({ children }: CartProviderProps) {
   const [lines, setLines] = useState<CartLine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (): Promise<CartLine[]> => {
     if (!userId) {
       setLines([]);
       setIsLoading(false);
-      return;
+      return [];
     }
 
     setIsLoading(true);
@@ -61,13 +69,17 @@ export function CartProvider({ children }: CartProviderProps) {
       .order('created_at');
 
     const rows = (data ?? []) as unknown as CartItemRow[];
-    setLines(
-      rows
-        .filter((row): row is CartItemRow & { product: Product } => row.product !== null)
-        .map((row) => ({ product: row.product, quantity: row.quantity }))
-    );
+    const next = rows
+      .filter((row): row is CartItemRow & { product: Product } => row.product !== null)
+      .map((row) => ({ product: row.product, quantity: row.quantity }));
+    setLines(next);
     setIsLoading(false);
+    return next;
   }, [userId]);
+
+  const refresh = useCallback(async () => {
+    await load();
+  }, [load]);
 
   useEffect(() => {
     load();
@@ -98,8 +110,10 @@ export function CartProvider({ children }: CartProviderProps) {
           { onConflict: 'user_id,product_id' }
         );
 
-      if (!error) await load();
-      return { error };
+      if (error) return { error };
+
+      const next = await load();
+      return { error: null, cart: { itemCount: cartItemCount(next), subtotal: cartSubtotal(next) } };
     },
     [userId, lines, load]
   );
@@ -155,9 +169,9 @@ export function CartProvider({ children }: CartProviderProps) {
       updateQuantity,
       removeItem,
       clear,
-      refresh: load,
+      refresh,
     }),
-    [lines, isLoading, addItem, updateQuantity, removeItem, clear, load]
+    [lines, isLoading, addItem, updateQuantity, removeItem, clear, refresh]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
