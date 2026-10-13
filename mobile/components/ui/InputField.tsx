@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
 import { largeTextStep, typographySpecs } from '@/constants/theme';
+import { useDictation } from '@/hooks/useDictation';
 import { useProfile } from '@/hooks/useProfile';
 import { useThemeColor } from '@/hooks/useThemeColor';
 
@@ -75,6 +76,7 @@ type BaseProps = Omit<
   width?: InputFieldWidth;
   valueVariant?: InputFieldValueVariant;
   isMicVisible?: boolean;
+  trailingAccessory?: React.ReactNode;
   isLabelHidden?: boolean;
   multiline?: boolean;
   className?: string;
@@ -158,6 +160,7 @@ export function InputField({
   isRequired = false,
   isSecure = false,
   isMicVisible = true,
+  trailingAccessory,
   isLabelHidden = false,
   width = 'full',
   valueVariant = 'text',
@@ -175,7 +178,6 @@ export function InputField({
   const { t } = useTranslation();
   const [isFocused, setIsFocused] = useState(false);
   const [isRevealedInternal, setIsRevealedInternal] = useState(false);
-  const [isDictationHintShown, setIsDictationHintShown] = useState(false);
   const inputRef = useRef<TextInput | null>(null);
 
   const hasError = Boolean(error);
@@ -189,7 +191,9 @@ export function InputField({
   const placeholderColor = useThemeColor({}, isDisabled ? 'disabled' : 'secondary');
 
   const resolvedLabel = label ?? t('shop.searchPlaceholder');
-  const dictationHint = t('input.dictationHint');
+  const { dictate, isDictating, hint, feedback, clearFeedback } = useDictation({
+    inputRef, value, onChangeText, maxLength: rest.maxLength, isDisabled,
+  });
 
   // React Native exposes no aria-invalid, aria-required, or native aria-describedby, so the
   // required/error state can only reach a screen reader through the accessible name. Never pair
@@ -209,12 +213,6 @@ export function InputField({
     inputRef.current = node;
     if (typeof ref === 'function') ref(node);
     else if (ref) ref.current = node;
-  }
-
-  function handleMicPress() {
-    inputRef.current?.focus();
-    setIsDictationHintShown(true);
-    AccessibilityInfo.announceForAccessibility(dictationHint);
   }
 
   function handleRevealToggle() {
@@ -270,12 +268,12 @@ export function InputField({
         diameter={32}
         variant="filled"
         icon={
-          <Icon name="dictate" size="md" className={isDisabled ? TONE.disabled : TONE.primary} />
+          <Icon name="dictate" size="md" className={isDisabled || isDictating ? TONE.disabled : TONE.primary} />
         }
         label={t('input.dictate', { label: resolvedLabel.toLowerCase() })}
-        hint={t('input.dictateHint')}
-        disabled={isDisabled}
-        onPress={handleMicPress}
+        hint={hint}
+        disabled={isDisabled || isDictating}
+        onPress={dictate}
       />
     );
   }
@@ -320,7 +318,7 @@ export function InputField({
           }}
           onBlur={(e) => {
             setIsFocused(false);
-            setIsDictationHintShown(false);
+            clearFeedback();
             onBlur?.(e);
           }}
           onSubmitEditing={onSubmitEditing}
@@ -334,11 +332,12 @@ export function InputField({
           role={isSearch ? 'searchbox' : undefined}
           aria-label={accessibleName}
           aria-disabled={isDisabled}
-          accessibilityHint={profile?.screen_reader_support ? helperText : undefined}
+          accessibilityHint={helperText}
           {...rest}
         />
 
         {renderTrailing()}
+        {trailingAccessory}
       </View>
 
       {hasError ? (
@@ -349,11 +348,11 @@ export function InputField({
           maxFontSizeMultiplier={2}>
           {error}
         </Text>
-      ) : isDictationHintShown || helperText ? (
+      ) : feedback || helperText ? (
         <Text
           className={`type-text-secondary mt-1 ${isDisabled ? TONE.disabled : TONE.secondary}`}
           maxFontSizeMultiplier={2}>
-          {isDictationHintShown ? dictationHint : helperText}
+          {feedback || helperText}
         </Text>
       ) : null}
     </View>

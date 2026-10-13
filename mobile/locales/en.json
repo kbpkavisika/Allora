@@ -1,4 +1,22 @@
 {
+  "readAloud": {
+    "label": "Read aloud",
+    "stop": "Stop reading",
+    "hint": "Reads this information aloud",
+    "stopHint": "Stops reading aloud",
+    "productHint": "Reads the product name, price, stock, description and reviews aloud",
+    "cartHint": "Reads every item in your cart and the total aloud",
+    "description": "Description: {{text}}",
+    "cartLine_one": "{{name}}, {{count}} at {{price}} each, {{total}}.",
+    "cartLine_other": "{{name}}, {{count}} at {{price}} each, {{total}}.",
+    "cartTotal": "Total {{total}}.",
+    "activeOrders_one": "You have {{count}} active order.",
+    "activeOrders_other": "You have {{count}} active orders.",
+    "pastOrders_one": "You have {{count}} past order.",
+    "pastOrders_other": "You have {{count}} past orders.",
+    "activeOrdersHint": "Reads your active orders aloud",
+    "pastOrdersHint": "Reads your past orders aloud"
+  },
   "common": {
     "cancel": "Cancel",
     "required": "Required",
@@ -51,9 +69,17 @@
     "startBody": "Ask {{name}} about a product, an order or delivery.",
     "theSeller": "the seller",
     "you": "You",
+    "seen": "Seen",
+    "voiceMessage": "Voice message",
+    "playVoice": "Play voice message, {{duration}}",
+    "pauseVoice": "Pause voice message",
+    "voiceUploadError": "Couldn't upload your voice message. Check your connection and try again.",
+    "micDenied": "Allow microphone access in your phone's settings to send voice messages.",
+    "recordError": "Couldn't record a voice message. Try again.",
     "buyerEmpty": "Tap Chat with seller on a product or order to ask a question.",
     "mutedLabel": "muted",
-    "openHint": "Opens the conversation"
+    "openHint": "Opens the conversation",
+    "sellerStartBody": "Send {{name}} a message about their order."
   },
   "orders": {
     "returnReason": {
@@ -65,7 +91,8 @@
     "status": {
       "new": "New",
       "processing": "Processing",
-      "completed": "Completed"
+      "completed": "Completed",
+      "cancelled": "Cancelled"
     },
     "noItems": "No items",
     "itemSummary": "{{name}} and {{count}} more",
@@ -90,7 +117,26 @@
     "chatWithSeller": "Chat with seller",
     "chatWithSellerHint": "Opens a conversation with the seller about this order",
     "placedCaption": "Order placed {{date}}",
-    "openHint": "Opens the order"
+    "openHint": "Opens the order",
+    "cancel": {
+      "action": "Cancel order",
+      "buyerHint": "Opens a confirmation to cancel this order",
+      "sellerHint": "Opens a form to cancel this order with a reason for the buyer",
+      "title": "Cancel this order?",
+      "buyerBody": "The seller will be told, and nothing will be sent to you.",
+      "sellerBody": "The buyer will see your reason. The items go back into your stock.",
+      "reason": "Reason",
+      "reasonOptional": "Reason (optional)",
+      "reasonPlaceholder": "Tell the other side why",
+      "confirm": "Cancel order",
+      "keep": "Keep order",
+      "error": "Could not cancel the order. Try again.",
+      "cancelledByYou": "You cancelled this order on {{date}}.",
+      "cancelledByBuyer": "The buyer cancelled this order on {{date}}.",
+      "cancelledBySeller": "The seller cancelled this order on {{date}}.",
+      "reasonLine": "Reason: {{reason}}",
+      "paidUseRefund": "This order is paid, so it can't be cancelled here. Request a refund instead."
+    }
   },
   "deliveries": {
     "status": {
@@ -303,7 +349,11 @@
     "trackingRequired": "Enter the tracking number.",
     "trackingTooLong": "Keep the tracking number under 40 characters.",
     "trackingInvalid": "Use only letters, numbers and dashes.",
-    "messageTooLong": "Keep your message under {{max}} characters."
+    "messageTooLong": "Keep your message under {{max}} characters.",
+    "cancelReasonRequired": "Give the buyer a reason.",
+    "cancelReasonTooLong": "Keep the reason under 500 characters.",
+    "returnNoteRequired": "Tell the buyer why.",
+    "returnNoteTooLong": "Keep the note under 500 characters."
   },
   "auth": {
     "email": "Email",
@@ -476,6 +526,9 @@
     "cartLabel_one": "Cart, {{count}} item",
     "cartLabel_other": "Cart, {{count}} items",
     "cartHint": "Opens your cart",
+    "messagesLabel_one": "Messages, {{count}} unread",
+    "messagesLabel_other": "Messages, {{count}} unread",
+    "messagesHint": "Opens your chats with sellers",
     "loadError": "Could not load products",
     "noProducts": "No products found",
     "tryDifferentSearch": "Try a different search or category."
@@ -491,7 +544,14 @@
     "checkoutHint": "Proceeds to payment for the items in your cart",
     "each": "{{price}} each",
     "remove": "Remove {{name}} from cart",
-    "removeHint": "Removes this item from your cart"
+    "removeHint": "Removes this item from your cart",
+    "soldOut": "Sold out. Remove it to check out.",
+    "overStock_one": "Only {{count}} left. Lower the quantity to check out.",
+    "overStock_other": "Only {{count}} left. Lower the quantity to check out.",
+    "limitReached_one": "Only {{count}} is available, and it's already in your cart.",
+    "limitReached_other": "Only {{count}} are available, and they're already in your cart.",
+    "updateError": "Could not update your cart. Try again.",
+    "fixStock": "Some items are sold out or over the available stock. Update them to check out."
   },
   "seller": {
     "home": {
@@ -514,18 +574,31 @@
       "emptyTitle": {
         "new": "No new orders",
         "processing": "No processing orders",
-        "completed": "No completed orders"
+        "completed": "No completed orders",
+        "cancelled": "No cancelled orders"
       },
       "emptyBody": {
         "new": "New orders from buyers will show up here.",
         "processing": "Orders you have started preparing will show up here.",
-        "completed": "Orders you have finished will show up here."
+        "completed": "Orders you have finished will show up here.",
+        "cancelled": "Orders you or your buyers cancel will show up here."
       },
       "openHint": "Opens the order details"
     },
     "products": {
       "search": "Search your products",
       "moreFilters": "More filters",
+      "moreFiltersActive_one": "More filters, {{count}} on",
+      "moreFiltersActive_other": "More filters, {{count}} on",
+      "filtersTitle": "Filter products",
+      "stockHeading": "Stock",
+      "anyStock": "Any stock",
+      "categoryHeading": "Category",
+      "allCategories": "All categories",
+      "clearFilters": "Clear filters",
+      "showResults_one": "Show {{count}} product",
+      "showResults_other": "Show {{count}} products",
+      "addHint": "Opens the form to add a new product",
       "sortBy": "Sort products by",
       "noMatch": "No products match your search.",
       "none": "You haven't added any products yet.",
@@ -536,7 +609,9 @@
     },
     "orderDetail": {
       "unavailable": "This order is no longer available.",
-      "complete": "This order is complete."
+      "complete": "This order is complete.",
+      "messageBuyer": "Message buyer",
+      "messageBuyerHint": "Opens a conversation with the buyer about this order"
     }
   },
   "returns": {
@@ -545,12 +620,42 @@
     "details": "Tell us more",
     "detailsPlaceholder": "Add any details that will help the seller resolve this quickly.",
     "callout": "Your request goes directly to the seller. Most replies arrive within 1–2 business days.",
-    "submit": "Submit request"
+    "submit": "Submit request",
+    "status": {
+      "requested": "Return requested",
+      "approved": "Return approved",
+      "rejected": "Return rejected",
+      "completed": "Return completed"
+    },
+    "title": "Return",
+    "requestedOn": "Requested on {{date}}",
+    "reasonLine": "Reason: {{reason}}",
+    "sellerNote": "Seller's note",
+    "buyerNext": {
+      "requested": "The seller will review your request.",
+      "approved": "Approved. Follow the seller's note to send the item back.",
+      "rejected": "The seller rejected this return.",
+      "completed": "The seller has received the item back."
+    },
+    "approve": "Approve return",
+    "approveHint": "Opens a form to approve this return with an optional note for the buyer",
+    "reject": "Reject return",
+    "rejectHint": "Opens a form to reject this return with a note for the buyer",
+    "markReceived": "Mark item received",
+    "markReceivedHint": "Completes the return once the item is back with you",
+    "approveTitle": "Approve this return?",
+    "rejectTitle": "Reject this return?",
+    "approveBody": "Tell the buyer how to send the item back.",
+    "rejectBody": "The buyer will see your note.",
+    "note": "Note for the buyer",
+    "noteOptional": "Note for the buyer (optional)",
+    "notePlaceholder": "For example, where to post the item",
+    "respondError": "Could not update the return. Try again.",
+    "unavailable": "This order can't be returned right now."
   },
   "checkout": {
     "addressRequired": "Add a delivery address before checking out.",
     "initError": "Could not initialize PayHere payment.",
-    "saveAfterPaymentError": "Payment went through but the order did not save. Contact support.",
     "placeError": "Could not place the order. Please try again.",
     "emptyCart": "Your cart is empty",
     "orderSummary": "Order summary",
@@ -609,6 +714,8 @@
     "notFound": "Product not found",
     "addError": "Could not add to cart. Try again.",
     "added": "{{name}} added to cart",
+    "addedWithTotal_one": "{{name}} added to cart. Cart now has {{count}} item, {{total}} total.",
+    "addedWithTotal_other": "{{name}} added to cart. Cart now has {{count}} items, {{total}} total.",
     "description": "Description",
     "chatHint": "Opens a conversation with the seller about this product",
     "addToCart": "Add to cart · {{price}}",
@@ -648,6 +755,7 @@
     "liveBody": "Buyers browsing {{category}} can find it now"
   },
   "productForm": {
+    "photoUploadError": "Couldn't upload your photos. Check your connection and try again.",
     "name": "Product name",
     "namePlaceholder": "e.g. Teak serving tray",
     "priceLkr": "Price (LKR)",
@@ -661,7 +769,12 @@
     "saveError": "Something went wrong saving your changes. Please try again.",
     "title": "Edit product",
     "intro": "Update the details, photo, or stock for {{name}}.",
-    "saved": "Changes saved."
+    "saved": "Changes saved.",
+    "delete": "Delete product",
+    "deleteHint": "Asks for confirmation, then removes this product from your shop",
+    "deleteConfirmTitle": "Delete {{name}}?",
+    "deleteConfirmBody": "Buyers will no longer see it, and it is removed from carts. Past orders keep their details. This cannot be undone.",
+    "deleteError": "Could not delete this product. Try again."
   },
   "quickStock": {
     "saveError": "Something went wrong saving your stock. Please try again.",
@@ -749,6 +862,14 @@
     "placeholder": "Write a message",
     "send": "Send",
     "sendHint": "Sends your message",
+    "record": "Record",
+    "recordHint": "Starts recording a voice message",
+    "recording": "Recording {{time}}",
+    "recordingStarted": "Recording. Tap Send when you're done.",
+    "recordingCancelled": "Recording cancelled",
+    "sendingVoice": "Sending voice message…",
+    "cancelVoiceHint": "Stops recording and discards it",
+    "sendVoiceHint": "Stops recording and sends the voice message",
     "removeReference": "Remove reference",
     "removeReferenceHint": "Sends the message without this reference"
   },
@@ -778,6 +899,9 @@
   },
   "input": {
     "dictationHint": "Tap the microphone on your keyboard to start speaking",
+    "dictateHintAndroid": "Opens voice input so you can speak",
+    "dictationPrompt": "Speak now",
+    "dictationUnavailable": "Voice input is unavailable. Tap the microphone on your keyboard to start speaking.",
     "hidePassword": "Hide password",
     "showPassword": "Show password",
     "hidePasswordHint": "Conceals the password",
@@ -808,5 +932,22 @@
   },
   "sheet": {
     "close": "Close {{label}}"
+  },
+  "assistant": {
+    "signInAgain": "Please sign in again before using AlloraAI.",
+    "rateLimitWait": "Please wait {{seconds}} seconds before trying AlloraAI again.",
+    "addSelected": "Add one {{name}} to my cart.",
+    "title": "AlloraAI",
+    "intro": "Tell me what you need. Try “Find milk under 500 rupees”, then “Add two of the first one”. Payment is unavailable in this experiment.",
+    "you": "You",
+    "results": "Here are the matching products, cheapest first. Tell me which to add:",
+    "noResults": "No matching products in stock. Try another product name or budget.",
+    "added": "Added {{count}} × {{name}} to your cart.",
+    "unavailable": "Shopping assistant is unavailable. Check its setup and try again.",
+    "failed": "I could not complete that request. No addition was confirmed. Please check your cart before retrying.",
+    "thinking": "Looking into your request…",
+    "command": "Shopping command",
+    "voiceHint": "Tap Dictate, use your keyboard’s microphone to speak, then tap Send.",
+    "dictate": "Dictate"
   }
 }

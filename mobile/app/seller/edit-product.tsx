@@ -3,7 +3,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Text, TextInput, View } from 'react-native';
+import { Alert, Text, TextInput, View } from 'react-native';
 
 import { Button } from '@/components/ui/Button';
 import { ChipSelect } from '@/components/ui/ChipSelect';
@@ -21,11 +21,12 @@ import {
   type ProductDetailsValues,
 } from '@/lib/sellerSchemas';
 import { translateOption } from '@/lib/i18n';
+import { photoUploadErrorMessage } from '@/lib/photoUpload';
 
 export default function EditProductScreen() {
   const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { products, isLoading, updateProduct } = useProducts();
+  const { products, isLoading, updateProduct, deleteProduct } = useProducts();
   const product = products.find((item) => item.id === id);
 
   const nameRef = useRef<TextInput>(null);
@@ -34,6 +35,7 @@ export default function EditProductScreen() {
   const stockQuantityRef = useRef<TextInput>(null);
   const [updated, setUpdated] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const {
     control,
@@ -77,7 +79,10 @@ export default function EditProductScreen() {
     const { error } = await updateProduct(product.id, toProductInput(values));
 
     if (error) {
-      setFormError(t('editProduct.saveError'));
+      console.warn('[EditProduct] save failed', error);
+      setFormError(
+        photoUploadErrorMessage(error, t('editProduct.saveError'), t('productForm.photoUploadError'))
+      );
       return;
     }
 
@@ -85,6 +90,32 @@ export default function EditProductScreen() {
   }
 
   const submit = handleSubmit(onSubmit, () => nameRef.current?.focus());
+
+  async function removeProduct() {
+    if (!product) return;
+
+    setFormError(null);
+    setIsDeleting(true);
+    const { error } = await deleteProduct(product.id);
+
+    if (error) {
+      setIsDeleting(false);
+      setFormError(t('editProduct.deleteError'));
+    }
+  }
+
+  function confirmDelete() {
+    if (!product) return;
+
+    Alert.alert(
+      t('editProduct.deleteConfirmTitle', { name: product.name }),
+      t('editProduct.deleteConfirmBody'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('editProduct.delete'), style: 'destructive', onPress: removeProduct },
+      ]
+    );
+  }
 
   if (!product) {
     return null;
@@ -231,7 +262,21 @@ export default function EditProductScreen() {
 
         <SuccessBanner message={updated ? t('editProduct.saved') : null} />
 
-        <Button label={t('common.saveChanges')} loading={isSubmitting} onPress={submit} />
+        <Button
+          label={t('common.saveChanges')}
+          loading={isSubmitting}
+          disabled={isDeleting}
+          onPress={submit}
+        />
+
+        <Button
+          variant="destructive"
+          label={t('editProduct.delete')}
+          hint={t('editProduct.deleteHint')}
+          loading={isDeleting}
+          disabled={isSubmitting}
+          onPress={confirmDelete}
+        />
       </View>
     </KeyboardScreen>
   );

@@ -1,12 +1,20 @@
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
 import { Badge, type BadgeVariant } from '@/components/ui/Badge';
 import { Icon } from '@/components/ui/Icon';
+import { ProductThumbnail } from '@/components/ui/ProductThumbnail';
 import { deliveryCaption } from '@/lib/deliveries';
-import { formatMoney, formatPlacedAt, itemSummary, statusPresentation, type Order } from '@/lib/orders';
+import i18n from '@/lib/i18n';
+import {
+  formatMoney,
+  formatPlacedAt,
+  itemSummary,
+  orderItemPhoto,
+  statusPresentation,
+  type Order,
+} from '@/lib/orders';
 import { refundService } from '@/services/refund/refundService';
 
 export interface OrderListCardProps {
@@ -42,10 +50,7 @@ function getOrderPaymentBadge(order: Order): { label: string; variant: BadgeVari
     return { label: 'Payment Failed', variant: 'warning', voice: 'Payment failed' };
   }
 
-  if (
-    order.payment_status === 'paid' ||
-    (order.status === 'completed' && order.payment_method === 'payhere')
-  ) {
+  if (order.payment_status === 'paid') {
     return { label: 'Paid', variant: 'success', voice: 'Payment paid' };
   }
 
@@ -56,10 +61,26 @@ function getOrderPaymentBadge(order: Order): { label: string; variant: BadgeVari
   return { label: 'Pending', variant: 'neutral', voice: 'Payment pending' };
 }
 
+export function orderSpokenSummary(order: Order): string {
+  const status = statusPresentation(order.status);
+  const delivery = deliveryCaption(order.delivery);
+
+  return [
+    i18n.t('orders.orderNumber', { number: order.order_number }),
+    itemSummary(order.items),
+    formatMoney(order.total),
+    `Status: ${status.label}`,
+    delivery,
+    `Payment: ${getOrderPaymentBadge(order).voice}`,
+  ]
+    .filter(Boolean)
+    .join(', ');
+}
+
 export function OrderListCard({ order, position }: OrderListCardProps) {
   const { t } = useTranslation();
   const status = statusPresentation(order.status);
-  const cover = order.items[0]?.product_photo;
+  const cover = orderItemPhoto(order.items[0]);
   const delivery = deliveryCaption(order.delivery);
   const caption = `${status.label} · ${
     delivery ?? t('orders.placedCaption', { date: formatPlacedAt(order.placed_at) })
@@ -73,17 +94,7 @@ export function OrderListCard({ order, position }: OrderListCardProps) {
       aria-label={`${t('orders.orderNumber', { number: order.order_number })}, ${itemSummary(order.items)}, ${formatMoney(order.total)}, Status: ${status.label}, Payment: ${paymentBadge.voice}${position ? `, ${position}` : ''}`}
       accessibilityHint={t('orders.openHint')}
       className="flex-row items-center gap-3 rounded-12 border-1 border-border bg-surface p-3 active:bg-surface-muted">
-      <View className="h-14 w-14 items-center justify-center overflow-hidden rounded-8 bg-surface-sunken">
-        {cover ? (
-          <Image
-            source={{ uri: cover }}
-            style={{ width: '100%', height: '100%' }}
-            contentFit="cover"
-          />
-        ) : (
-          <Icon name="orders" size="md" className="text-secondary" />
-        )}
-      </View>
+      <ProductThumbnail uri={cover} fallbackIcon="orders" />
 
       <View className="flex-1 gap-1">
         <View className="flex-row items-center justify-between gap-2">

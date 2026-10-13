@@ -107,7 +107,7 @@ export default function AccountScreen() {
           }
           trailing={<CountBadge count={unreadCount} />}
           showChevron
-          onPress={() => router.push('/chat')}
+          onPress={() => router.push('/messages')}
           hint={t('account.buyer.messagesHint')}
         />
       </Card>

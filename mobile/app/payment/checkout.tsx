@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PaymentMethodOption } from '@/components/payment/PaymentMethodOption';
 import { PaymentAuthentication } from '@/components/payment/PaymentAuthentication';
-import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
+import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
 import { formatPaymentConfirmationSpeech } from '@/components/payment/paymentSpeech';
 import { Button } from '@/components/ui/Button';
 import { Callout } from '@/components/ui/Callout';
@@ -19,8 +19,9 @@ import { useCart } from '@/lib/CartProvider';
 import { formatMoney, type PaymentMethod } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 import {
+  abandonPayHereCheckout,
   initializePayHerePayment,
-  isPayHereInitializationUnavailable,
+  type PayHerePaymentInitializationResult,
 } from '@/lib/payments/initializePayment';
 import { buildPaymentReceiptPayload } from '@/lib/payments/paymentReceipt';
 import { formatAddressLines } from '@/lib/profile';
@@ -34,7 +35,7 @@ export default function CheckoutScreen() {
   const { lines, subtotal, clear } = useCart();
   const { addresses, profile } = useProfile();
   const { session } = useAuth();
-  const { placeOrder } = useOrders();
+  const { placeOrder, refresh: refreshOrders } = useOrders();
 
   const address = useMemo(
     () => addresses.find((item) => item.is_default) ?? addresses[0] ?? null,
@@ -90,36 +91,43 @@ export default function CheckoutScreen() {
       if (method === 'payhere') {
         const fullName = profile?.full_name?.trim() ?? '';
         const [firstName, ...lastNameParts] = fullName.split(/\s+/).filter(Boolean);
-        const temporaryFallbackOrderId = `CART-${Date.now()}`;
-        let resolvedOrderId = temporaryFallbackOrderId;
 
-        try {
-          const initialization = await initializePayHerePayment(total);
-          resolvedOrderId = initialization.payHereOrderId;
-          console.info('[Checkout] PayHere initialization succeeded', {
-            paymentId: initialization.paymentId,
-            payHereOrderId: initialization.payHereOrderId,
-          });
-        } catch (initializationError) {
-          if (isPayHereInitializationUnavailable(initializationError)) {
-            console.warn(
-              '[Checkout] Temporary PayHere initializer fallback: function unavailable; using local order ID generation.'
-            );
-          } else {
-            setIsSubmitting(false);
-            setPaymentState('failed');
-            setError(
-              initializationError instanceof Error
-                ? initializationError.message
-                : t('checkout.initError')
-            );
-            return;
-          }
+        const { orders, error: placeError } = await placeOrder({
+          lines,
+          paymentMethod: 'payhere',
+          address,
+        });
+
+        if (placeError) {
+          setIsSubmitting(false);
+          setPaymentState('failed');
+          setError(t('checkout.placeError'));
+          return;
         }
 
+        const orderIds = orders.map((order) => order.id);
+
+        async function releaseOrders() {
+          await abandonPayHereCheckout(orderIds);
+          await refreshOrders();
+        }
+
+        let initialization: PayHerePaymentInitializationResult;
+        try {
+          initialization = await initializePayHerePayment(orderIds);
+        } catch {
+          await releaseOrders();
+          setIsSubmitting(false);
+          setPaymentState('failed');
+          setError(t('checkout.initError'));
+          return;
+        }
+
+        const paidTotal = initialization.amount;
+
         const outcome = await startPayHereCheckout({
-          orderId: resolvedOrderId,
-          amountLkr: total,
+          orderId: initialization.payHereOrderId,
+          amountLkr: paidTotal,
           lines,
           customer: {
             firstName: firstName || 'Customer',
@@ -131,6 +139,7 @@ export default function CheckoutScreen() {
         });
 
         if (outcome.status === 'cancelled') {
+          await releaseOrders();
           setIsSubmitting(false);
           setPaymentState('cancelled');
           console.info('[Checkout] PayHere checkout was cancelled by user');
@@ -140,6 +149,7 @@ export default function CheckoutScreen() {
         }
 
         if (outcome.status !== 'completed' || !outcome.paymentId) {
+          await releaseOrders();
           setIsSubmitting(false);
           setPaymentState('failed');
           const failureMessage =
@@ -147,22 +157,7 @@ export default function CheckoutScreen() {
               ? outcome.error
               : 'Payment could not be completed.';
           setError(failureMessage);
-          goToResult({ variant: 'failure', total: String(total), message: failureMessage });
-          return;
-        }
-
-        const { orders, error: placeError } = await placeOrder({
-          lines,
-          paymentMethod: 'payhere',
-          paymentStatus: 'pending',
-          paymentReference: outcome.paymentId,
-          address,
-        });
-
-        if (placeError) {
-          setIsSubmitting(false);
-          setPaymentState('failed');
-          setError(t('checkout.saveAfterPaymentError'));
+          goToResult({ variant: 'failure', total: String(paidTotal), message: failureMessage });
           return;
         }
 
@@ -174,8 +169,8 @@ export default function CheckoutScreen() {
             buyerEmail,
             buyerName,
             paymentId: outcome.paymentId,
-            payHereOrderId: resolvedOrderId,
-            amount: total,
+            payHereOrderId: initialization.payHereOrderId,
+            amount: paidTotal,
             currency: 'LKR',
             paymentMethod: 'payhere',
             paymentDate: new Date().toISOString(),
@@ -208,7 +203,7 @@ export default function CheckoutScreen() {
           variant: 'success',
           orderId: orders[0]?.id ?? '',
           count: String(orders.length),
-          total: String(total),
+          total: String(paidTotal),
           reference: outcome.paymentId,
         });
         return;
@@ -217,7 +212,6 @@ export default function CheckoutScreen() {
       const { orders, error: placeError } = await placeOrder({
         lines,
         paymentMethod: 'cod',
-        paymentStatus: 'pending',
         address,
       });
 

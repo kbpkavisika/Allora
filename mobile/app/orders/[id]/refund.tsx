@@ -6,7 +6,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { AccessibilityInfo, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ReadAloudButton } from '@/components/payment/ReadAloudButton';
+import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
 import {
   formatRefundConfirmationSpeech,
   formatRefundRequestSpeech,

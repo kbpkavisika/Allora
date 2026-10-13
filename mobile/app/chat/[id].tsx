@@ -11,7 +11,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 
-import { MessageComposer } from '@/components/chat/MessageComposer';
+import { MessageComposer, type VoiceRecordingProblem } from '@/components/chat/MessageComposer';
+import { VoiceNotePlayer } from '@/components/chat/VoiceNotePlayer';
 import {
   MessageContextLine,
   type MessageContextLineProps,
@@ -23,18 +24,24 @@ import { IconButton } from '@/components/ui/IconButton';
 import { MessageBubble } from '@/components/ui/MessageBubble';
 import { Toast } from '@/components/ui/Toast';
 import { TopBar } from '@/components/ui/TopBar';
+import { useAppForeground } from '@/hooks/useAppForeground';
+import type { VoiceRecording } from '@/hooks/useVoiceRecorder';
 import { useAuth } from '@/lib/AuthProvider';
+import { uploadErrorMessage } from '@/lib/cloudinary';
 import {
+  conversationName,
   fetchProductNames,
   formatMessageDay,
   formatMessageTime,
   isSameDay,
+  isSeenByCounterpart,
   mergeMessages,
   MESSAGE_PAGE_SIZE,
   NEW_CONVERSATION_ID,
+  uploadVoiceNote,
   type Message,
 } from '@/lib/chat';
-import { useChat } from '@/lib/ChatProvider';
+import { useChat, type SendMessageInput } from '@/lib/ChatProvider';
 import { setActiveConversation } from '@/lib/notifications';
 import { useOrders } from '@/lib/OrdersProvider';
 import { useProfile } from '@/lib/ProfileProvider';
@@ -50,9 +57,10 @@ type ContextLine = Omit<MessageContextLineProps, 'onRemove' | 'className'>;
 export default function ChatThreadScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { id, shopId, productId, orderId } = useLocalSearchParams<{
+  const { id, shopId, buyerId, productId, orderId } = useLocalSearchParams<{
     id?: string;
     shopId?: string;
+    buyerId?: string;
     productId?: string;
     orderId?: string;
   }>();
@@ -123,6 +131,8 @@ export default function ChatThreadScreen() {
     refreshMessages();
   }, [refreshMessages]);
 
+  useAppForeground(refreshMessages);
+
   useEffect(
     () =>
       subscribeToMessages((event) => {
@@ -165,7 +175,16 @@ export default function ChatThreadScreen() {
     );
   }, [messages, pendingContext, productNames]);
 
-  const title = conversation?.counterpart_name ?? shopName ?? t('tabs.chat');
+  const buyerName = buyerId && orderId ? getOrder(orderId)?.ship_name ?? null : null;
+  const counterpartName = buyerId ? buyerName : shopName;
+  const title = conversation
+    ? conversationName(conversation)
+    : (counterpartName ?? t('tabs.chat'));
+  const lastSentMessage = messages.find((message) => message.sender_id === userId);
+  const seenMessageId =
+    conversation && lastSentMessage && isSeenByCounterpart(conversation, lastSentMessage)
+      ? lastSentMessage.id
+      : null;
 
   function contextLine({ productId: product, orderId: order }: MessageContext): ContextLine | null {
     if (order) {
@@ -210,11 +229,33 @@ export default function ChatThreadScreen() {
     }
   }
 
-  async function handleSend(body: string) {
+  function handleSend(body: string) {
+    return deliver({ body });
+  }
+
+  async function handleSendVoice({ uri, durationMs }: VoiceRecording) {
+    let audioUrl: string;
+    try {
+      audioUrl = await uploadVoiceNote(uri);
+    } catch (error) {
+      console.warn('[Chat] voice upload failed', error);
+      setToast(uploadErrorMessage(error, t('chat.sendError'), t('chat.voiceUploadError')));
+      return false;
+    }
+
+    return deliver({ body: '', audioUrl, audioDurationMs: durationMs });
+  }
+
+  function handleVoiceProblem(problem: VoiceRecordingProblem) {
+    setToast(problem === 'denied' ? t('chat.micDenied') : t('chat.recordError'));
+  }
+
+  async function deliver(content: Pick<SendMessageInput, 'body' | 'audioUrl' | 'audioDurationMs'>) {
     const { message, error } = await sendMessage({
-      body,
+      ...content,
       conversationId: conversationId ?? undefined,
       shopId: conversationId ? undefined : shopId,
+      buyerId: conversationId ? undefined : buyerId,
       productId: pendingContext?.productId,
       orderId: pendingContext?.orderId,
     });
@@ -288,7 +329,9 @@ export default function ChatThreadScreen() {
               {t('chat.startTitle')}
             </Text>
             <Text className="type-text-primary text-center text-secondary">
-              {t('chat.startBody', { name: shopName ?? t('chat.theSeller') })}
+              {buyerId
+                ? t('chat.sellerStartBody', { name: counterpartName ?? t('account.seller.buyer') })
+                : t('chat.startBody', { name: counterpartName ?? t('chat.theSeller') })}
             </Text>
           </View>
         ) : (
@@ -321,6 +364,16 @@ export default function ChatThreadScreen() {
                     isMine={isMine}
                     senderLabel={isMine ? t('chat.you') : title}
                     header={line ? <MessageContextLine {...line} /> : null}
+                    status={item.id === seenMessageId ? t('chat.seen') : null}
+                    media={
+                      item.audio_url && item.audio_duration_ms ? (
+                        <VoiceNotePlayer
+                          url={item.audio_url}
+                          durationMs={item.audio_duration_ms}
+                          isMine={isMine}
+                        />
+                      ) : null
+                    }
                   />
                 </View>
               );
@@ -334,7 +387,12 @@ export default function ChatThreadScreen() {
           {pendingLine ? (
             <MessageContextLine {...pendingLine} onRemove={() => setPendingContext(null)} />
           ) : null}
-          <MessageComposer onSend={handleSend} disabled={isLoading} />
+          <MessageComposer
+            onSend={handleSend}
+            onSendVoice={handleSendVoice}
+            onVoiceProblem={handleVoiceProblem}
+            disabled={isLoading}
+          />
         </View>
       </KeyboardAvoidingView>
 

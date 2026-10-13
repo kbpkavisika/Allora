@@ -6,6 +6,7 @@ import { useChat } from '@/lib/ChatProvider';
 
 export interface SellerChatContext {
   shopId: string;
+  buyerId?: string;
   productId?: string;
   orderId?: string;
 }
@@ -15,9 +16,9 @@ export function useSellerChat() {
   const [isOpening, setIsOpening] = useState(false);
 
   const openSellerChat = useCallback(
-    async ({ shopId, productId, orderId }: SellerChatContext) => {
+    async ({ shopId, buyerId, productId, orderId }: SellerChatContext) => {
       setIsOpening(true);
-      const { conversationId } = await findConversation(shopId);
+      const { conversationId } = await findConversation(shopId, buyerId);
       setIsOpening(false);
 
       router.push({
@@ -25,6 +26,7 @@ export function useSellerChat() {
         params: {
           id: conversationId ?? NEW_CONVERSATION_ID,
           shopId,
+          ...(buyerId ? { buyerId } : null),
           ...(productId ? { productId } : null),
           ...(orderId ? { orderId } : null),
         },

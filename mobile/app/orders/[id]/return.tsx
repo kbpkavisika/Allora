@@ -12,7 +12,7 @@ import { ChipSelect } from '@/components/ui/ChipSelect';
 import { FormError } from '@/components/ui/FormError';
 import { InputField } from '@/components/ui/InputField';
 import { TopBar } from '@/components/ui/TopBar';
-import { returnReasonLabel, returnReasons } from '@/lib/orders';
+import { canRequestReturn, returnReasonLabel, returnReasons } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 import { returnRequestSchema, type ReturnRequestValues } from '@/lib/schemas';
 
@@ -46,9 +46,8 @@ export default function ReturnRequestScreen() {
       reason: values.reason,
       details: values.details,
     });
-    setIsSubmitting(false);
-
     if (error) {
+      setIsSubmitting(false);
       setFormError(t('returns.sendError'));
       return;
     }
@@ -56,13 +55,13 @@ export default function ReturnRequestScreen() {
     router.replace({ pathname: '/orders/[id]', params: { id: order.id, returned: '1' } });
   }
 
-  if (!order) {
+  if (!order || (!canRequestReturn(order) && !isSubmitting)) {
     return (
       <View className="flex-1 bg-surface">
         <TopBar title={t('orders.returnItem')} />
         <View className="items-center gap-3 p-4 pt-16">
           <Text role="heading" className="type-h3 text-primary">
-            {t('orders.notFound')}
+            {order ? t('returns.unavailable') : t('orders.notFound')}
           </Text>
         </View>
       </View>

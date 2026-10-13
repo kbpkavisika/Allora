@@ -9,11 +9,18 @@ export interface QuantityStepperProps {
   productName: string;
   onChange: (quantity: number) => void;
   min?: number;
+  max?: number;
 }
 
 // Standalone ± control, deliberately kept away from destructive actions (design.md §08,
 // wireframe S11 note: "Remove is a labelled button... far from ±" avoids wrong-item removal).
-export function QuantityStepper({ quantity, productName, onChange, min = 1 }: QuantityStepperProps) {
+export function QuantityStepper({
+  quantity,
+  productName,
+  onChange,
+  min = 1,
+  max = Infinity,
+}: QuantityStepperProps) {
   const { t } = useTranslation();
 
   return (
@@ -37,6 +44,7 @@ export function QuantityStepper({ quantity, productName, onChange, min = 1 }: Qu
         label={t('quantity.increase', { name: productName })}
         hint={t('quantity.current', { quantity })}
         onPress={() => onChange(quantity + 1)}
+        disabled={quantity >= max}
       />
     </View>
   );

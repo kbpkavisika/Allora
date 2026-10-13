@@ -63,7 +63,7 @@ async function getExpoPushToken(): Promise<string | null> {
   return data;
 }
 
-export async function registerPushToken(): Promise<void> {
+export async function registerPushToken(language: string): Promise<void> {
   try {
     const token = await getExpoPushToken();
     if (!token) return;
@@ -71,6 +71,7 @@ export async function registerPushToken(): Promise<void> {
     const { error } = await supabase.rpc('register_push_token', {
       p_token: token,
       p_platform: Platform.OS,
+      p_language: language,
     });
     if (!error) registeredToken = token;
   } catch {

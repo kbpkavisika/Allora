@@ -17,13 +17,22 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Divider } from '@/components/ui/Divider';
 import { Icon } from '@/components/ui/Icon';
+import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
 import { Toast } from '@/components/ui/Toast';
 import { TopBar } from '@/components/ui/TopBar';
+import { useReduceMotion } from '@/hooks/useReduceMotion';
 import { useSellerChat } from '@/hooks/useSellerChat';
+import { CartStockLimitError } from '@/lib/cart';
 import { useCart } from '@/lib/CartProvider';
 import { formatMoney } from '@/lib/orders';
-import { getStockStatus, type Product } from '@/lib/products';
-import { fetchRatingSummary, summarizeReviews, type RatingSummary } from '@/lib/reviews';
+import { formatProductSpeech, getStockStatus, type Product } from '@/lib/products';
+import {
+  fetchRatingSummary,
+  formatAverage,
+  formatReviewCount,
+  summarizeReviews,
+  type RatingSummary,
+} from '@/lib/reviews';
 import { useShop } from '@/lib/ShopProvider';
 import { supabase } from '@/lib/supabase';
 
@@ -96,13 +105,33 @@ export default function ProductDetailScreen() {
   const soldOut = product.stock_quantity <= 0;
   const hasDescription = product.description.trim().length > 0;
   const isOwnProduct = shop?.id === product.shop_id;
+  const reviewsSpeech =
+    reviewSummary.total > 0
+      ? t('reviews.summaryLabel', {
+          caption: `${formatAverage(reviewSummary.average)} · ${formatReviewCount(reviewSummary.total)}`,
+        })
+      : t('reviews.summaryLabelEmpty');
 
   async function handleAdd() {
     if (!product) return;
     setIsAdding(true);
-    const { error } = await addItem(product.id);
+    const { error, cart } = await addItem(product.id);
     setIsAdding(false);
-    setToast(error ? t('product.addError') : t('product.added', { name: product.name }));
+    if (error instanceof CartStockLimitError) {
+      setToast(
+        error.available > 0 ? t('cart.limitReached', { count: error.available }) : t('stock.soldOut')
+      );
+    } else if (error || !cart) {
+      setToast(t('product.addError'));
+    } else {
+      setToast(
+        t('product.addedWithTotal', {
+          name: product.name,
+          count: cart.itemCount,
+          total: formatMoney(cart.subtotal),
+        })
+      );
+    }
   }
 
   return (
@@ -158,9 +187,17 @@ export default function ProductDetailScreen() {
             }
           />
 
+          <Divider />
+
+          <ReadAloudButton
+            text={formatProductSpeech(product, reviewsSpeech)}
+            hint={t('readAloud.productHint')}
+            variant="social"
+            fullWidth
+          />
+
           {!isOwnProduct ? (
             <>
-              <Divider />
               <Button
                 variant="secondary"
                 label={t('orders.chatWithSeller')}
@@ -202,6 +239,7 @@ export default function ProductDetailScreen() {
 }
 
 function PhotoCarousel({ photos, name }: { photos: string[]; name: string }) {
+  const reduceMotion = useReduceMotion();
   const { t } = useTranslation();
   const { width } = useWindowDimensions();
   const [index, setIndex] = useState(0);
@@ -241,7 +279,7 @@ function PhotoCarousel({ photos, name }: { photos: string[]; name: string }) {
               source={{ uri: item }}
               style={{ width: '100%', height: '100%' }}
               contentFit="contain"
-              transition={150}
+              transition={reduceMotion ? 0 : 150}
               alt={t('product.photoAlt', { name, index: i + 1, total: photos.length })}
             />
           </View>
