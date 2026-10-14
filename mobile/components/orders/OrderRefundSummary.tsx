@@ -21,7 +21,7 @@ export function getRefundStatusPresentation(status: RefundRequest['status']): {
     case 'refunded':
       return { label: 'Refund Completed', variant: 'success' };
     case 'failed':
-      return { label: 'Refund Failed', variant: 'warning' };
+      return { label: 'Refund Declined', variant: 'warning' };
     case 'requested':
       return { label: 'Refund Requested', variant: 'neutral' };
     case 'processing':

@@ -971,6 +971,17 @@
     "readAloud": "Read aloud refund details",
     "history": "Refund history",
     "latest": "Latest",
-    "orderRefundedLabel": "Order Refunded"
+    "orderRefundedLabel": "Order Refunded",
+    "approveTitle": "Approve & Issue Refund",
+    "approveBody": "Confirm that you want to approve this refund of ",
+    "rejectTitle": "Decline Refund Request",
+    "rejectBody": "Provide a clear reason why this refund request cannot be approved for Order #",
+    "approve": "Approve Refund",
+    "reject": "Decline Refund",
+    "note": "Reason for declining",
+    "noteOptional": "Note to buyer (optional)",
+    "notePlaceholder": "e.g. Item delivered intact and as described...",
+    "noteOptionalPlaceholder": "e.g. Refund issued to original payment method...",
+    "respondError": "Could not update the refund status. Please try again."
   }
 }

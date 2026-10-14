@@ -15,6 +15,7 @@ import {
 import { OrderReturnSummary } from '@/components/orders/OrderReturnSummary';
 import { formatRefundStatusSpeech } from '@/components/payment/paymentSpeech';
 import { ReturnResponseSheet } from '@/components/seller/ReturnResponseSheet';
+import { RefundResponseSheet } from '@/components/seller/RefundResponseSheet';
 import { DeliveryUpdateSheet } from '@/components/seller/DeliveryUpdateSheet';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -44,7 +45,7 @@ export default function SellerOrderDetailScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const { getOrder, advanceDelivery, respondToReturn } = useOrders();
+  const { getOrder, advanceDelivery, respondToReturn, refresh } = useOrders();
   const { openSellerChat, isOpening } = useSellerChat();
   useOrdersRefresh();
 
@@ -53,6 +54,7 @@ export default function SellerOrderDetailScreen() {
   const [isDeliveryOpen, setIsDeliveryOpen] = useState(false);
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [returnDecision, setReturnDecision] = useState<'approved' | 'rejected' | null>(null);
+  const [refundDecision, setRefundDecision] = useState<'approved' | 'rejected' | null>(null);
   const [isCompletingReturn, setIsCompletingReturn] = useState(false);
   const [returnError, setReturnError] = useState<string | null>(null);
 
@@ -247,33 +249,53 @@ export default function SellerOrderDetailScreen() {
 
         {activeRefund ? (
           <OrderRefundSummary refund={activeRefund} viewer="seller">
-            <View className="pt-2 gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                label={t('refund.viewStatus', { defaultValue: 'View refund status' })}
-                hint={t('refund.viewStatusHint', {
-                  defaultValue: 'Navigates to the refund status tracking screen',
-                })}
-                onPress={() =>
-                  router.push({
-                    pathname: '/orders/[id]/refund-status' as any,
-                    params: { id: order.id },
-                  })
-                }
-              />
+            {activeRefund.status === 'requested' || activeRefund.status === 'processing' ? (
+              <View className="pt-2 gap-3">
+                <View className="flex-row gap-3">
+                  <View className="flex-1">
+                    <Button
+                      size="sm"
+                      label={t('refund.approve', { defaultValue: 'Approve Refund' })}
+                      hint="Opens the sheet to approve this refund request"
+                      onPress={() => setRefundDecision('approved')}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      label={t('refund.reject', { defaultValue: 'Decline Refund' })}
+                      hint="Opens the sheet to decline this refund request"
+                      onPress={() => setRefundDecision('rejected')}
+                    />
+                  </View>
+                </View>
 
-              <ReadAloudButton
-                text={formatRefundStatusSpeech({
-                  status: activeRefund.status,
-                  amount: activeRefund.refundAmount,
-                  currency: activeRefund.currency || 'LKR',
-                  refundReference: activeRefund.id,
-                  reason: activeRefund.reasonLabel,
-                })}
-                label={t('refund.readAloud', { defaultValue: 'Read aloud refund details' })}
-              />
-            </View>
+                <ReadAloudButton
+                  text={formatRefundStatusSpeech({
+                    status: activeRefund.status,
+                    amount: activeRefund.refundAmount,
+                    currency: activeRefund.currency || 'LKR',
+                    refundReference: activeRefund.id,
+                    reason: activeRefund.reasonLabel,
+                  })}
+                  label={t('refund.readAloud', { defaultValue: 'Read aloud refund details' })}
+                />
+              </View>
+            ) : (
+              <View className="pt-2 gap-2">
+                <ReadAloudButton
+                  text={formatRefundStatusSpeech({
+                    status: activeRefund.status,
+                    amount: activeRefund.refundAmount,
+                    currency: activeRefund.currency || 'LKR',
+                    refundReference: activeRefund.id,
+                    reason: activeRefund.reasonLabel,
+                  })}
+                  label={t('refund.readAloud', { defaultValue: 'Read aloud refund details' })}
+                />
+              </View>
+            )}
           </OrderRefundSummary>
         ) : null}
 
@@ -406,6 +428,32 @@ export default function SellerOrderDetailScreen() {
             returnId={orderReturn.id}
             decision={returnDecision}
             onDismiss={() => setReturnDecision(null)}
+          />
+        ) : null}
+      </Modal>
+
+      <Modal
+        visible={refundDecision !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRefundDecision(null)}>
+        {activeRefund && refundDecision ? (
+          <RefundResponseSheet
+            orderId={order.id}
+            refundId={activeRefund.id}
+            refundAmount={activeRefund.refundAmount}
+            orderNumber={order.order_number}
+            decision={refundDecision}
+            onDismiss={() => setRefundDecision(null)}
+            onSuccess={() => {
+              setRefundDecision(null);
+              void refundService
+                .fetchRefundsForOrder(order.id, order.order_number)
+                .then((loaded) => {
+                  setRefunds(loaded);
+                });
+              void refresh();
+            }}
           />
         ) : null}
       </Modal>

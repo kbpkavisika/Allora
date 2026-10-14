@@ -35,7 +35,7 @@ function getSellerRefundBadge(
       return { label: 'Refund Completed', variant: 'success', voice: 'Refund completed' };
     }
     if (refund.status === 'failed') {
-      return { label: 'Refund Failed', variant: 'warning', voice: 'Refund failed' };
+      return { label: 'Refund Declined', variant: 'warning', voice: 'Refund declined' };
     }
     if (refund.status === 'requested') {
       return { label: 'Refund Requested', variant: 'neutral', voice: 'Refund requested' };

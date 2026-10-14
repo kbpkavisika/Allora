@@ -227,8 +227,12 @@ export function formatRefundStatusSpeech({
   const amountText = `${formatAmountForSpeech(amount)} ${formatCurrencyName(currency)}`;
   const reasonText = reason ? ` Reason: ${reason}.` : '';
 
-  if (status === 'processing' || status === 'requested') {
-    return `Refund processing. Your refund request of ${amountText} has been submitted and is being processed. Refund reference is ${refundReference}.${reasonText}`;
+  if (status === 'requested') {
+    return `Refund requested. Your refund request of ${amountText} has been submitted for review. Refund reference is ${refundReference}.${reasonText}`;
+  }
+
+  if (status === 'processing') {
+    return `Refund processing. Your refund request of ${amountText} is being processed. Refund reference is ${refundReference}.${reasonText}`;
   }
 
   if (status === 'refunded') {
@@ -236,7 +240,7 @@ export function formatRefundStatusSpeech({
   }
 
   if (status === 'failed') {
-    return `Refund failed. Amount was ${amountText}. Refund reference is ${refundReference}.${reasonText} You can choose to retry submitting the refund request.`;
+    return `Refund declined. Amount was ${amountText}. Refund reference is ${refundReference}.${reasonText} You can choose to retry submitting the refund request.`;
   }
 
   return `Refund status: ${status}. Amount: ${amountText}. Reference: ${refundReference}.${reasonText}`;

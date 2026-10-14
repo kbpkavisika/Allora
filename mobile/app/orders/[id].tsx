@@ -91,7 +91,8 @@ export default function OrderDetailScreen() {
   const total = order.items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
   const orderTotal = order.total || total;
 
-  const isEligibleForRefund = order.payment_status === 'paid';
+  const isEligibleForRefund =
+    order.payment_method === 'payhere' && order.payment_status === 'paid' && !isCancelled;
 
   const canRequestRefund = isEligibleForRefund && (!refund || refund.status === 'failed');
 
@@ -103,6 +104,9 @@ export default function OrderDetailScreen() {
     paymentBadgeVariant = 'success';
   } else if (order.payment_status === 'partially_refunded') {
     paymentBadgeLabel = 'Partially Refunded';
+    paymentBadgeVariant = 'neutral';
+  } else if (refund?.status === 'requested') {
+    paymentBadgeLabel = 'Refund Requested';
     paymentBadgeVariant = 'neutral';
   } else if (refund?.status === 'processing') {
     paymentBadgeLabel = 'Refund Processing';
@@ -308,8 +312,10 @@ export default function OrderDetailScreen() {
                   record.status === 'refunded'
                     ? 'Refund Completed'
                     : record.status === 'failed'
-                      ? 'Refund Failed'
-                      : 'Refund Processing';
+                      ? 'Refund Declined'
+                      : record.status === 'requested'
+                        ? 'Refund Requested'
+                        : 'Refund Processing';
                 const recVariant: 'success' | 'warning' | 'neutral' =
                   record.status === 'refunded'
                     ? 'success'

@@ -4,12 +4,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
 import { formatRefundStatusSpeech } from '@/components/payment/paymentSpeech';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Callout } from '@/components/ui/Callout';
 import { Icon, type IconName } from '@/components/ui/Icon';
+import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
 import { TopBar } from '@/components/ui/TopBar';
 import { formatMoney } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
@@ -32,11 +32,11 @@ const STATUS_CONFIG: Record<
     icon: 'orders',
     ring: 'border-accent bg-accent-tint',
     iconColor: 'text-accent-primary',
-    badgeLabel: 'Refund Processing',
-    badgeVariant: 'warning',
+    badgeLabel: 'Refund Requested',
+    badgeVariant: 'neutral',
     title: 'Refund Request Submitted',
     description:
-      'Your refund request has been received and is queued for verification with the payment provider.',
+      'Your refund request has been received and is waiting for seller review.',
   },
   processing: {
     icon: 'orders',
@@ -46,7 +46,7 @@ const STATUS_CONFIG: Record<
     badgeVariant: 'neutral',
     title: 'Refund Processing',
     description:
-      "Your refund request has been submitted successfully. The refund will be processed according to the payment provider's refund process.",
+      'The seller is processing your refund request according to the marketplace refund policy.',
   },
   refunded: {
     icon: 'check',
@@ -61,17 +61,17 @@ const STATUS_CONFIG: Record<
     icon: 'close',
     ring: 'border-error bg-error-tint',
     iconColor: 'text-error',
-    badgeLabel: 'Refund Failed',
+    badgeLabel: 'Refund Declined',
     badgeVariant: 'warning',
-    title: 'Refund Request Failed',
+    title: 'Refund Request Declined',
     description:
-      'We could not process this refund request at this time. Please try again or contact support for assistance.',
+      'Your refund request could not be approved at this time. You can contact the seller or submit a new request.',
   },
 };
 
 export default function RefundStatusScreen() {
   const insets = useSafeAreaInsets();
-  const { id, status: statusParam } = useLocalSearchParams<{ id?: string; status?: RefundStatus }>();
+  const { id } = useLocalSearchParams<{ id?: string }>();
   const { getOrder } = useOrders();
   const hasAnnouncedRef = useRef(false);
 
@@ -89,13 +89,6 @@ export default function RefundStatusScreen() {
     }
   }, [order?.id, order?.order_number, currentRefund]);
 
-  const [simulatedStatus, setSimulatedStatus] = useState<RefundStatus | null>(
-    statusParam ?? null
-  );
-
-  const status: RefundStatus = simulatedStatus ?? refund?.status ?? 'processing';
-  const config = STATUS_CONFIG[status];
-
   const refundAmount = useMemo(() => {
     if (refund?.refundAmount) return refund.refundAmount;
     if (order?.total) return order.total;
@@ -107,42 +100,24 @@ export default function RefundStatusScreen() {
     refund?.paymentReference || order?.payment_reference || `ORDER-${order?.order_number ?? ''}`;
   const reasonText = refund?.reasonLabel ?? 'General refund';
 
-  function handleSimulateStatus(newStatus: RefundStatus) {
-    if (order) {
-      refundService.updateRefundStatus(order.id, newStatus);
-    }
-    setSimulatedStatus(newStatus);
-    if (newStatus === 'refunded') {
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      AccessibilityInfo.announceForAccessibility(
-        `Refund completed. ${formatMoney(refundAmount)} has been refunded. Reference ${refundRef}.`
-      );
-    } else if (newStatus === 'failed') {
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      AccessibilityInfo.announceForAccessibility(
-        `Refund request failed for ${formatMoney(refundAmount)}.`
-      );
-    } else {
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      AccessibilityInfo.announceForAccessibility(
-        `Refund processing. Your refund request of ${formatMoney(refundAmount)} is being processed. Reference ${refundRef}.`
-      );
-    }
-  }
-
   useEffect(() => {
-    if (hasAnnouncedRef.current) return;
+    if (!refund || hasAnnouncedRef.current) return;
     hasAnnouncedRef.current = true;
 
-    if (status === 'refunded') {
+    if (refund.status === 'refunded') {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       AccessibilityInfo.announceForAccessibility(
         `Refund completed. ${formatMoney(refundAmount)} has been refunded. Reference ${refundRef}.`
       );
-    } else if (status === 'failed') {
+    } else if (refund.status === 'failed') {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       AccessibilityInfo.announceForAccessibility(
-        `Refund request failed for ${formatMoney(refundAmount)}.`
+        `Refund request was declined for ${formatMoney(refundAmount)}.`
+      );
+    } else if (refund.status === 'requested') {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      AccessibilityInfo.announceForAccessibility(
+        `Refund request submitted for ${formatMoney(refundAmount)}. Reference ${refundRef}.`
       );
     } else {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -150,7 +125,7 @@ export default function RefundStatusScreen() {
         `Refund processing. Your refund request of ${formatMoney(refundAmount)} is being processed. Reference ${refundRef}.`
       );
     }
-  }, [status, refundAmount, refundRef]);
+  }, [refund, refundAmount, refundRef]);
 
   if (!order) {
     return (
@@ -170,6 +145,60 @@ export default function RefundStatusScreen() {
       </View>
     );
   }
+
+  if (!refund) {
+    return (
+      <View className="flex-1 bg-surface">
+        <TopBar title="Refund Status" />
+        <View className="items-center gap-4 p-6 pt-16">
+          <View className="h-16 w-16 items-center justify-center rounded-full border-1 border-border bg-surface">
+            <Icon name="orders" size="lg" className="text-secondary" />
+          </View>
+          <View className="items-center gap-2">
+            <Text role="heading" className="type-h2 text-center text-primary">
+              No Refund Request Found
+            </Text>
+            <Text className="type-text-secondary text-center text-secondary">
+              There is currently no active refund request recorded for Order #{order.order_number}.
+            </Text>
+          </View>
+          <View className="w-full gap-3 pt-6">
+            {order.payment_method === 'payhere' &&
+            order.payment_status === 'paid' &&
+            order.status !== 'cancelled' ? (
+              <Button
+                label="Request a Refund"
+                hint="Opens the refund request form for this order"
+                onPress={() =>
+                  router.replace({
+                    pathname: '/orders/[id]/refund' as any,
+                    params: { id: order.id },
+                  })
+                }
+              />
+            ) : null}
+            <Button
+              variant="secondary"
+              label="View Order Details"
+              hint="Navigates to the details for this order"
+              onPress={() =>
+                router.replace({ pathname: '/orders/[id]' as any, params: { id: order.id } })
+              }
+            />
+            <Button
+              variant="secondary"
+              label="Back to Orders"
+              hint="Navigates to your orders list"
+              onPress={() => router.replace('/(tabs)/orders')}
+            />
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  const status: RefundStatus = refund.status;
+  const config = STATUS_CONFIG[status];
 
   return (
     <View className="flex-1 bg-surface">
@@ -206,7 +235,7 @@ export default function RefundStatusScreen() {
         {status === 'failed' ? (
           <Callout
             tone="warning"
-            message="The refund could not be initiated. Your payment method was not affected."
+            message="This refund request was declined. You can contact the seller or submit a new request if needed."
           />
         ) : null}
 
@@ -246,7 +275,7 @@ export default function RefundStatusScreen() {
               </Text>
             </View>
 
-            {refund?.reasonDetails ? (
+            {refund.reasonDetails ? (
               <View className="gap-0.5">
                 <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
                   Details
@@ -262,11 +291,13 @@ export default function RefundStatusScreen() {
                 Status
               </Text>
               <Text className="type-label text-primary capitalize" maxFontSizeMultiplier={2}>
-                {status === 'requested' || status === 'processing'
-                  ? 'Processing'
-                  : status === 'refunded'
-                    ? 'Completed'
-                    : 'Failed'}
+                {status === 'requested'
+                  ? 'Refund Requested'
+                  : status === 'processing'
+                    ? 'Processing'
+                    : status === 'refunded'
+                      ? 'Completed'
+                      : 'Declined'}
               </Text>
             </View>
           </View>
@@ -283,65 +314,26 @@ export default function RefundStatusScreen() {
           />
         </View>
 
-        {/* Status Transition Simulation for Testing */}
-        <View
-          accessibilityRole="summary"
-          aria-label="Testing status simulation controls"
-          className="rounded-12 border-1 border-dashed border-border bg-surface-sunken p-3 gap-2">
-          <Text className="type-label text-secondary">
-            Simulate Status (Testing / Demonstration)
-          </Text>
-          <View className="flex-row gap-2">
-            <View className="flex-1">
-              <Button
-                variant={status === 'processing' || status === 'requested' ? 'primary' : 'secondary'}
-                size="sm"
-                label="Processing"
-                hint="Simulates refund in processing state"
-                onPress={() => handleSimulateStatus('processing')}
-              />
-            </View>
-            <View className="flex-1">
-              <Button
-                variant={status === 'refunded' ? 'primary' : 'secondary'}
-                size="sm"
-                label="Completed"
-                hint="Simulates refund completion"
-                onPress={() => handleSimulateStatus('refunded')}
-              />
-            </View>
-            <View className="flex-1">
-              <Button
-                variant={status === 'failed' ? 'primary' : 'secondary'}
-                size="sm"
-                label="Failed"
-                hint="Simulates refund failure"
-                onPress={() => handleSimulateStatus('failed')}
-              />
-            </View>
-          </View>
-        </View>
-
         {/* Action Buttons */}
         <View className="gap-3">
           {status === 'failed' ? (
             <Button
-              label="Try Again"
+              label="Request Refund Again"
               hint="Re-opens the refund request form to retry"
               onPress={() =>
                 router.replace({ pathname: '/orders/[id]/refund' as any, params: { id: order.id } })
               }
             />
-          ) : (
-            <Button
-              label="View Order Details"
-              variant="secondary"
-              hint="Navigates to the full details for this order"
-              onPress={() =>
-                router.replace({ pathname: '/orders/[id]' as any, params: { id: order.id } })
-              }
-            />
-          )}
+          ) : null}
+
+          <Button
+            label="View Order Details"
+            variant="secondary"
+            hint="Navigates to the full details for this order"
+            onPress={() =>
+              router.replace({ pathname: '/orders/[id]' as any, params: { id: order.id } })
+            }
+          />
 
           <Button
             label="Back to Orders"
