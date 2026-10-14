@@ -141,6 +141,32 @@ export class RefundService {
     return refundStore.get(orderId) ?? [];
   }
 
+  async fetchRefundsForOrders(orderIds: string[]): Promise<Map<string, RefundRequest[]>> {
+    if (orderIds.length === 0) return refundStore;
+
+    try {
+      const { data, error } = await supabase
+        .from('order_refunds')
+        .select('*')
+        .in('order_id', orderIds)
+        .order('created_at', { ascending: true });
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        for (const row of data as unknown as OrderRefundRow[]) {
+          const mapped = mapRowToRefundRequest(row);
+          const existing = refundStore.get(row.order_id) ?? [];
+          if (!existing.some((r) => r.id === mapped.id)) {
+            refundStore.set(row.order_id, [...existing, mapped]);
+          }
+        }
+      }
+    } catch {
+      // Return cached store if query fails
+    }
+
+    return refundStore;
+  }
+
   getRefund(idOrOrderId: string): RefundRequest | undefined {
     const list = refundStore.get(idOrOrderId);
     if (list && list.length > 0) {

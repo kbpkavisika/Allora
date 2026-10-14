@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 
-import { Badge } from '@/components/ui/Badge';
+import { Badge, type BadgeVariant } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { ProductThumbnail } from '@/components/ui/ProductThumbnail';
@@ -16,6 +16,7 @@ import {
   statusPresentation,
   type Order,
 } from '@/lib/orders';
+import { refundService } from '@/services/refund/refundService';
 
 export interface SellerOrderCardProps {
   order: Order;
@@ -23,6 +24,34 @@ export interface SellerOrderCardProps {
   onAdvance: () => void;
   isAdvancing?: boolean;
   position?: string;
+}
+
+function getSellerRefundBadge(
+  order: Order
+): { label: string; variant: BadgeVariant; voice: string } | null {
+  const refund = refundService.getRefund(order.id);
+  if (refund) {
+    if (refund.status === 'refunded') {
+      return { label: 'Refund Completed', variant: 'success', voice: 'Refund completed' };
+    }
+    if (refund.status === 'failed') {
+      return { label: 'Refund Failed', variant: 'warning', voice: 'Refund failed' };
+    }
+    if (refund.status === 'requested') {
+      return { label: 'Refund Requested', variant: 'neutral', voice: 'Refund requested' };
+    }
+    return { label: 'Refund Processing', variant: 'neutral', voice: 'Refund processing' };
+  }
+
+  if (order.payment_status === 'refunded') {
+    return { label: 'Refund Completed', variant: 'success', voice: 'Refund completed' };
+  }
+
+  if (order.payment_status === 'partially_refunded') {
+    return { label: 'Partially Refunded', variant: 'neutral', voice: 'Partially refunded' };
+  }
+
+  return null;
 }
 
 export function SellerOrderCard({
@@ -34,8 +63,11 @@ export function SellerOrderCard({
 }: SellerOrderCardProps) {
   const { t } = useTranslation();
   const status = statusPresentation(order.status);
+  const refundBadge = getSellerRefundBadge(order);
+  const isRefunded =
+    order.payment_status === 'refunded' || refundBadge?.label === 'Refund Completed';
   const advanceLabel =
-    order.status === 'cancelled'
+    order.status === 'cancelled' || isRefunded
       ? null
       : nextDeliveryStatusLabel(order.delivery?.status ?? 'pending');
   const delivery = deliveryCaption(order.delivery);
@@ -48,7 +80,7 @@ export function SellerOrderCard({
       <Pressable
         onPress={onPress}
         role="button"
-        aria-label={`${orderNumber}, ${buyer}, ${status.label}${position ? `, ${position}` : ''}`}
+        aria-label={`${orderNumber}, ${buyer}, ${status.label}${refundBadge ? `, ${refundBadge.voice}` : ''}${openReturn ? `, Return ${openReturn.status}` : ''}${position ? `, ${position}` : ''}`}
         accessibilityHint={t('seller.orders.openHint')}
         className="flex-row items-center gap-3 active:bg-surface-muted">
         <ProductThumbnail uri={orderItemPhoto(order.items[0])} fallbackIcon="orders" />
@@ -79,6 +111,10 @@ export function SellerOrderCard({
               label={returnStatusPresentation(openReturn.status).label}
               variant={returnStatusPresentation(openReturn.status).variant}
             />
+          ) : null}
+
+          {refundBadge ? (
+            <Badge label={refundBadge.label} variant={refundBadge.variant} />
           ) : null}
         </View>
 

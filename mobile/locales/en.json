@@ -611,7 +611,11 @@
       "unavailable": "This order is no longer available.",
       "complete": "This order is complete.",
       "messageBuyer": "Message buyer",
-      "messageBuyerHint": "Opens a conversation with the buyer about this order"
+      "messageBuyerHint": "Opens a conversation with the buyer about this order",
+      "refundProcessingWarning": "Buyer has requested a refund for this order. Review refund details below before dispatching or fulfilling delivery.",
+      "refundCompletedInfo": "This order has been refunded. Delivery progression has been stopped.",
+      "refundFailedWarning": "A previous refund request for this order failed to process.",
+      "refundedDeliveryNote": "Order refunded. Delivery actions disabled."
     }
   },
   "returns": {
@@ -949,5 +953,24 @@
     "command": "Shopping command",
     "voiceHint": "Tap Dictate, use your keyboard’s microphone to speak, then tap Send.",
     "dictate": "Dictate"
+  },
+  "refund": {
+    "sectionTitle": "Refund information",
+    "reference": "Refund Reference",
+    "status": "Refund Status",
+    "amount": "Refund Amount",
+    "type": "Refund Type",
+    "partial": "Partial",
+    "full": "Full",
+    "reason": "Refund Reason",
+    "details": "Reason Details",
+    "paymentRef": "Original Payment Ref",
+    "requestedOn": "Requested On",
+    "viewStatus": "View refund status",
+    "viewStatusHint": "Navigates to the refund status tracking screen",
+    "readAloud": "Read aloud refund details",
+    "history": "Refund history",
+    "latest": "Latest",
+    "orderRefundedLabel": "Order Refunded"
   }
 }

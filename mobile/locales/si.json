@@ -865,5 +865,24 @@
   },
   "sheet": {
     "close": "{{label}} වසන්න"
+  },
+  "refund": {
+    "sectionTitle": "මුදල් ආපසු ගෙවීමේ තොරතුරු",
+    "reference": "මුදල් ආපසු ගෙවීමේ අංකය",
+    "status": "තත්ත්වය",
+    "amount": "මුදල",
+    "type": "වර්ගය",
+    "partial": "කොටසක්",
+    "full": "සම්පූර්ණ",
+    "reason": "හේතුව",
+    "details": "විස්තර",
+    "paymentRef": "ගෙවීම් අංකය",
+    "requestedOn": "ඉල්ලූ දිනය",
+    "viewStatus": "තත්ත්වය බලන්න",
+    "viewStatusHint": "මුදල් ආපසු ගෙවීමේ තත්ත්වය පෙන්වයි",
+    "readAloud": "හඬින් කියවන්න",
+    "history": "මුදල් ආපසු ඉතිහාසය",
+    "latest": "නවතම",
+    "orderRefundedLabel": "ඇණවුම ආපසු ගෙවා ඇත"
   }
 }

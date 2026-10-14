@@ -92,6 +92,105 @@ serve(async (req) => {
 
     if (authError || !user) return errorResponse(401, 'Unauthorized');
 
+    let body: { code?: string } = {};
+    try {
+      body = await req.json();
+    } catch {
+      body = {};
+    }
+
+    if (body?.code) {
+      const code = String(body.code).trim();
+      if (!/^\d{6}$/.test(code)) {
+        return new Response(
+          JSON.stringify({
+            verified: false,
+            error: 'invalid_code',
+            message: 'Verification code must be exactly 6 digits.',
+          }),
+          { status: 400, headers: jsonHeaders },
+        );
+      }
+
+      const { data: activeOtp, error: findError } = await supabase
+        .from('payment_otps')
+        .select('id, code_hash, expires_at, attempt_count')
+        .eq('buyer_id', user.id)
+        .eq('used', false)
+        .maybeSingle();
+
+      if (findError || !activeOtp) {
+        return new Response(
+          JSON.stringify({
+            verified: false,
+            error: 'not_found',
+            message: 'No active verification code found. Please request a new code.',
+          }),
+          { status: 400, headers: jsonHeaders },
+        );
+      }
+
+      if (activeOtp.attempt_count >= 5) {
+        await supabase
+          .from('payment_otps')
+          .update({ used: true, used_at: new Date().toISOString() })
+          .eq('id', activeOtp.id);
+
+        return new Response(
+          JSON.stringify({
+            verified: false,
+            error: 'too_many_attempts',
+            message: 'Too many incorrect attempts. Please request a new code.',
+          }),
+          { status: 400, headers: jsonHeaders },
+        );
+      }
+
+      if (new Date(activeOtp.expires_at).getTime() < Date.now()) {
+        await supabase
+          .from('payment_otps')
+          .update({ used: true, used_at: new Date().toISOString() })
+          .eq('id', activeOtp.id);
+
+        return new Response(
+          JSON.stringify({
+            verified: false,
+            error: 'expired',
+            message: 'Verification code has expired. Please request a new code.',
+          }),
+          { status: 400, headers: jsonHeaders },
+        );
+      }
+
+      const inputHash = await hmacSha256(otpSecret, `${user.id}:${code}`);
+
+      if (inputHash === activeOtp.code_hash) {
+        await supabase
+          .from('payment_otps')
+          .update({ used: true, used_at: new Date().toISOString() })
+          .eq('id', activeOtp.id);
+
+        return new Response(
+          JSON.stringify({ verified: true }),
+          { status: 200, headers: jsonHeaders },
+        );
+      }
+
+      await supabase
+        .from('payment_otps')
+        .update({ attempt_count: activeOtp.attempt_count + 1 })
+        .eq('id', activeOtp.id);
+
+      return new Response(
+        JSON.stringify({
+          verified: false,
+          error: 'invalid_code',
+          message: 'Incorrect verification code. Please check and try again.',
+        }),
+        { status: 400, headers: jsonHeaders },
+      );
+    }
+
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .select('phone')

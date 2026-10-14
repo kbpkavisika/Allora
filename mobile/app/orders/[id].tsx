@@ -8,6 +8,7 @@ import { CancelOrderSheet } from '@/components/orders/CancelOrderSheet';
 import { DeliverySummary } from '@/components/orders/DeliverySummary';
 import { OrderCancellationNotice } from '@/components/orders/OrderCancellationNotice';
 import { OrderItemRows } from '@/components/orders/OrderItemRows';
+import { OrderRefundSummary } from '@/components/orders/OrderRefundSummary';
 import { OrderReturnSummary } from '@/components/orders/OrderReturnSummary';
 import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
 import {
@@ -131,22 +132,7 @@ export default function OrderDetailScreen() {
         ? `Payment receipt delivered to ${session.user.email}.`
         : 'Payment receipt delivered to registered email address.';
 
-  const refundStatusLabel =
-    refund?.status === 'refunded'
-      ? 'Refund Completed'
-      : refund?.status === 'failed'
-        ? 'Refund Failed'
-        : 'Refund Processing';
 
-  const refundStatusVariant: 'success' | 'warning' | 'neutral' =
-    refund?.status === 'refunded'
-      ? 'success'
-      : refund?.status === 'failed'
-        ? 'warning'
-        : 'neutral';
-
-  const originalPaymentRef =
-    refund?.paymentReference || order.payment_reference || `ORDER-${order.order_number}`;
 
   return (
     <View className="flex-1 bg-surface">
@@ -280,106 +266,35 @@ export default function OrderDetailScreen() {
 
         {/* Refund Information Section */}
         {refund ? (
-          <View className="gap-4">
-            <SectionHeader title="Refund information" />
-            <View
-              accessibilityRole="summary"
-              aria-label="Refund information summary"
-              className="gap-3 rounded-12 border-1 border-border bg-surface p-4">
-              <View className="flex-row items-center justify-between">
-                <Text className="type-label text-secondary" maxFontSizeMultiplier={2}>
-                  Refund Reference
-                </Text>
-                <Text className="type-mono text-primary font-bold" maxFontSizeMultiplier={2}>
-                  {refund.id}
-                </Text>
-              </View>
+          <OrderRefundSummary refund={refund} viewer="buyer">
+            <View className="pt-2 gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                label={t('refund.viewStatus', { defaultValue: 'View refund status' })}
+                hint={t('refund.viewStatusHint', {
+                  defaultValue: 'Navigates to the refund status tracking screen',
+                })}
+                onPress={() =>
+                  router.push({
+                    pathname: '/orders/[id]/refund-status' as any,
+                    params: { id: order.id },
+                  })
+                }
+              />
 
-              <View className="flex-row items-center justify-between">
-                <Text className="type-label text-secondary" maxFontSizeMultiplier={2}>
-                  Refund Status
-                </Text>
-                <Badge label={refundStatusLabel} variant={refundStatusVariant} />
-              </View>
-
-              <View className="flex-row items-center justify-between">
-                <Text className="type-label text-secondary" maxFontSizeMultiplier={2}>
-                  Refund Amount
-                </Text>
-                <Text className="type-h3 text-primary" maxFontSizeMultiplier={2}>
-                  {formatMoney(refund.refundAmount)}
-                </Text>
-              </View>
-
-              <View className="flex-row items-center justify-between">
-                <Text className="type-label text-secondary" maxFontSizeMultiplier={2}>
-                  Refund Reason
-                </Text>
-                <Text className="type-text-primary text-primary" maxFontSizeMultiplier={2}>
-                  {refund.reasonLabel}
-                </Text>
-              </View>
-
-              {refund.reasonDetails ? (
-                <View className="gap-0.5">
-                  <Text className="type-label text-secondary" maxFontSizeMultiplier={2}>
-                    Reason Details
-                  </Text>
-                  <Text className="type-text-secondary text-primary" maxFontSizeMultiplier={2}>
-                    {refund.reasonDetails}
-                  </Text>
-                </View>
-              ) : null}
-
-              <View className="flex-row items-center justify-between">
-                <Text className="type-label text-secondary" maxFontSizeMultiplier={2}>
-                  Original Payment Ref
-                </Text>
-                <Text className="type-mono text-primary" maxFontSizeMultiplier={2}>
-                  {originalPaymentRef}
-                </Text>
-              </View>
-
-              <View className="flex-row items-center justify-between">
-                <Text className="type-label text-secondary" maxFontSizeMultiplier={2}>
-                  Requested On
-                </Text>
-                <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
-                  {new Date(refund.createdAt).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </Text>
-              </View>
-
-              <View className="pt-2 gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  label="View refund status"
-                  hint="Navigates to the refund status tracking screen"
-                  onPress={() =>
-                    router.push({
-                      pathname: '/orders/[id]/refund-status' as any,
-                      params: { id: order.id },
-                    })
-                  }
-                />
-
-                <ReadAloudButton
-                  text={formatRefundStatusSpeech({
-                    status: refund.status,
-                    amount: refund.refundAmount,
-                    currency: refund.currency || 'LKR',
-                    refundReference: refund.id,
-                    reason: refund.reasonLabel,
-                  })}
-                  label="Read aloud refund details"
-                />
-              </View>
+              <ReadAloudButton
+                text={formatRefundStatusSpeech({
+                  status: refund.status,
+                  amount: refund.refundAmount,
+                  currency: refund.currency || 'LKR',
+                  refundReference: refund.id,
+                  reason: refund.reasonLabel,
+                })}
+                label={t('refund.readAloud', { defaultValue: 'Read aloud refund details' })}
+              />
             </View>
-          </View>
+          </OrderRefundSummary>
         ) : null}
 
         {/* Refund History Section (if multiple refund records exist) */}

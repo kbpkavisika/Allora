@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +12,7 @@ import { useListPosition } from '@/hooks/useListPosition';
 import { useOrdersRefresh } from '@/hooks/useOrdersRefresh';
 import { orderStatuses, type OrderStatus } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
+import { refundService } from '@/services/refund/refundService';
 
 export default function SellerOrdersScreen() {
   const { t } = useTranslation();
@@ -22,6 +23,16 @@ export default function SellerOrdersScreen() {
 
   const [tab, setTab] = useState<OrderStatus>('new');
   const [advancingId, setAdvancingId] = useState<string | null>(null);
+  const [, setRefundRefreshCount] = useState(0);
+
+  useEffect(() => {
+    if (orders.length > 0) {
+      const orderIds = orders.map((o) => o.id);
+      void refundService.fetchRefundsForOrders(orderIds).then(() => {
+        setRefundRefreshCount((count) => count + 1);
+      });
+    }
+  }, [orders]);
 
   const tabs = useMemo<ScrollTabItem[]>(
     () =>
