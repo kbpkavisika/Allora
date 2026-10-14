@@ -6,11 +6,6 @@ import { Controller, useForm } from 'react-hook-form';
 import { AccessibilityInfo, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
-import {
-  formatRefundConfirmationSpeech,
-  formatRefundRequestSpeech,
-} from '@/components/payment/paymentSpeech';
 import { Button } from '@/components/ui/Button';
 import { Callout } from '@/components/ui/Callout';
 import { ChipSelect } from '@/components/ui/ChipSelect';
@@ -186,14 +181,6 @@ export default function RefundRequestScreen() {
 
           {!isConfirming ? (
             <>
-              <ReadAloudButton
-                text={formatRefundRequestSpeech({
-                  orderNumber: order.order_number,
-                  amount: totalAmount,
-                  currency: 'LKR',
-                })}
-                label="Read aloud"
-              />
 
               <View className="gap-3">
                 <SectionHeader title="Refund type" />
@@ -355,15 +342,6 @@ export default function RefundRequestScreen() {
                 </View>
               </View>
 
-              <ReadAloudButton
-                text={formatRefundConfirmationSpeech({
-                  amount: selectedAmount,
-                  currency: 'LKR',
-                  reason: reasonLabel,
-                  reference: paymentReference,
-                })}
-                label="Read aloud confirmation"
-              />
 
               <FormError message={formError} />
 

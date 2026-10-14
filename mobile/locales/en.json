@@ -2,20 +2,8 @@
   "readAloud": {
     "label": "Read aloud",
     "stop": "Stop reading",
-    "hint": "Reads this information aloud",
-    "stopHint": "Stops reading aloud",
-    "productHint": "Reads the product name, price, stock, description and reviews aloud",
-    "cartHint": "Reads every item in your cart and the total aloud",
-    "description": "Description: {{text}}",
-    "cartLine_one": "{{name}}, {{count}} at {{price}} each, {{total}}.",
-    "cartLine_other": "{{name}}, {{count}} at {{price}} each, {{total}}.",
-    "cartTotal": "Total {{total}}.",
-    "activeOrders_one": "You have {{count}} active order.",
-    "activeOrders_other": "You have {{count}} active orders.",
-    "pastOrders_one": "You have {{count}} past order.",
-    "pastOrders_other": "You have {{count}} past orders.",
-    "activeOrdersHint": "Reads your active orders aloud",
-    "pastOrdersHint": "Reads your past orders aloud"
+    "hint": "Reads this page aloud",
+    "stopHint": "Stops reading aloud"
   },
   "common": {
     "cancel": "Cancel",
@@ -706,8 +694,7 @@
     "paymentMethod": "Payment method",
     "payHereOnline": "PayHere (online)",
     "paymentReference": "Payment reference",
-    "receiptNote": "A confirmation receipt will be sent to your registered email address.",
-    "readAloud": "Read aloud summary"
+    "receiptNote": "A confirmation receipt will be sent to your registered email address."
   },
   "product": {
     "title": "Product",
@@ -938,7 +925,8 @@
     "retryIn": "Try again in {{seconds}} seconds.",
     "addSelected": "Add one {{name}} to my cart.",
     "title": "AlloraAI",
-    "intro": "Tell me what you need. Try “Find milk under 500 rupees”, then “Add two of the first one”. Payment is unavailable in this experiment.",
+    "greeting": "Hi, {{name}}",
+    "greetingAnonymous": "Hi there",
     "you": "You",
     "results": "Here are the matching products, cheapest first. Tell me which to add:",
     "noResults": "No matching products in stock. Try another product name or budget.",
@@ -946,8 +934,9 @@
     "unavailable": "Shopping assistant is unavailable. Check its setup and try again.",
     "failed": "I could not complete that request. No addition was confirmed. Please check your cart before retrying.",
     "thinking": "Looking into your request…",
-    "command": "Shopping command",
+    "command": "What are you looking for today?",
     "voiceHint": "Tap Dictate, use your keyboard’s microphone to speak, then tap Send.",
-    "dictate": "Dictate"
+    "dictate": "Dictate",
+    "newChat": "New chat"
   }
 }

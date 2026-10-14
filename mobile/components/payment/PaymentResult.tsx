@@ -2,8 +2,6 @@ import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
 import { Text, View } from 'react-native';
 
-import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
-import { formatPaymentResultSpeech } from '@/components/payment/paymentSpeech';
 import type { PaymentResult as PaymentResultData } from '@/services/payment/paymentTypes';
 
 export interface PaymentResultProps {
@@ -42,7 +40,6 @@ export function PaymentResult({ result, amount, currency }: PaymentResultProps) 
       <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
         Reference: {result.reference}
       </Text>
-      <ReadAloudButton text={formatPaymentResultSpeech(result, amount, currency)} />
     </View>
   );
 }

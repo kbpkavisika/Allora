@@ -19,11 +19,11 @@ import { FilterChip } from '@/components/ui/FilterChip';
 import { InputField } from '@/components/ui/InputField';
 import { OptionList } from '@/components/ui/OptionList';
 import { ProductTile, ProductTileSkeleton } from '@/components/ui/ProductTile';
+import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
 import { ScrollTabs, type ScrollTabItem } from '@/components/ui/ScrollTabs';
 import { useReduceMotion } from '@/hooks/useReduceMotion';
 import { useListPosition } from '@/hooks/useListPosition';
 import { BROWSE_PAGE_SIZE, fetchProducts, productSorts, type ProductSort } from '@/lib/browse';
-import { useCart } from '@/lib/CartProvider';
 import { useChat } from '@/lib/ChatProvider';
 import type { Product } from '@/lib/products';
 import { shopCategories } from '@/lib/shop';
@@ -226,7 +226,6 @@ export default function ShopScreen() {
 function ShopTopBar() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  const { itemCount } = useCart();
   const { unreadCount } = useChat();
 
   return (
@@ -248,13 +247,7 @@ function ShopTopBar() {
             hint={t('shop.messagesHint')}
             onPress={() => router.push('/messages')}
           />
-          <BadgedIconButton
-            icon="cart"
-            count={itemCount}
-            label={itemCount > 0 ? t('shop.cartLabel', { count: itemCount }) : t('tabs.cart')}
-            hint={t('shop.cartHint')}
-            onPress={() => router.push('/(tabs)/cart')}
-          />
+          <ReadAloudButton />
         </View>
       </View>
     </View>

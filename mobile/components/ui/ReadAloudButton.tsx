@@ -2,17 +2,9 @@ import * as Speech from 'expo-speech';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, type ButtonVariant } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
-
-export interface ReadAloudButtonProps {
-  text: string;
-  label?: string;
-  hint?: string;
-  disabled?: boolean;
-  fullWidth?: boolean;
-  variant?: Extract<ButtonVariant, 'secondary' | 'social'>;
-}
+import { IconButton } from '@/components/ui/IconButton';
+import { useReadPage } from '@/hooks/usePageSpeech';
 
 const SPEECH_LANGUAGE: Record<string, string> = {
   en: 'en-US',
@@ -20,15 +12,9 @@ const SPEECH_LANGUAGE: Record<string, string> = {
   ta: 'ta-LK',
 };
 
-export function ReadAloudButton({
-  text,
-  label,
-  hint,
-  disabled = false,
-  fullWidth = false,
-  variant = 'secondary',
-}: ReadAloudButtonProps) {
+export function ReadAloudButton() {
   const { t, i18n } = useTranslation();
+  const readPage = useReadPage();
   const [isSpeaking, setIsSpeaking] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -66,7 +52,8 @@ export function ReadAloudButton({
   }
 
   async function handlePress() {
-    if (!text.trim() || disabled) return;
+    const text = readPage();
+    if (!text) return;
 
     if (isSpeaking) {
       clearPolling();
@@ -90,30 +77,14 @@ export function ReadAloudButton({
     }
   }
 
-  const currentLabel = isSpeaking ? t('readAloud.stop') : (label ?? t('readAloud.label'));
-  const currentHint = isSpeaking ? t('readAloud.stopHint') : (hint ?? t('readAloud.hint'));
-
   return (
-    <Button
-      label={currentLabel}
-      variant={variant}
-      size="md"
-      leadingIcon={
-        <Icon
-          name={isSpeaking ? 'stop' : 'speak'}
-          size="md"
-          className={disabled ? 'text-disabled' : 'text-primary'}
-        />
-      }
+    <IconButton
+      icon={<Icon name={isSpeaking ? 'stop' : 'speak'} size="lg" className="text-primary" />}
+      label={isSpeaking ? t('readAloud.stop') : t('readAloud.label')}
+      hint={isSpeaking ? t('readAloud.stopHint') : t('readAloud.hint')}
       onPress={() => {
         void handlePress();
       }}
-      disabled={disabled}
-      accessibilityLabel={currentLabel}
-      accessibilityHint={currentHint}
-      hint={currentHint}
-      fullWidth={fullWidth}
-      className={fullWidth ? '' : 'self-start'}
     />
   );
 }

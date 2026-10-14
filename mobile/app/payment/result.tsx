@@ -8,8 +8,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/Button';
 import { Callout } from '@/components/ui/Callout';
 import { Icon, type IconName } from '@/components/ui/Icon';
-import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
-import { formatCheckoutResultSpeech } from '@/components/payment/paymentSpeech';
 import { formatMoney } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 
@@ -225,16 +223,6 @@ export default function PaymentResultScreen() {
             ) : null}
           </View>
 
-          <ReadAloudButton
-            text={formatCheckoutResultSpeech({
-              variant,
-              amount: total,
-              currency: 'LKR',
-              reference: params.reference,
-              message: params.message,
-            })}
-            label={t('paymentResult.readAloud')}
-          />
         </View>
 
         {/* Actions */}

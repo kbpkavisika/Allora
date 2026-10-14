@@ -10,10 +10,10 @@ import { Button } from '@/components/ui/Button';
 import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
 import { InputField } from '@/components/ui/InputField';
-import { MessageBubble } from '@/components/ui/MessageBubble';
 import { ProductThumbnail } from '@/components/ui/ProductThumbnail';
 import { TopBar } from '@/components/ui/TopBar';
 import { useDictation } from '@/hooks/useDictation';
+import { useProfile } from '@/hooks/useProfile';
 import { MESSAGE_MAX_LENGTH } from '@/lib/chat';
 import { useCart } from '@/lib/CartProvider';
 import { formatPrice } from '@/lib/products';
@@ -27,6 +27,8 @@ type ChatMessage = { role: 'user' | 'assistant'; content: string; products?: Pro
 export default function ShoppingAssistantScreen() {
   const { t } = useTranslation();
   const { addItem, isLoading: isCartLoading } = useCart();
+  const { profile } = useProfile();
+  const firstName = profile?.full_name?.trim().split(/\s+/)[0];
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [busy, setBusy] = useState(false);
@@ -109,6 +111,13 @@ export default function ShoppingAssistantScreen() {
     }
   })();
 
+  const startNewChat = () => {
+    setMessages([]);
+    setProducts([]);
+    setError(null);
+    reset();
+  };
+
   const addProduct = async (product: Product) => {
     if (pending.current || isCartLoading) return;
     pending.current = true;
@@ -130,13 +139,30 @@ export default function ShoppingAssistantScreen() {
 
   return (
     <KeyboardAvoidingView className="flex-1 bg-surface" behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <TopBar title={t('assistant.title')} showBack={false} trailing={
-        <IconButton icon={<Icon name="cart" size="lg" className="text-primary" />} label={t('tabs.cart')} onPress={() => router.push('/(tabs)/cart')} />
-      } />
-      <ScrollView ref={scrollRef} className="flex-1" contentContainerStyle={{ padding: 16, gap: 16 }} keyboardShouldPersistTaps="handled" onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}>
+      <TopBar
+        title={t('assistant.title')}
+        showBack={false}
+        leading={
+          <IconButton icon={<Icon name="plus" size="lg" className={busy || !messages.length ? 'text-disabled' : 'text-primary'} />} label={t('assistant.newChat')} disabled={busy || !messages.length} onPress={startNewChat} />
+        }
+      />
+      <ScrollView ref={scrollRef} className="flex-1" contentContainerStyle={{ flexGrow: 1, padding: 16, gap: 24 }} keyboardShouldPersistTaps="handled" onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}>
+        {messages.length === 0 && (
+          <View className="flex-1 items-center justify-center gap-3 px-4">
+            <Text role="heading" className="type-h1 text-center text-primary" maxFontSizeMultiplier={1.5}>
+              {firstName ? t('assistant.greeting', { name: firstName }) : t('assistant.greetingAnonymous')}
+            </Text>
+          </View>
+        )}
         {messages.map((message, messageIndex) => (
           <View key={messageIndex} className="gap-3">
-            <MessageBubble body={message.content} time="" isMine={message.role === 'user'} senderLabel={message.role === 'user' ? t('assistant.you') : t('assistant.title')} />
+            {message.role === 'user' ? (
+              <View accessible aria-label={t('assistant.you') + ': ' + message.content} className="max-w-[80%] self-end rounded-12 bg-surface-sunken px-4 py-3">
+                <Text className="type-text-primary text-primary" maxFontSizeMultiplier={2}>{message.content}</Text>
+              </View>
+            ) : (
+              <Text aria-label={t('assistant.title') + ': ' + message.content} className="type-text-primary text-primary" maxFontSizeMultiplier={2}>{message.content}</Text>
+            )}
             {message.products?.map((product, index) => (
               <View key={product.id} className="gap-3 rounded-12 border-1 border-border bg-surface p-3">
                 <Pressable
@@ -164,8 +190,8 @@ export default function ShoppingAssistantScreen() {
           <InputField
             ref={inputRef}
             label={t('assistant.command')}
-            isLabelHidden
             placeholder={t('assistant.command')}
+            isLabelHidden
             value={field.value}
             onChangeText={field.onChange}
             onBlur={field.onBlur}
@@ -189,8 +215,8 @@ export default function ShoppingAssistantScreen() {
                 />
                 <IconButton
                   diameter={32}
-                  variant="filled"
-                  icon={<Icon name="send" size="md" className={busy || isCartLoading || isDictating || !field.value.trim() ? 'text-disabled' : 'text-primary'} />}
+                  variant="solid"
+                  icon={<Icon name="send" size="md" className={busy || isCartLoading || isDictating || !field.value.trim() ? 'text-disabled' : 'text-surface'} />}
                   label={t('composer.send')}
                   hint={t('composer.sendHint')}
                   disabled={busy || isCartLoading || isDictating || !field.value.trim()}

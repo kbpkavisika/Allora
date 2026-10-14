@@ -9,11 +9,6 @@ import { DeliverySummary } from '@/components/orders/DeliverySummary';
 import { OrderCancellationNotice } from '@/components/orders/OrderCancellationNotice';
 import { OrderItemRows } from '@/components/orders/OrderItemRows';
 import { OrderReturnSummary } from '@/components/orders/OrderReturnSummary';
-import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
-import {
-  formatPaymentSummarySpeech,
-  formatRefundStatusSpeech,
-} from '@/components/payment/paymentSpeech';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Callout } from '@/components/ui/Callout';
@@ -265,16 +260,6 @@ export default function OrderDetailScreen() {
               </View>
             ) : null}
 
-            <ReadAloudButton
-              text={formatPaymentSummarySpeech({
-                status: paymentBadgeLabel,
-                amount: orderTotal,
-                currency: 'LKR',
-                reference: order.payment_reference || `ORDER-${order.order_number}`,
-                method: paymentMethodDisplay,
-              })}
-              label="Read aloud payment details"
-            />
           </View>
         </View>
 
@@ -367,16 +352,6 @@ export default function OrderDetailScreen() {
                   }
                 />
 
-                <ReadAloudButton
-                  text={formatRefundStatusSpeech({
-                    status: refund.status,
-                    amount: refund.refundAmount,
-                    currency: refund.currency || 'LKR',
-                    refundReference: refund.id,
-                    reason: refund.reasonLabel,
-                  })}
-                  label="Read aloud refund details"
-                />
               </View>
             </View>
           </View>

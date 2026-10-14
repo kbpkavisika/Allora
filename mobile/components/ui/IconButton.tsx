@@ -6,7 +6,7 @@ export interface IconButtonProps {
   hint?: string;
   onPress?: () => void;
   diameter?: 44 | 32;
-  variant?: 'bare' | 'outlined' | 'filled';
+  variant?: 'bare' | 'outlined' | 'filled' | 'solid';
   disabled?: boolean;
   className?: string;
 }
@@ -17,6 +17,7 @@ const SURFACE: Record<NonNullable<IconButtonProps['variant']>, string> = {
   bare: 'bg-transparent',
   outlined: 'border-1 border-border-strong bg-surface',
   filled: 'bg-surface-sunken',
+  solid: 'bg-primary',
 };
 
 // Repeats the resting fill rather than changing it — a disabled Pressable never enters a press
@@ -26,6 +27,7 @@ const SURFACE_INERT: Record<NonNullable<IconButtonProps['variant']>, string> = {
   bare: 'bg-transparent active:bg-transparent',
   outlined: 'border-1 border-border-strong bg-surface active:bg-surface',
   filled: 'bg-surface-sunken active:bg-surface-sunken',
+  solid: 'bg-border active:bg-border',
 };
 
 export function IconButton({
@@ -40,7 +42,7 @@ export function IconButton({
 }: IconButtonProps) {
   const surface = disabled
     ? SURFACE_INERT[variant]
-    : `${SURFACE[variant]} active:bg-surface-sunken`;
+    : `${SURFACE[variant]} ${variant === 'solid' ? 'active:bg-primary-hover' : 'active:bg-surface-sunken'}`;
 
   return (
     <Pressable

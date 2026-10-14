@@ -5,16 +5,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/ui/Icon';
 import { IconButton } from '@/components/ui/IconButton';
+import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
 import { useScreenTitleFocus } from '@/hooks/useScreenTitleFocus';
 
 export interface TopBarProps {
   title: string;
   subtitle?: string;
   showBack?: boolean;
+  leading?: React.ReactNode;
   trailing?: React.ReactNode;
 }
 
-export function TopBar({ title, subtitle, showBack = true, trailing }: TopBarProps) {
+export function TopBar({ title, subtitle, showBack = true, leading, trailing }: TopBarProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -31,7 +33,7 @@ export function TopBar({ title, subtitle, showBack = true, trailing }: TopBarPro
               hint={t('common.previousScreenHint')}
               onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
             />
-          ) : null}
+          ) : leading}
         </View>
 
         <View className="flex-1 items-center justify-center">
@@ -53,7 +55,10 @@ export function TopBar({ title, subtitle, showBack = true, trailing }: TopBarPro
           ) : null}
         </View>
 
-        <View className="w-tap items-end justify-center">{trailing}</View>
+        <View className="flex-row items-center justify-end">
+          {trailing}
+          <ReadAloudButton />
+        </View>
       </View>
     </View>
   );

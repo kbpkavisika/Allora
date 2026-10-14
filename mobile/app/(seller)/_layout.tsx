@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { BottomTabBar, type TabDefinition } from '@/components/ui/BottomTabBar';
 import { Header } from '@/components/ui/Header';
+import { PageSpeechScreen } from '@/hooks/usePageSpeech';
 import { useChat } from '@/hooks/useChat';
 import { useShop } from '@/hooks/useShop';
 
@@ -25,6 +26,7 @@ export default function SellerTabLayout() {
   return (
     <Tabs
       screenOptions={{ header: () => <Header /> }}
+      screenLayout={({ children }) => <PageSpeechScreen>{children}</PageSpeechScreen>}
       tabBar={(props) => (
         <BottomTabBar
           {...(props as unknown as BottomTabBarProps)}

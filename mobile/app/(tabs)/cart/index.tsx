@@ -7,10 +7,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CartItemRow } from '@/components/cart/CartItemRow';
 import { Button } from '@/components/ui/Button';
 import { Callout } from '@/components/ui/Callout';
-import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
 import { SuccessBanner } from '@/components/ui/SuccessBanner';
 import { Toast } from '@/components/ui/Toast';
-import { cartHasStockIssues, CartStockLimitError, formatCartSpeech } from '@/lib/cart';
+import { cartHasStockIssues, CartStockLimitError } from '@/lib/cart';
 import { useCart } from '@/lib/CartProvider';
 import { formatMoney } from '@/lib/orders';
 
@@ -69,13 +68,6 @@ export default function CartScreen() {
               {itemCount > 0 ? t('cart.titleWithCount', { count: itemCount }) : t('tabs.cart')}
             </Text>
             <SuccessBanner message={bannerMessage} />
-            {lines.length > 0 ? (
-              <ReadAloudButton
-                text={formatCartSpeech(lines)}
-                hint={t('readAloud.cartHint')}
-                fullWidth
-              />
-            ) : null}
           </View>
         }
         renderItem={({ item: line }) => (

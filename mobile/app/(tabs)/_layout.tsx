@@ -4,7 +4,9 @@ import { useTranslation } from 'react-i18next';
 
 import { BottomTabBar, type TabDefinition } from '@/components/ui/BottomTabBar';
 import { Header } from '@/components/ui/Header';
+import { PageSpeechScreen } from '@/hooks/usePageSpeech';
 import { useChat } from '@/hooks/useChat';
+import { useCart } from '@/lib/CartProvider';
 
 export default function TabLayout() {
   const { t } = useTranslation();
@@ -16,15 +18,17 @@ export default function TabLayout() {
     'account/index': { label: t('tabs.account'), icon: 'account' },
   };
   const { unreadCount } = useChat();
+  const { itemCount } = useCart();
 
   return (
     <Tabs
       screenOptions={{ header: () => <Header /> }}
+      screenLayout={({ children }) => <PageSpeechScreen>{children}</PageSpeechScreen>}
       tabBar={(props) => (
         <BottomTabBar
           {...(props as unknown as BottomTabBarProps)}
           tabs={tabs}
-          badges={{ 'account/index': unreadCount }}
+          badges={{ 'cart/index': itemCount, 'account/index': unreadCount }}
         />
       )}>
       <Tabs.Screen name="index" options={{ title: t('tabs.shop'), headerShown: false }} />

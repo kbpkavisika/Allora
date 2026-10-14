@@ -15,8 +15,6 @@ import {
 } from 'react-native';
 
 import { FormError } from '@/components/ui/FormError';
-import { ReadAloudButton } from '@/components/ui/ReadAloudButton';
-import { formatPaymentAuthenticationSpeech } from '@/components/payment/paymentSpeech';
 import {
   requestPaymentOtp,
   verifyPaymentOtp,
@@ -276,7 +274,6 @@ export function PaymentAuthentication({
         </Text>
       </View>
 
-      <ReadAloudButton text={formatPaymentAuthenticationSpeech(maskedPhone)} />
 
       {!maskedPhone ? (
         <Pressable
