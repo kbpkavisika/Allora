@@ -200,6 +200,7 @@ export default function CheckoutScreen() {
         goToResult({
           variant: 'success',
           orderId: orders[0]?.id ?? '',
+          orderNumber: orders[0]?.order_number ?? '',
           count: String(orders.length),
           total: String(paidTotal),
           reference: outcome.paymentId,
@@ -226,6 +227,7 @@ export default function CheckoutScreen() {
       goToResult({
         variant: 'cod',
         orderId: orders[0]?.id ?? '',
+        orderNumber: orders[0]?.order_number ?? '',
         count: String(orders.length),
         total: String(total),
       });

@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/Button';
@@ -46,7 +46,12 @@ export function CancelOrderSheet({ orderId, isSeller, onDismiss }: CancelOrderSh
 
   return (
     <BottomSheet onDismiss={onDismiss} label={t('orders.cancel.title')}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        contentContainerStyle={{ paddingBottom: 16 }}>
         <Text role="heading" className="type-h2 mb-2 text-primary" maxFontSizeMultiplier={1.5}>
           {t('orders.cancel.title')}
         </Text>
@@ -81,7 +86,7 @@ export function CancelOrderSheet({ orderId, isSeller, onDismiss }: CancelOrderSh
           />
           <Button variant="secondary" label={t('orders.cancel.keep')} onPress={onDismiss} />
         </View>
-      </KeyboardAvoidingView>
+      </ScrollView>
     </BottomSheet>
   );
 }

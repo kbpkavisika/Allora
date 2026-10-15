@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Pressable, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export interface BottomSheetProps {
@@ -15,30 +15,34 @@ export function BottomSheet({ onDismiss, label, children }: BottomSheetProps) {
   const insets = useSafeAreaInsets();
 
   return (
-    <View className="flex-1 justify-end" style={{ backgroundColor: SCRIM }}>
-      <Pressable
-        onPress={onDismiss}
-        role="button"
-        aria-label={t('sheet.close', { label: label.toLowerCase() })}
-        className="flex-1"
-      />
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1 }}>
+      <View className="flex-1 justify-end" style={{ backgroundColor: SCRIM }}>
+        <Pressable
+          onPress={onDismiss}
+          role="button"
+          aria-label={t('sheet.close', { label: label.toLowerCase() })}
+          className="flex-1"
+        />
 
-      <View
-        role="dialog"
-        aria-label={label}
-        className="rounded-t-16 bg-surface px-5 pb-5 pt-3"
-        style={{
-          maxHeight: '85%',
-          paddingBottom: insets.bottom + 20,
-          shadowColor: '#101112',
-          shadowOpacity: 0.16,
-          shadowRadius: 40,
-          shadowOffset: { width: 0, height: -16 },
-          elevation: 24,
-        }}>
-        <View className="mb-4 h-1 w-10 self-center rounded-full bg-inert" aria-hidden />
-        {children}
+        <View
+          role="dialog"
+          aria-label={label}
+          className="rounded-t-16 bg-surface px-5 pb-5 pt-3"
+          style={{
+            maxHeight: '85%',
+            paddingBottom: insets.bottom + 20,
+            shadowColor: '#101112',
+            shadowOpacity: 0.16,
+            shadowRadius: 40,
+            shadowOffset: { width: 0, height: -16 },
+            elevation: 24,
+          }}>
+          <View className="mb-4 h-1 w-10 self-center rounded-full bg-inert" aria-hidden />
+          {children}
+        </View>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }

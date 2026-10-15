@@ -2,7 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Platform, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/Button';
@@ -68,7 +68,12 @@ export function DeliveryUpdateSheet({
 
   return (
     <BottomSheet onDismiss={onDismiss} label={t('delivery.update')}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        contentContainerStyle={{ paddingBottom: 16 }}>
         <Text role="heading" className="type-h2 mb-4 text-primary" maxFontSizeMultiplier={1.5}>
           {t('delivery.update')}
         </Text>
@@ -138,7 +143,7 @@ export function DeliveryUpdateSheet({
             onPress={handleSubmit(onSubmit)}
           />
         </View>
-      </KeyboardAvoidingView>
+      </ScrollView>
     </BottomSheet>
   );
 }

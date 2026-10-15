@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/Button';
 import { Callout } from '@/components/ui/Callout';
 import { Icon, type IconName } from '@/components/ui/Icon';
+import { TopBar } from '@/components/ui/TopBar';
 import { formatMoney } from '@/lib/orders';
 import { useOrders } from '@/lib/OrdersProvider';
 
@@ -16,6 +17,7 @@ type ResultVariant = 'success' | 'failure' | 'cod' | 'cancelled' | 'pending';
 type ResultParams = {
   variant?: string;
   orderId?: string;
+  orderNumber?: string;
   count?: string;
   total?: string;
   reference?: string;
@@ -67,8 +69,12 @@ export default function PaymentResultScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<ResultParams>();
-  const { getOrder } = useOrders();
+  const { getOrder, refresh: refreshOrders } = useOrders();
   const hasAnnouncedRef = useRef(false);
+
+  useEffect(() => {
+    void refreshOrders();
+  }, [refreshOrders]);
 
   const rawVariant = params.variant ?? 'success';
   const variant: ResultVariant =
@@ -85,7 +91,7 @@ export default function PaymentResultScreen() {
   const total = Number(params.total ?? '0');
   const count = Number(params.count ?? '1');
   const order = params.orderId ? getOrder(params.orderId) : undefined;
-  const orderNumber = order?.order_number;
+  const orderNumber = params.orderNumber || order?.order_number;
   const presentation = PRESENTATION[variant];
 
   useEffect(() => {
@@ -115,10 +121,14 @@ export default function PaymentResultScreen() {
 
   return (
     <View className="flex-1 bg-surface">
+      <TopBar
+        title={t('paymentResult.title', { defaultValue: 'Payment Status' })}
+        showBack={false}
+      />
       <ScrollView
         contentContainerStyle={{
           padding: 16,
-          paddingTop: insets.top + 32,
+          paddingTop: 24,
           paddingBottom: insets.bottom + 32,
           gap: 24,
         }}

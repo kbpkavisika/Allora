@@ -666,6 +666,7 @@
     "placeOrderHint": "Places the order to pay on delivery"
   },
   "paymentResult": {
+    "title": "Payment Status",
     "heading": {
       "success": "Payment successful",
       "cod": "Order placed!",

@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { AccessibilityInfo, KeyboardAvoidingView, Platform, Text, View } from 'react-native';
+import { AccessibilityInfo, ScrollView, Text, View } from 'react-native';
 
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Button } from '@/components/ui/Button';
@@ -89,7 +89,12 @@ export function RefundResponseSheet({
 
   return (
     <BottomSheet onDismiss={onDismiss} label={title}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        contentContainerStyle={{ paddingBottom: 16 }}>
         <Text role="heading" className="type-h2 mb-2 text-primary" maxFontSizeMultiplier={1.5}>
           {title}
         </Text>
@@ -146,7 +151,7 @@ export function RefundResponseSheet({
             onPress={handleSubmit(onSubmit)}
           />
         </View>
-      </KeyboardAvoidingView>
+      </ScrollView>
     </BottomSheet>
   );
 }
