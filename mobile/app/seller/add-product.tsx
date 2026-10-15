@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -18,7 +18,15 @@ import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
 import { ProductPhotoGrid } from '@/components/ui/ProductPhotoGrid';
 import { StepProgress } from '@/components/ui/StepProgress';
 import { useProducts } from '@/hooks/useProducts';
+import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
 import { formatPrice, getStockStatus, toProductInput } from '@/lib/products';
+import {
+  PRODUCT_VOICE_MAX_MS,
+  ProductVoiceError,
+  toProductFormValues,
+  transcribeProductVoice,
+} from '@/lib/productVoice';
+import { supabase } from '@/lib/supabase';
 import {
   productCategories,
   productDetailsSchema,
@@ -31,6 +39,8 @@ import { photoUploadErrorMessage } from '@/lib/photoUpload';
 const TOTAL_STEPS = 4;
 
 const STEP_CAPTIONS = ['record', 'review', 'photos', 'done'];
+
+type VoiceMode = 'idle' | 'recording' | 'processing';
 
 function formatDuration(seconds: number) {
   const minutes = Math.floor(seconds / 60);
@@ -47,10 +57,15 @@ export default function AddProductScreen() {
 
   const { createProduct } = useProducts();
 
+  const recorder = useVoiceRecorder();
+  const limitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [step, setStep] = useState(1);
-  const [isRecording, setIsRecording] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
+  const [voiceMode, setVoiceMode] = useState<VoiceMode>('idle');
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [isVoiceDraft, setIsVoiceDraft] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const isRecording = voiceMode === 'recording';
+  const isProcessing = voiceMode === 'processing';
 
   const {
     control,
@@ -73,17 +88,27 @@ export default function AddProductScreen() {
     reValidateMode: 'onChange',
   });
 
-  useEffect(() => {
-    if (!isRecording) {
-      return;
-    }
+  useEffect(
+    () => () => {
+      if (limitTimerRef.current) clearTimeout(limitTimerRef.current);
+    },
+    []
+  );
 
-    const timer = setInterval(() => setElapsed((current) => current + 1), 1000);
-    return () => clearInterval(timer);
-  }, [isRecording]);
+  function clearLimitTimer() {
+    if (limitTimerRef.current) clearTimeout(limitTimerRef.current);
+    limitTimerRef.current = null;
+  }
+
+  async function cancelRecording() {
+    clearLimitTimer();
+    if (voiceMode === 'recording') await recorder.cancel();
+    setVoiceMode('idle');
+  }
 
   function goBack() {
     if (step === 1) {
+      void cancelRecording();
       if (router.canGoBack()) {
         router.back();
       } else {
@@ -96,22 +121,55 @@ export default function AddProductScreen() {
   }
 
   function goToRecord() {
-    setIsRecording(false);
-    setElapsed(0);
+    setVoiceError(null);
+    setVoiceMode('idle');
     setStep(1);
   }
 
-  // Capture is mocked until the recorder and transcription are wired up: stopping simply
-  // advances to the review step so the seller can type the details in.
-  function toggleRecording() {
-    if (isRecording) {
-      setIsRecording(false);
-      setStep(2);
+  async function startRecording() {
+    setVoiceError(null);
+    const result = await recorder.start();
+
+    if (result !== 'recording') {
+      setVoiceError(t(result === 'denied' ? 'addProduct.micDenied' : 'addProduct.voiceFailed'));
       return;
     }
 
-    setElapsed(0);
-    setIsRecording(true);
+    setVoiceMode('recording');
+    limitTimerRef.current = setTimeout(() => void finishRecording(), PRODUCT_VOICE_MAX_MS);
+    AccessibilityInfo.announceForAccessibility(t('addProduct.recording'));
+  }
+
+  async function finishRecording() {
+    clearLimitTimer();
+    setVoiceMode('processing');
+    AccessibilityInfo.announceForAccessibility(t('addProduct.processing'));
+
+    try {
+      const recording = await recorder.finish();
+      if (!recording) throw new ProductVoiceError(t('addProduct.voiceFailed'));
+
+      const draft = await transcribeProductVoice(supabase, recording.uri);
+      reset({ ...getValues(), ...toProductFormValues(draft) });
+      setIsVoiceDraft(true);
+      setVoiceMode('idle');
+      setStep(2);
+    } catch (failure) {
+      setVoiceError(failure instanceof ProductVoiceError ? failure.message : t('addProduct.voiceFailed'));
+      setVoiceMode('idle');
+    }
+  }
+
+  async function typeInstead() {
+    await cancelRecording();
+    setVoiceError(null);
+    setIsVoiceDraft(false);
+    setStep(2);
+  }
+
+  function toggleRecording() {
+    if (isProcessing) return;
+    void (isRecording ? finishRecording() : startRecording());
   }
 
   async function goToPhotos() {
@@ -141,7 +199,8 @@ export default function AddProductScreen() {
 
   function addAnother() {
     reset();
-    setElapsed(0);
+    setVoiceError(null);
+    setIsVoiceDraft(false);
     setFormError(null);
     setStep(1);
   }
@@ -203,11 +262,18 @@ export default function AddProductScreen() {
           <View className="rounded-full border-1 border-border p-5">
             <Pressable
               onPress={toggleRecording}
+              disabled={isProcessing}
               role="button"
               aria-label={isRecording ? t('addProduct.stopRecording') : t('addProduct.startRecording')}
               aria-pressed={isRecording}
+              aria-busy={isProcessing}
+              aria-disabled={isProcessing}
               className="h-16 w-16 items-center justify-center rounded-full bg-primary active:bg-primary-hover">
-              <Icon name={isRecording ? 'stop' : 'dictate'} size="lg" className="text-surface" />
+              {isProcessing ? (
+                <ActivityIndicator size={20} className="text-surface" />
+              ) : (
+                <Icon name={isRecording ? 'stop' : 'dictate'} size="lg" className="text-surface" />
+              )}
             </Pressable>
           </View>
 
@@ -215,11 +281,17 @@ export default function AddProductScreen() {
             <View className="flex-row items-center gap-2" aria-live="polite">
               <View className="h-2 w-2 rounded-full bg-accent" aria-hidden />
               <Text className="type-overline text-accent-pressed">{t('addProduct.recording')}</Text>
-              <Text className="type-mono text-primary">{formatDuration(elapsed)}</Text>
+              <Text className="type-mono text-primary">
+                {formatDuration(Math.floor(recorder.durationMs / 1000))}
+              </Text>
             </View>
           ) : (
-            <Text className="type-text-secondary text-secondary">{t('addProduct.tapMic')}</Text>
+            <Text className="type-text-secondary text-secondary" aria-live="polite">
+              {isProcessing ? t('addProduct.processing') : t('addProduct.tapMic')}
+            </Text>
           )}
+
+          <FormError message={voiceError} />
 
           <Callout message={t('addProduct.example')} />
 
@@ -227,14 +299,15 @@ export default function AddProductScreen() {
             variant="link"
             label={t('addProduct.typeInstead')}
             fullWidth={false}
-            onPress={() => setStep(2)}
+            disabled={isProcessing}
+            onPress={typeInstead}
           />
         </View>
       ) : null}
 
       {step === 2 ? (
         <View className="gap-5">
-          <Callout message={t('addProduct.heard')} />
+          {isVoiceDraft ? <Callout message={t('addProduct.heard')} /> : null}
 
           <Controller
             control={control}

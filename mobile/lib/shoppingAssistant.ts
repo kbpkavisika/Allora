@@ -36,6 +36,13 @@ export async function invokeShoppingAssistant(
     historyLength += message.content.length;
   }
   if (!messages.length || messages.at(-1)?.role !== 'user') throw new Error('Invalid shopping request.');
+  const accessToken = await getFreshAccessToken(client);
+  return client.functions.invoke('shopping-assistant', {
+    body: { ...body, messages }, headers: { Authorization: 'Bearer ' + accessToken }, timeout: 45000,
+  });
+}
+
+export async function getFreshAccessToken(client: Pick<SupabaseClient, 'auth'>) {
   const { data, error } = await client.auth.getSession();
   let session = data.session;
   if (error || !session?.access_token) throw new Error('Please sign in again.');
@@ -46,9 +53,7 @@ export async function invokeShoppingAssistant(
       throw new Error('Please sign in again.');
     }
   }
-  return client.functions.invoke('shopping-assistant', {
-    body: { ...body, messages }, headers: { Authorization: 'Bearer ' + session.access_token }, timeout: 45000,
-  });
+  return session.access_token;
 }
 
 export async function readShoppingFailure(response: Response) {

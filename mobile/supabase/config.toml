@@ -421,3 +421,6 @@ enabled = true
 
 [functions.shopping-assistant]
 verify_jwt = false
+
+[functions.product-voice]
+verify_jwt = false
