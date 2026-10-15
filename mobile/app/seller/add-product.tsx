@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { useRef, useState } from 'react';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { AccessibilityInfo, ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 
@@ -18,14 +18,11 @@ import { KeyboardScreen } from '@/components/ui/KeyboardScreen';
 import { ProductPhotoGrid } from '@/components/ui/ProductPhotoGrid';
 import { StepProgress } from '@/components/ui/StepProgress';
 import { useProducts } from '@/hooks/useProducts';
-import { useVoiceRecorder } from '@/hooks/useVoiceRecorder';
+import { useDictation } from '@/hooks/useDictation';
+import { MESSAGE_MAX_LENGTH } from '@/lib/chat';
 import { formatPrice, getStockStatus, toProductInput } from '@/lib/products';
-import {
-  PRODUCT_VOICE_MAX_MS,
-  ProductVoiceError,
-  toProductFormValues,
-  transcribeProductVoice,
-} from '@/lib/productVoice';
+import { extractProductDraft, ProductVoiceError, toProductFormValues } from '@/lib/productVoice';
+import { messageSchema, type MessageValues } from '@/lib/schemas';
 import { supabase } from '@/lib/supabase';
 import {
   productCategories,
@@ -40,14 +37,6 @@ const TOTAL_STEPS = 4;
 
 const STEP_CAPTIONS = ['record', 'review', 'photos', 'done'];
 
-type VoiceMode = 'idle' | 'recording' | 'processing';
-
-function formatDuration(seconds: number) {
-  const minutes = Math.floor(seconds / 60);
-  const remainder = seconds % 60;
-  return `${minutes}:${String(remainder).padStart(2, '0')}`;
-}
-
 export default function AddProductScreen() {
   const { t } = useTranslation();
   const nameRef = useRef<TextInput>(null);
@@ -57,15 +46,26 @@ export default function AddProductScreen() {
 
   const { createProduct } = useProducts();
 
-  const recorder = useVoiceRecorder();
-  const limitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const transcriptRef = useRef<TextInput>(null);
   const [step, setStep] = useState(1);
-  const [voiceMode, setVoiceMode] = useState<VoiceMode>('idle');
+  const [isProcessing, setIsProcessing] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [isVoiceDraft, setIsVoiceDraft] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const isRecording = voiceMode === 'recording';
-  const isProcessing = voiceMode === 'processing';
+
+  const transcriptForm = useForm<MessageValues>({
+    resolver: zodResolver(messageSchema),
+    defaultValues: { body: '' },
+  });
+  const transcript = useWatch({ control: transcriptForm.control, name: 'body' });
+  const dictation = useDictation({
+    inputRef: transcriptRef,
+    value: transcript,
+    onChangeText: (body) =>
+      transcriptForm.setValue('body', body, { shouldDirty: true, shouldValidate: true }),
+    maxLength: MESSAGE_MAX_LENGTH,
+    isDisabled: isProcessing,
+  });
 
   const {
     control,
@@ -88,27 +88,8 @@ export default function AddProductScreen() {
     reValidateMode: 'onChange',
   });
 
-  useEffect(
-    () => () => {
-      if (limitTimerRef.current) clearTimeout(limitTimerRef.current);
-    },
-    []
-  );
-
-  function clearLimitTimer() {
-    if (limitTimerRef.current) clearTimeout(limitTimerRef.current);
-    limitTimerRef.current = null;
-  }
-
-  async function cancelRecording() {
-    clearLimitTimer();
-    if (voiceMode === 'recording') await recorder.cancel();
-    setVoiceMode('idle');
-  }
-
   function goBack() {
     if (step === 1) {
-      void cancelRecording();
       if (router.canGoBack()) {
         router.back();
       } else {
@@ -122,54 +103,31 @@ export default function AddProductScreen() {
 
   function goToRecord() {
     setVoiceError(null);
-    setVoiceMode('idle');
     setStep(1);
   }
 
-  async function startRecording() {
+  const fillFromTranscript = transcriptForm.handleSubmit(async ({ body }) => {
+    if (isProcessing || dictation.isDictating) return;
     setVoiceError(null);
-    const result = await recorder.start();
-
-    if (result !== 'recording') {
-      setVoiceError(t(result === 'denied' ? 'addProduct.micDenied' : 'addProduct.voiceFailed'));
-      return;
-    }
-
-    setVoiceMode('recording');
-    limitTimerRef.current = setTimeout(() => void finishRecording(), PRODUCT_VOICE_MAX_MS);
-    AccessibilityInfo.announceForAccessibility(t('addProduct.recording'));
-  }
-
-  async function finishRecording() {
-    clearLimitTimer();
-    setVoiceMode('processing');
+    setIsProcessing(true);
     AccessibilityInfo.announceForAccessibility(t('addProduct.processing'));
 
     try {
-      const recording = await recorder.finish();
-      if (!recording) throw new ProductVoiceError(t('addProduct.voiceFailed'));
-
-      const draft = await transcribeProductVoice(supabase, recording.uri);
+      const draft = await extractProductDraft(supabase, body);
       reset({ ...getValues(), ...toProductFormValues(draft) });
       setIsVoiceDraft(true);
-      setVoiceMode('idle');
       setStep(2);
     } catch (failure) {
       setVoiceError(failure instanceof ProductVoiceError ? failure.message : t('addProduct.voiceFailed'));
-      setVoiceMode('idle');
+    } finally {
+      setIsProcessing(false);
     }
-  }
+  });
 
-  async function typeInstead() {
-    await cancelRecording();
+  function typeInstead() {
     setVoiceError(null);
     setIsVoiceDraft(false);
     setStep(2);
-  }
-
-  function toggleRecording() {
-    if (isProcessing) return;
-    void (isRecording ? finishRecording() : startRecording());
   }
 
   async function goToPhotos() {
@@ -195,10 +153,11 @@ export default function AddProductScreen() {
     setStep(TOTAL_STEPS);
   }
 
-  const submit = handleSubmit(onSubmit, () => nameRef.current?.focus());
+  const submit = () => handleSubmit(onSubmit, () => nameRef.current?.focus())();
 
   function addAnother() {
     reset();
+    transcriptForm.reset();
     setVoiceError(null);
     setIsVoiceDraft(false);
     setFormError(null);
@@ -261,35 +220,52 @@ export default function AddProductScreen() {
 
           <View className="rounded-full border-1 border-border p-5">
             <Pressable
-              onPress={toggleRecording}
-              disabled={isProcessing}
+              onPress={dictation.dictate}
+              disabled={isProcessing || dictation.isDictating}
               role="button"
-              aria-label={isRecording ? t('addProduct.stopRecording') : t('addProduct.startRecording')}
-              aria-pressed={isRecording}
+              aria-label={t('addProduct.startRecording')}
+              accessibilityHint={dictation.hint}
               aria-busy={isProcessing}
-              aria-disabled={isProcessing}
+              aria-disabled={isProcessing || dictation.isDictating}
               className="h-16 w-16 items-center justify-center rounded-full bg-primary active:bg-primary-hover">
               {isProcessing ? (
                 <ActivityIndicator size={20} className="text-surface" />
               ) : (
-                <Icon name={isRecording ? 'stop' : 'dictate'} size="lg" className="text-surface" />
+                <Icon name="dictate" size="lg" className="text-surface" />
               )}
             </Pressable>
           </View>
 
-          {isRecording ? (
-            <View className="flex-row items-center gap-2" aria-live="polite">
-              <View className="h-2 w-2 rounded-full bg-accent" aria-hidden />
-              <Text className="type-overline text-accent-pressed">{t('addProduct.recording')}</Text>
-              <Text className="type-mono text-primary">
-                {formatDuration(Math.floor(recorder.durationMs / 1000))}
-              </Text>
-            </View>
-          ) : (
-            <Text className="type-text-secondary text-secondary" aria-live="polite">
-              {isProcessing ? t('addProduct.processing') : t('addProduct.tapMic')}
-            </Text>
-          )}
+          <Text className="type-text-secondary text-secondary" aria-live="polite">
+            {isProcessing ? t('addProduct.processing') : dictation.feedback || t('addProduct.tapMic')}
+          </Text>
+
+          <Controller
+            control={transcriptForm.control}
+            name="body"
+            render={({ field, fieldState }) => (
+              <InputField
+                ref={transcriptRef}
+                label={t('addProduct.heard')}
+                placeholder={t('addProduct.recordBody')}
+                value={field.value}
+                onChangeText={field.onChange}
+                onBlur={field.onBlur}
+                error={fieldState.error?.message}
+                isDisabled={isProcessing}
+                isMicVisible={false}
+                maxLength={MESSAGE_MAX_LENGTH}
+                multiline
+              />
+            )}
+          />
+
+          <Button
+            label={t('common.continue')}
+            loading={isProcessing}
+            disabled={dictation.isDictating || !transcript.trim()}
+            onPress={fillFromTranscript}
+          />
 
           <FormError message={voiceError} />
 

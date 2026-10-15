@@ -4,21 +4,15 @@ import { productVoiceResponseSchema, type ProductVoiceDraft } from '@/lib/schema
 import { productCategories, type ProductDetailsValues } from '@/lib/sellerSchemas';
 import { getFreshAccessToken, readShoppingFailure } from '@/lib/shoppingAssistant';
 
-export const PRODUCT_VOICE_MAX_MS = 2 * 60 * 1000;
-
 export class ProductVoiceError extends Error {}
 
-export async function transcribeProductVoice(
+export async function extractProductDraft(
   client: Pick<SupabaseClient, 'auth' | 'functions'>,
-  uri: string,
+  transcript: string,
 ): Promise<ProductVoiceDraft> {
   const accessToken = await getFreshAccessToken(client);
-  const extension = uri.split('.').pop()?.toLowerCase() || 'm4a';
-  const body = new FormData();
-  body.append('audio', { uri, name: 'product.' + extension, type: 'audio/' + (extension === 'm4a' ? 'mp4' : extension) } as unknown as Blob);
-
   const { data, error } = await client.functions.invoke('product-voice', {
-    body, headers: { Authorization: 'Bearer ' + accessToken }, timeout: 55000,
+    body: { transcript }, headers: { Authorization: 'Bearer ' + accessToken }, timeout: 45000,
   });
 
   if (error) {

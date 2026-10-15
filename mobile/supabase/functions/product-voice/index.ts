@@ -3,7 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 declare const Deno: { env: { get(name: string): string | undefined }; serve(handler: (req: Request) => Promise<Response>): void };
 type ProductDraft = { name: string; description: string; price: number | null; stockQuantity: number | null; category: string };
 const categories = ['Apparel', 'Footwear', 'Accessories', 'Home', 'Beauty', 'Other'];
-const maxAudioBytes = 10 * 1024 * 1024;
+const maxTranscriptLength = 4000;
+const maxBodyBytes = 64 * 1024;
 const headers = {
   'Content-Type': 'application/json',
   'Cache-Control': 'no-store',
@@ -43,7 +44,7 @@ Deno.serve(async (req: Request) => {
       return json({ code: 'rate_limited', error: 'Too many voice requests right now.', retryAfter }, 429, { 'Retry-After': String(retryAfter) });
     }
     if ([401, 403, 404].includes(response.status)) return fail('provider_configuration', 'Voice input is not configured correctly.', 503);
-    return fail('provider_unavailable', 'We could not understand that recording. Please try again.', 502);
+    return fail('provider_unavailable', 'We could not understand that description. Please try again.', 502);
   };
   if (req.method === 'OPTIONS') return json({}, 200);
   if (req.method !== 'POST') return json({ code: 'method_not_allowed', error: 'Method not allowed.' }, 405, { Allow: 'POST, OPTIONS' });
@@ -65,25 +66,11 @@ Deno.serve(async (req: Request) => {
 
     stage = 'validation';
     const contentLength = Number(req.headers.get('Content-Length'));
-    if (Number.isFinite(contentLength) && contentLength > maxAudioBytes + 65536) return fail('request_too_large', 'That recording is too long.', 413);
-    const form = await req.formData() as unknown as { get(name: string): FormDataEntryValue | null };
-    const audio = form.get('audio');
-    if (!(audio instanceof File) || audio.size === 0) return fail('invalid_request', 'No recording was received.', 400);
-    if (audio.size > maxAudioBytes) return fail('request_too_large', 'That recording is too long.', 413);
-
-    stage = 'transcription';
-    const transcriptionForm = new FormData();
-    transcriptionForm.append('file', audio, audio.name || 'product.m4a');
-    transcriptionForm.append('model', Deno.env.get('GROQ_TRANSCRIPTION_MODEL') || 'whisper-large-v3');
-    transcriptionForm.append('response_format', 'json');
-    transcriptionForm.append('temperature', '0');
-    const transcription = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-      method: 'POST', signal: AbortSignal.any([deadline, AbortSignal.timeout(30000)]),
-      headers: { Authorization: 'Bearer ' + key }, body: transcriptionForm,
-    });
-    if (!transcription.ok) return await providerFailure(transcription);
-    const transcript = String((await transcription.json())?.text ?? '').trim().slice(0, 4000);
+    if (Number.isFinite(contentLength) && contentLength > maxBodyBytes) return fail('request_too_large', 'That description is too long.', 413);
+    const body = await req.json().catch(() => null) as { transcript?: unknown } | null;
+    const transcript = typeof body?.transcript === 'string' ? body.transcript.trim() : '';
     if (!transcript) return fail('empty_transcript', 'We did not hear anything. Please try again closer to the mic.', 422);
+    if (transcript.length > maxTranscriptLength) return fail('request_too_large', 'That description is too long.', 413);
 
     stage = 'extraction';
     const model = Deno.env.get('GROQ_MODEL') || 'openai/gpt-oss-120b';
@@ -106,7 +93,7 @@ Deno.serve(async (req: Request) => {
     if (!draft || typeof draft.name !== 'string' || typeof draft.description !== 'string' || !categories.concat('').includes(draft.category) ||
       (draft.price !== null && (typeof draft.price !== 'number' || !Number.isFinite(draft.price) || draft.price < 0)) ||
       (draft.stockQuantity !== null && (!Number.isInteger(draft.stockQuantity) || draft.stockQuantity < 0))) {
-      return fail('invalid_provider_response', 'We could not understand that recording. Please try again.', 502);
+      return fail('invalid_provider_response', 'We could not understand that description. Please try again.', 502);
     }
     return json({
       transcript,
@@ -116,8 +103,7 @@ Deno.serve(async (req: Request) => {
     const details = error as { name?: string };
     log('error', 'request_failed', { errorName: details?.name });
     if (details?.name === 'TimeoutError' || details?.name === 'AbortError') return fail('request_timeout', 'That took too long. Please try again.', 504);
-    if (stage === 'validation') return fail('invalid_request', 'No recording was received.', 400);
-    if (stage === 'auth') return fail('dependency_unavailable', 'Could not reach the sign-in service.', 503);
-    return fail('internal_error', 'We could not understand that recording. Please try again.', 500);
+        if (stage === 'auth') return fail('dependency_unavailable', 'Could not reach the sign-in service.', 503);
+    return fail('internal_error', 'We could not understand that description. Please try again.', 500);
   }
 });
