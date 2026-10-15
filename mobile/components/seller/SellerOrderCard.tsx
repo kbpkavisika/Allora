@@ -32,23 +32,23 @@ function getSellerRefundBadge(
   const refund = refundService.getRefund(order.id);
   if (refund) {
     if (refund.status === 'refunded') {
-      return { label: 'Refund Completed', variant: 'success', voice: 'Refund completed' };
+      return { label: 'Refunded', variant: 'success', voice: 'Refund completed' };
     }
     if (refund.status === 'failed') {
-      return { label: 'Refund Declined', variant: 'warning', voice: 'Refund declined' };
+      return { label: 'Declined', variant: 'warning', voice: 'Refund declined' };
     }
     if (refund.status === 'requested') {
-      return { label: 'Refund Requested', variant: 'neutral', voice: 'Refund requested' };
+      return { label: 'Requested', variant: 'neutral', voice: 'Refund requested' };
     }
-    return { label: 'Refund Processing', variant: 'neutral', voice: 'Refund processing' };
+    return { label: 'Processing', variant: 'neutral', voice: 'Refund processing' };
   }
 
   if (order.payment_status === 'refunded') {
-    return { label: 'Refund Completed', variant: 'success', voice: 'Refund completed' };
+    return { label: 'Refunded', variant: 'success', voice: 'Refund completed' };
   }
 
   if (order.payment_status === 'partially_refunded') {
-    return { label: 'Partially Refunded', variant: 'neutral', voice: 'Partially refunded' };
+    return { label: 'Partial Refund', variant: 'neutral', voice: 'Partially refunded' };
   }
 
   return null;
@@ -65,7 +65,9 @@ export function SellerOrderCard({
   const status = statusPresentation(order.status);
   const refundBadge = getSellerRefundBadge(order);
   const isRefunded =
-    order.payment_status === 'refunded' || refundBadge?.label === 'Refund Completed';
+    order.payment_status === 'refunded' ||
+    refundBadge?.label === 'Refunded' ||
+    refundBadge?.label === 'Refund Completed';
   const advanceLabel =
     order.status === 'cancelled' || isRefunded
       ? null
@@ -76,13 +78,13 @@ export function SellerOrderCard({
   const openReturn = hasOpenReturn(order) ? latestReturn(order) : undefined;
 
   return (
-    <View className="gap-3 rounded-12 border-1 border-border bg-surface p-3">
+    <View className="gap-3 rounded-12 border-1 border-border bg-surface p-3 overflow-hidden">
       <Pressable
         onPress={onPress}
         role="button"
         aria-label={`${orderNumber}, ${buyer}, ${status.label}${refundBadge ? `, ${refundBadge.voice}` : ''}${openReturn ? `, Return ${openReturn.status}` : ''}${position ? `, ${position}` : ''}`}
         accessibilityHint={t('seller.orders.openHint')}
-        className="flex-row items-center gap-3 active:bg-surface-muted">
+        className="flex-row items-center gap-3 overflow-hidden active:bg-surface-muted">
         <ProductThumbnail uri={orderItemPhoto(order.items[0])} fallbackIcon="orders" />
 
         <View className="flex-1 gap-1">

@@ -25,23 +25,23 @@ function getOrderPaymentBadge(order: Order): { label: string; variant: BadgeVari
   const refund = refundService.getRefund(order.id);
   if (refund) {
     if (refund.status === 'refunded') {
-      return { label: 'Refund Completed', variant: 'success', voice: 'Refund completed' };
+      return { label: 'Refunded', variant: 'success', voice: 'Refund completed' };
     }
     if (refund.status === 'failed') {
-      return { label: 'Refund Declined', variant: 'warning', voice: 'Refund declined' };
+      return { label: 'Declined', variant: 'warning', voice: 'Refund declined' };
     }
     if (refund.status === 'requested') {
-      return { label: 'Refund Requested', variant: 'neutral', voice: 'Refund requested' };
+      return { label: 'Requested', variant: 'neutral', voice: 'Refund requested' };
     }
-    return { label: 'Refund Processing', variant: 'neutral', voice: 'Refund processing' };
+    return { label: 'Processing', variant: 'neutral', voice: 'Refund processing' };
   }
 
   if (order.payment_status === 'refunded') {
-    return { label: 'Refund Completed', variant: 'success', voice: 'Refund completed' };
+    return { label: 'Refunded', variant: 'success', voice: 'Refund completed' };
   }
 
   if (order.payment_status === 'partially_refunded') {
-    return { label: 'Partially Refunded', variant: 'neutral', voice: 'Order partially refunded' };
+    return { label: 'Partial Refund', variant: 'neutral', voice: 'Order partially refunded' };
   }
 
   if (order.status === ('cancelled' as any) || (order as any).cancelled_at) {
@@ -49,7 +49,7 @@ function getOrderPaymentBadge(order: Order): { label: string; variant: BadgeVari
   }
 
   if (order.payment_status === 'failed') {
-    return { label: 'Payment Failed', variant: 'warning', voice: 'Payment failed' };
+    return { label: 'Failed', variant: 'warning', voice: 'Payment failed' };
   }
 
   if (order.payment_status === 'paid') {
@@ -80,15 +80,15 @@ export function OrderListCard({ order, position }: OrderListCardProps) {
       role="button"
       aria-label={`${t('orders.orderNumber', { number: order.order_number })}, ${itemSummary(order.items)}, ${formatMoney(order.total)}, Status: ${status.label}, Payment: ${paymentBadge.voice}${position ? `, ${position}` : ''}`}
       accessibilityHint={t('orders.openHint')}
-      className="flex-row items-center gap-3 rounded-12 border-1 border-border bg-surface p-3 active:bg-surface-muted">
+      className="flex-row items-center gap-3 rounded-12 border-1 border-border bg-surface p-3 overflow-hidden active:bg-surface-muted">
       <ProductThumbnail uri={cover} fallbackIcon="orders" />
 
       <View className="flex-1 gap-1">
         <View className="flex-row items-center justify-between gap-2">
-          <Text className="type-mono text-secondary" numberOfLines={1}>
+          <Text className="type-mono flex-1 text-secondary" numberOfLines={1}>
             {t('orders.orderNumber', { number: order.order_number })}
           </Text>
-          <Badge label={paymentBadge.label} variant={paymentBadge.variant} />
+          <Badge label={paymentBadge.label} variant={paymentBadge.variant} className="shrink-0" />
         </View>
 
         <Text className="type-label-lg text-primary" numberOfLines={1}>
