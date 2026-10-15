@@ -118,6 +118,21 @@ export function returnResponseSchema(isNoteRequired: boolean) {
   });
 }
 
+export function refundResponseSchema(isNoteRequired: boolean) {
+  const note = z
+    .string()
+    .trim()
+    .max(500, { message: 'Keep note under 500 characters' });
+
+  return z.object({
+    note: isNoteRequired
+      ? note.min(1, { message: 'Please provide a reason for declining the refund' })
+      : note,
+  });
+}
+
+export type RefundResponseValues = z.infer<ReturnType<typeof refundResponseSchema>>;
+
 export const refundReasons = [
   'damaged',
   'wrong_item',

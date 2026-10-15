@@ -81,7 +81,7 @@ export class RefundService {
             details: input.reasonDetails?.trim() || null,
             payment_reference: input.paymentReference || null,
             currency: input.currency ?? 'LKR',
-            status: 'processing',
+            status: 'requested',
           })
           .select('id, refund_number, created_at, status')
           .single();
@@ -109,7 +109,7 @@ export class RefundService {
       reason: input.reason,
       reasonLabel,
       reasonDetails: input.reasonDetails?.trim() || undefined,
-      status: 'processing',
+      status: 'requested',
       createdAt: persistedCreatedAt ?? new Date().toISOString(),
       currency: input.currency ?? 'LKR',
     };
@@ -141,6 +141,32 @@ export class RefundService {
     return refundStore.get(orderId) ?? [];
   }
 
+  async fetchRefundsForOrders(orderIds: string[]): Promise<Map<string, RefundRequest[]>> {
+    if (orderIds.length === 0) return refundStore;
+
+    try {
+      const { data, error } = await supabase
+        .from('order_refunds')
+        .select('*')
+        .in('order_id', orderIds)
+        .order('created_at', { ascending: true });
+
+      if (!error && Array.isArray(data) && data.length > 0) {
+        for (const row of data as unknown as OrderRefundRow[]) {
+          const mapped = mapRowToRefundRequest(row);
+          const existing = refundStore.get(row.order_id) ?? [];
+          if (!existing.some((r) => r.id === mapped.id)) {
+            refundStore.set(row.order_id, [...existing, mapped]);
+          }
+        }
+      }
+    } catch {
+      // Return cached store if query fails
+    }
+
+    return refundStore;
+  }
+
   getRefund(idOrOrderId: string): RefundRequest | undefined {
     const list = refundStore.get(idOrOrderId);
     if (list && list.length > 0) {
@@ -165,6 +191,80 @@ export class RefundService {
     return all;
   }
 
+  async respondToRefund({
+    refundId,
+    orderId,
+    decision,
+    note,
+  }: {
+    refundId?: string;
+    orderId: string;
+    decision: 'refunded' | 'failed' | 'processing';
+    note?: string;
+  }): Promise<{ success: boolean; error?: string }> {
+    try {
+      const list = refundStore.get(orderId) ?? [];
+      let targetRefund: RefundRequest | undefined;
+
+      if (refundId) {
+        targetRefund = list.find((r) => r.id === refundId);
+      }
+      if (!targetRefund && list.length > 0) {
+        targetRefund = list[list.length - 1];
+      }
+
+      if (targetRefund) {
+        targetRefund.status = decision;
+        if (note?.trim()) {
+          targetRefund.reasonDetails = targetRefund.reasonDetails
+            ? `${targetRefund.reasonDetails}\n\nSeller note: ${note.trim()}`
+            : `Seller note: ${note.trim()}`;
+        }
+      }
+
+      const updatePayload: Record<string, unknown> = {
+        status: decision,
+      };
+
+      if (note?.trim()) {
+        const detailsNote = targetRefund?.reasonDetails || `Seller note: ${note.trim()}`;
+        updatePayload.details = detailsNote;
+      }
+
+      const refNumber = refundId || targetRefund?.id;
+      if (refNumber && refNumber.startsWith('REF-')) {
+        await supabase
+          .from('order_refunds')
+          .update(updatePayload)
+          .eq('refund_number', refNumber);
+      } else if (refNumber) {
+        await supabase
+          .from('order_refunds')
+          .update(updatePayload)
+          .eq('id', refNumber);
+      } else {
+        await supabase
+          .from('order_refunds')
+          .update(updatePayload)
+          .eq('order_id', orderId);
+      }
+
+      if (decision === 'refunded') {
+        const isPartial = targetRefund?.refundType === 'partial';
+        await supabase
+          .from('orders')
+          .update({
+            payment_status: isPartial ? 'partially_refunded' : 'refunded',
+          })
+          .eq('id', orderId);
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Failed to update refund status' };
+    }
+  }
+
   updateRefundStatus(idOrOrderId: string, status: RefundStatus): RefundRequest | undefined {
     const list = refundStore.get(idOrOrderId);
     let matchedRefund: RefundRequest | undefined;
@@ -185,29 +285,11 @@ export class RefundService {
     }
 
     if (matchedRefund) {
-      const targetOrderId = matchedRefund.orderId;
-      const refNumber = matchedRefund.id;
-
-      void (async () => {
-        try {
-          await supabase
-            .from('order_refunds')
-            .update({ status })
-            .or(`refund_number.eq.${refNumber},order_id.eq.${targetOrderId}`);
-
-          if (status === 'refunded') {
-            const isPartial = matchedRefund.refundType === 'partial';
-            await supabase
-              .from('orders')
-              .update({
-                payment_status: isPartial ? 'partially_refunded' : 'refunded',
-              })
-              .eq('id', targetOrderId);
-          }
-        } catch {
-          // Status kept in local memory
-        }
-      })();
+      void this.respondToRefund({
+        refundId: matchedRefund.id,
+        orderId: matchedRefund.orderId,
+        decision: status === 'requested' ? 'processing' : status,
+      });
     }
 
     return matchedRefund;

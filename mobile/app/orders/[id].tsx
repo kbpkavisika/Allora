@@ -8,6 +8,7 @@ import { CancelOrderSheet } from '@/components/orders/CancelOrderSheet';
 import { DeliverySummary } from '@/components/orders/DeliverySummary';
 import { OrderCancellationNotice } from '@/components/orders/OrderCancellationNotice';
 import { OrderItemRows } from '@/components/orders/OrderItemRows';
+import { OrderRefundSummary } from '@/components/orders/OrderRefundSummary';
 import { OrderReturnSummary } from '@/components/orders/OrderReturnSummary';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -85,7 +86,8 @@ export default function OrderDetailScreen() {
   const total = order.items.reduce((sum, item) => sum + item.unit_price * item.quantity, 0);
   const orderTotal = order.total || total;
 
-  const isEligibleForRefund = order.payment_status === 'paid';
+  const isEligibleForRefund =
+    order.payment_method === 'payhere' && order.payment_status === 'paid';
 
   const canRequestRefund = isEligibleForRefund && (!refund || refund.status === 'failed');
 
@@ -97,6 +99,9 @@ export default function OrderDetailScreen() {
     paymentBadgeVariant = 'success';
   } else if (order.payment_status === 'partially_refunded') {
     paymentBadgeLabel = 'Partially Refunded';
+    paymentBadgeVariant = 'neutral';
+  } else if (refund?.status === 'requested') {
+    paymentBadgeLabel = 'Refund Requested';
     paymentBadgeVariant = 'neutral';
   } else if (refund?.status === 'processing') {
     paymentBadgeLabel = 'Refund Processing';
@@ -125,23 +130,6 @@ export default function OrderDetailScreen() {
       : session?.user?.email
         ? `Payment receipt delivered to ${session.user.email}.`
         : 'Payment receipt delivered to registered email address.';
-
-  const refundStatusLabel =
-    refund?.status === 'refunded'
-      ? 'Refund Completed'
-      : refund?.status === 'failed'
-        ? 'Refund Failed'
-        : 'Refund Processing';
-
-  const refundStatusVariant: 'success' | 'warning' | 'neutral' =
-    refund?.status === 'refunded'
-      ? 'success'
-      : refund?.status === 'failed'
-        ? 'warning'
-        : 'neutral';
-
-  const originalPaymentRef =
-    refund?.paymentReference || order.payment_reference || `ORDER-${order.order_number}`;
 
   return (
     <View className="flex-1 bg-surface">
@@ -265,102 +253,30 @@ export default function OrderDetailScreen() {
 
         {/* Refund Information Section */}
         {refund ? (
-          <View className="gap-4">
-            <SectionHeader title="Refund information" />
-            <View
-              accessibilityRole="summary"
-              aria-label="Refund information summary"
-              className="gap-3 rounded-12 border-1 border-border bg-surface p-4">
-              <View className="flex-row items-center justify-between">
-                <Text className="type-label text-secondary" maxFontSizeMultiplier={2}>
-                  Refund Reference
-                </Text>
-                <Text className="type-mono text-primary font-bold" maxFontSizeMultiplier={2}>
-                  {refund.id}
-                </Text>
-              </View>
-
-              <View className="flex-row items-center justify-between">
-                <Text className="type-label text-secondary" maxFontSizeMultiplier={2}>
-                  Refund Status
-                </Text>
-                <Badge label={refundStatusLabel} variant={refundStatusVariant} />
-              </View>
-
-              <View className="flex-row items-center justify-between">
-                <Text className="type-label text-secondary" maxFontSizeMultiplier={2}>
-                  Refund Amount
-                </Text>
-                <Text className="type-h3 text-primary" maxFontSizeMultiplier={2}>
-                  {formatMoney(refund.refundAmount)}
-                </Text>
-              </View>
-
-              <View className="flex-row items-center justify-between">
-                <Text className="type-label text-secondary" maxFontSizeMultiplier={2}>
-                  Refund Reason
-                </Text>
-                <Text className="type-text-primary text-primary" maxFontSizeMultiplier={2}>
-                  {refund.reasonLabel}
-                </Text>
-              </View>
-
-              {refund.reasonDetails ? (
-                <View className="gap-0.5">
-                  <Text className="type-label text-secondary" maxFontSizeMultiplier={2}>
-                    Reason Details
-                  </Text>
-                  <Text className="type-text-secondary text-primary" maxFontSizeMultiplier={2}>
-                    {refund.reasonDetails}
-                  </Text>
-                </View>
-              ) : null}
-
-              <View className="flex-row items-center justify-between">
-                <Text className="type-label text-secondary" maxFontSizeMultiplier={2}>
-                  Original Payment Ref
-                </Text>
-                <Text className="type-mono text-primary" maxFontSizeMultiplier={2}>
-                  {originalPaymentRef}
-                </Text>
-              </View>
-
-              <View className="flex-row items-center justify-between">
-                <Text className="type-label text-secondary" maxFontSizeMultiplier={2}>
-                  Requested On
-                </Text>
-                <Text className="type-text-secondary text-secondary" maxFontSizeMultiplier={2}>
-                  {new Date(refund.createdAt).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </Text>
-              </View>
-
-              <View className="pt-2 gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  label="View refund status"
-                  hint="Navigates to the refund status tracking screen"
-                  onPress={() =>
-                    router.push({
-                      pathname: '/orders/[id]/refund-status' as any,
-                      params: { id: order.id },
-                    })
-                  }
-                />
-
-              </View>
+          <OrderRefundSummary refund={refund} viewer="buyer">
+            <View className="pt-2 gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                label={t('refund.viewStatus', { defaultValue: 'View refund status' })}
+                hint={t('refund.viewStatusHint', {
+                  defaultValue: 'Navigates to the refund status tracking screen',
+                })}
+                onPress={() =>
+                  router.push({
+                    pathname: '/orders/[id]/refund-status' as any,
+                    params: { id: order.id },
+                  })
+                }
+              />
             </View>
-          </View>
+          </OrderRefundSummary>
         ) : null}
 
         {/* Refund History Section (if multiple refund records exist) */}
         {refunds.length > 1 ? (
           <View className="gap-3">
-            <SectionHeader title="Refund history" />
+            <SectionHeader title={t('refund.history', { defaultValue: 'Refund history' })} />
             <View className="gap-2">
               {refunds.map((record, index) => {
                 const isLatest = index === refunds.length - 1;
@@ -368,8 +284,10 @@ export default function OrderDetailScreen() {
                   record.status === 'refunded'
                     ? 'Refund Completed'
                     : record.status === 'failed'
-                      ? 'Refund Failed'
-                      : 'Refund Processing';
+                      ? 'Refund Declined'
+                      : record.status === 'requested'
+                        ? 'Refund Requested'
+                        : 'Refund Processing';
                 const recVariant: 'success' | 'warning' | 'neutral' =
                   record.status === 'refunded'
                     ? 'success'
