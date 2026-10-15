@@ -227,6 +227,19 @@ export type MessageValues = z.infer<typeof messageSchema>;
 export type AccessibilityPreferencesValues = z.infer<typeof accessibilityPreferencesSchema>;
 export type NotificationPreferencesValues = z.infer<typeof notificationPreferencesSchema>;
 
+export const productVoiceResponseSchema = z.object({
+  transcript: z.string(),
+  product: z.object({
+    name: z.string().max(80),
+    description: z.string().max(1000),
+    price: z.number().nonnegative().nullable(),
+    stockQuantity: z.number().int().nonnegative().nullable(),
+    category: z.string(),
+  }),
+});
+
+export type ProductVoiceDraft = z.infer<typeof productVoiceResponseSchema>['product'];
+
 export const shoppingResponseSchema = z.object({
   action: z.object({
     type: z.enum(['search', 'add', 'reply']),
